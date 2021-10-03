@@ -8,6 +8,7 @@ client.remove_command('help')
 db = sqlite3.connect('main.db')
 cur = db.cursor()
 cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, user_name text, elo int, wins int, loss int)''')
+cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')
 db.commit()
 
 @client.event

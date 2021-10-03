@@ -17,23 +17,25 @@ class Queue(commands.Cog):
 
     def on_join(self, guild, user):
         if self.check(guild.id):
-            if not user in self.data[guild.id]["queue"]:
-                self.data[guild.id]["queue"].append(user)
-                if len(self.data[guild.id]["queue"]) >= 10:
-                    self.data[guild.id]["state"] = "pick"
-                    self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.blue_cap)
-                    self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.orange_cap)
-                    self.data[guild.id]["pick_logic"] = [
-                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],  
-                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"],
-                    ]
-                return True
+            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
+                if not user in self.data[guild.id]["queue"]:
+                    self.data[guild.id]["queue"].append(user)
+                    if len(self.data[guild.id]["queue"]) >= 10:
+                        self.data[guild.id]["state"] = "pick"
+                        self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.blue_cap)
+                        self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.orange_cap)
+                        self.data[guild.id]["pick_logic"] = [
+                            self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],  
+                            self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"],
+                        ]
+                    return True
     
     def on_leave(self, guild, user):
         if self.check(guild.id):
-            if user in self.data[guild.id]["queue"]:
-                self.data[guild.id]["queue"].remove(user)
-                return True
+            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
+                if user in self.data[guild.id]["queue"]:
+                    self.data[guild.id]["queue"].remove(user)
+                    return True
 
 
     def embed_gen(self, guild):
