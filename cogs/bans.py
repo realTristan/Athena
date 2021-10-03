@@ -12,6 +12,8 @@ class Bans(commands.Cog):
     @commands.command()
     async def ban(self, ctx, user:discord.Member, time:str, reason:str):
         try:
+            if time[len(time)] == "s":
+                length = int(time.strip("s"))
             if time[len(time)] == "m":
                 length = int(time.strip("m")) * 60
             if time[len(time)] == "h":
