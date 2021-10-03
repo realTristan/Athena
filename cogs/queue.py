@@ -86,7 +86,8 @@ class Queue(commands.Cog):
 
     @commands.command(aliases=["fj"])
     async def forcejoin(self, ctx, user:discord.Member):
-        await ctx.send(embed=await self.on_join(ctx.guild, user))
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            await ctx.send(embed=await self.on_join(ctx.guild, user))
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
