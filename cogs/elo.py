@@ -45,36 +45,38 @@ class Elo(commands.Cog):
     @commands.command()
     async def match(self, ctx, action:str, match_id:int, *args):
         if action == "report":
-            for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
-                if row[7] != "reported" or "cancelled":
-                    cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    db.commit()
+            if ctx.author.permissions.manage_messages:
+                for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
+                    if row[7] != "reported" or "cancelled":
+                        cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        db.commit()
 
-                    if "blue" in list(args)[0]:
-                        for user in str(row[4]).split(","):
-                            await ctx.send(await self.add_loss(ctx.guild, user))
-                        await ctx.send(await self.add_loss(ctx.guild, int(row[3])))
+                        if "blue" in list(args)[0]:
+                            for user in str(row[4]).split(","):
+                                await ctx.send(await self.add_loss(ctx.guild, user))
+                            await ctx.send(await self.add_loss(ctx.guild, int(row[3])))
 
-                        for user in str(row[6]).split(","):
-                            await ctx.send(await self.add_win(ctx.guild, user))
-                        await ctx.send(await self.add_win(ctx.guild, int(row[5])))
+                            for user in str(row[6]).split(","):
+                                await ctx.send(await self.add_win(ctx.guild, user))
+                            await ctx.send(await self.add_win(ctx.guild, int(row[5])))
 
 
-                    if "orange" in list(args)[0]:
-                        for user in str(row[4]).split(","):
-                            await ctx.send(await self.add_win(ctx.guild, user))
-                        await ctx.send(await self.add_win(ctx.guild, int(row[3])))
+                        if "orange" in list(args)[0]:
+                            for user in str(row[4]).split(","):
+                                await ctx.send(await self.add_win(ctx.guild, user))
+                            await ctx.send(await self.add_win(ctx.guild, int(row[3])))
 
-                        for user in str(row[6]).split(","):
-                            await ctx.send(await self.add_loss(ctx.guild, user))
-                        await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
+                            for user in str(row[6]).split(","):
+                                await ctx.send(await self.add_loss(ctx.guild, user))
+                            await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
 
         if action == "cancel":
-            for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
-                if row[7] != "reported" or "cancelled":
-                    cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    db.commit()
-                    await ctx.send(embed=await self.display_match(match_id, ctx.guild))
+            if ctx.author.permissions.manage_messages:
+                for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
+                    if row[7] != "reported" or "cancelled":
+                        cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        db.commit()
+                        await ctx.send(embed=await self.display_match(match_id, ctx.guild))
 
         if action == "show":
             await ctx.send(embed=await self.display_match(match_id, ctx.guild))
@@ -88,21 +90,34 @@ class Elo(commands.Cog):
         await ctx.send(embed=await self.display_match(match_count, ctx.guild))
 
 
-    @commands.command(aliases=["sub"])
+    @commands.command(aliases=["sub", "swap"])
+    @has_permissions(manage_messages=True)
     async def replace(self, ctx, match_id:int, user1:discord.Member, user2:discord.Member):
-        pass
+        for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
+            if row[7] != "reported" or "cancelled":
+                blue_team = str(row[6]).split(",")
+                orange_team = str(row[4]).split(",")
 
+                if str(user1.id) in str(row[3]):
+                    cur.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    db.commit()
+                
+                elif user1.id in orange_team:
+                    orange_team.remove(user1.id)
+                    orange_team.append(user2.id)
+                    cur.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    db.commit()
 
+                elif str(user1.id) in str(row[5]):
+                    cur.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    db.commit()
 
-
-
-
-
-
-
-
-
-
+                elif user1.id in blue_team:
+                    blue_team.remove(user1.id)
+                    blue_team.append(user2.id)
+                    cur.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    db.commit()
+            await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
 
     @commands.command()
     async def rename(self, ctx, name:str):
