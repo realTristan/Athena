@@ -1,6 +1,7 @@
 from discord.ext.commands import has_permissions
 import discord, sqlite3, random, time
 from discord.ext import commands
+from discord.utils import get
 import datetime as datetime
 
 db = sqlite3.connect('main.db')
@@ -72,8 +73,25 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
 
             await self.add_match(ctx.guild)
+            await self.create_vc(ctx)
             await self.reset(ctx.guild)
             return await ctx.send(embed=embed)
+
+    async def create_vc(self, ctx):
+        category = get(ctx.guild.categories, name='ten mans')
+        if not category:
+            category = await ctx.guild.create_category('ten mans')
+
+        blue_vc = await ctx.guild.create_voice_channel(f'🔹 Team {random.choice(self.data[ctx.guild.id]["blue_cap"]).name}', category=category)
+        await blue_vc.set_permissions(ctx.guild.default_role, connect=False)
+        for user in self.data[ctx.guild.id]["blue_team"]:
+            await blue_vc.set_permissions(user, connect=True)
+
+        orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {random.choice(self.data[ctx.guild.id]['orange_cap']).name}", category=category)
+        await orange_vc.set_permissions(ctx.guild.default_role, connect=False)
+        for user in self.data[ctx.guild.id]["orange_team"]:
+            await orange_vc.set_permissions(user, connect=True)
+        return
 
     async def add_match(self, guild):
         orange_team = ','.join(str(e.id) for e in self.data[guild.id]['orange_team'])
