@@ -8,7 +8,7 @@ class Settings(commands.Cog):
 
     async def write(self, file, data):
         with open(f"json/{file}.json", "w") as f:
-            json.dump(data, f, indent=4)
+            json.dump(data, f)
 
     @commands.command()
     @has_permissions(administrator=True)
@@ -16,8 +16,8 @@ class Settings(commands.Cog):
         data=json.load(open("json/maps.json", "r+"))
         if ctx.guild.id not in data:
             data[ctx.guild.id] = []
-        if map not in data[ctx.guild.id]["maps"]:
-            data[ctx.guild.id]["maps"].append(map)
+        if map not in data[ctx.guild.id]:
+            data[ctx.guild.id].append(map)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535))
             await self.write("maps", data)
 
@@ -27,8 +27,8 @@ class Settings(commands.Cog):
         data=json.load(open("json/maps.json", "r+"))
         if ctx.guild.id not in data:
             data[ctx.guild.id] = []
-        if map in data[ctx.guild.id]["maps"]:
-            data[ctx.guild.id]["maps"].remove(map)
+        if map in data[ctx.guild.id]:
+            data[ctx.guild.id].remove(map)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=65535))
             await self.write("maps", data)
 
