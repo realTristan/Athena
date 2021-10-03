@@ -127,14 +127,14 @@ class Elo(commands.Cog):
 
     @commands.command()
     async def rename(self, ctx, name:str):
-        cur.execute(f"UPDATE users SET user_name = {name} WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
+        cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
         db.commit()
         await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
 
     @commands.command(aliases=["fr"])
     @has_permissions(manage_messages=True)
     async def forcerename(self, ctx, user:discord.Member, name:str):
-        cur.execute(f"UPDATE users SET user_name = {name} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         db.commit()
         await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
 

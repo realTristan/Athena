@@ -1,6 +1,7 @@
-import discord, os, sqlite3
+from discord.ext.commands import CommandNotFound
 from discord.ext import commands
 from datetime import datetime
+import discord, os, sqlite3
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, members=True, presences=True)
 client = commands.Bot(command_prefix='=', intents=intents)
@@ -15,6 +16,12 @@ cur.execute(f'''CREATE TABLE IF NOT EXISTS reg_role (guild_id int, role_id int)'
 
 cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, map text, orange_cap text, orange_team text, blue_cap text, blue_team text, status text)''')
 db.commit()
+
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        return
+    raise error
 
 @client.event
 async def on_ready():
