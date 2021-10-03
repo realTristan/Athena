@@ -94,7 +94,7 @@ class Queue(commands.Cog):
 
     @commands.command(aliases=["fl"])
     async def forceleave(self, ctx, user:discord.Member):
-        await ctx.send(embed=await self.on_leave(ctx.guild, ctx.author))
+        await ctx.send(embed=await self.on_leave(ctx.guild, user))
 
     @commands.command(aliases=["q"])
     async def queue(self, ctx):
