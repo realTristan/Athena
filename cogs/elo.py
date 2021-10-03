@@ -46,33 +46,35 @@ class Elo(commands.Cog):
     async def match(self, ctx, action:str, match_id:int, *args):
         if action == "report":
             for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
-                cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                db.commit()
+                if row[7] != "reported" or "cancelled":
+                    cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    db.commit()
 
-                if "blue" in list(args)[0]:
-                    for user in str(row[4]).split(","):
-                        await ctx.send(await self.add_loss(ctx.guild, user))
-                    await ctx.send(await self.add_loss(ctx.guild, int(row[3])))
+                    if "blue" in list(args)[0]:
+                        for user in str(row[4]).split(","):
+                            await ctx.send(await self.add_loss(ctx.guild, user))
+                        await ctx.send(await self.add_loss(ctx.guild, int(row[3])))
 
-                    for user in str(row[6]).split(","):
-                        await ctx.send(await self.add_win(ctx.guild, user))
-                    await ctx.send(await self.add_win(ctx.guild, int(row[5])))
+                        for user in str(row[6]).split(","):
+                            await ctx.send(await self.add_win(ctx.guild, user))
+                        await ctx.send(await self.add_win(ctx.guild, int(row[5])))
 
 
-                if "orange" in list(args)[0]:
-                    for user in str(row[4]).split(","):
-                        await ctx.send(await self.add_win(ctx.guild, user))
-                    await ctx.send(await self.add_win(ctx.guild, int(row[3])))
+                    if "orange" in list(args)[0]:
+                        for user in str(row[4]).split(","):
+                            await ctx.send(await self.add_win(ctx.guild, user))
+                        await ctx.send(await self.add_win(ctx.guild, int(row[3])))
 
-                    for user in str(row[6]).split(","):
-                        await ctx.send(await self.add_loss(ctx.guild, user))
-                    await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
+                        for user in str(row[6]).split(","):
+                            await ctx.send(await self.add_loss(ctx.guild, user))
+                        await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
 
         if action == "cancel":
             for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
-                cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                db.commit()
-                await ctx.send(embed=await self.display_match(match_id, ctx.guild))
+                if row[7] != "reported" or "cancelled":
+                    cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    db.commit()
+                    await ctx.send(embed=await self.display_match(match_id, ctx.guild))
 
         if action == "show":
             await ctx.send(embed=await self.display_match(match_id, ctx.guild))
