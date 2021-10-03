@@ -67,6 +67,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[guild.id]["blue_team"]))
 
             await self.add_match(guild)
+            await self.reset(guild)
             return embed
 
     async def add_match(self, guild):

@@ -16,7 +16,8 @@ class Elo(commands.Cog):
                 cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {guild.id} AND user_id = {user}")
                 db.commit()
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
-                    await guild.get_member(int(user)).edit(nick=f"{row[2]} [{row[3]}]")
+                    try: await guild.get_member(int(user)).edit(nick=f"{row[2]} [{row[3]}]")
+                    except: pass
                     return discord.Embed(title="Added Win", description=f"{user.mention} [**{row[4]-1}**] ➜ {user.mention} [**{row[4]}**]", color=65535)
 
     async def add_loss(self, guild, user):
@@ -27,7 +28,8 @@ class Elo(commands.Cog):
                 db.commit()
 
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
-                await guild.get_member(int(user)).edit(nick=f"{row[2]} [{row[3]}]")
+                try: await guild.get_member(int(user)).edit(nick=f"{row[2]} [{row[3]}]")
+                except: pass
                 return discord.Embed(title="Added Loss", description=f"{user.mention} [**{row[5]-1}**] ➜ {user.mention} [**{row[5]}**]", color=65535)
 
     async def display_match(self, match_id, guild):
@@ -44,7 +46,7 @@ class Elo(commands.Cog):
     @commands.command()
     async def match(self, ctx, action:str, match_id:int, *args):
         if action == "report":
-            if ctx.author.permissions.manage_messages:
+            if ctx.author.guild_permissions.manage_messages:
                 for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
                     if "reported" not in row[7] and "cancelled" not in row[7]:
                         cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
@@ -69,16 +71,16 @@ class Elo(commands.Cog):
                                 await ctx.send(await self.add_loss(ctx.guild, user))
                             await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
                     else:
-                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported"))
+                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
         if action == "cancel":
-            if ctx.author.permissions.manage_messages:
+            if ctx.author.guild_permissions.manage_messages:
                 for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
                     if "reported" not in row[7] and "cancelled" not in row[7]:
                         cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
                         await ctx.send(embed=await self.display_match(match_id, ctx.guild))
                     else:
-                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported"))
+                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
         if action == "show":
             await ctx.send(embed=await self.display_match(match_id, ctx.guild))
 
@@ -121,7 +123,7 @@ class Elo(commands.Cog):
                     await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} user not found")); return
                 await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
             else:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported"))
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
 
     @commands.command()
     async def rename(self, ctx, name:str):
