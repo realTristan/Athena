@@ -76,8 +76,10 @@ class Elo(commands.Cog):
 
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user});").fetchall()[0] == (1,):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
-                await ctx.send(embed=discord.Embed(title=f"**{row[2]}**", description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=65535))
-
+                embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=65535)
+                embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=ctx.author.avatar_url)
+                await ctx.send(embed=embed)
+                
     @commands.command()
     @has_permissions(administrator=True)
     async def reset(self, ctx, user:discord.Member):
@@ -88,7 +90,6 @@ class Elo(commands.Cog):
             db.commit()
             await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=65535))
         
-
 
 def setup(client):
     client.add_cog(Elo(client))
