@@ -19,7 +19,7 @@ class Settings(commands.Cog):
                 if map not in str(row[1]).split(","):
                     cur.execute(f"UPDATE maps SET map_list = '{str(row[1])},{map}' WHERE guild_id = {ctx.guild.id}")
         db.commit()
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535))
 
     @commands.command(aliases=["removemap", "deletemap"])
     @has_permissions(administrator=True)
@@ -46,7 +46,7 @@ class Settings(commands.Cog):
         else:
             cur.execute(f"UPDATE reg_role SET role_id = {role.id} WHERE guild_id = {ctx.guild.id}")
         db.commit()
-        await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set {role.mention} to the register role', color=65535))
+        return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set {role.mention} as the register role', color=65535))
 
 
 
