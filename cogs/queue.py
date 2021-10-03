@@ -10,13 +10,13 @@ class Queue(commands.Cog):
         self.client = client
         self.data = {}
 
-    def check(self, guild):
+    async def check(self, guild):
         if guild.id not in self.data:
             self.data[guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "maps": [], "state": "queue"}
         return True
 
-    def on_join(self, guild, user):
-        if self.check(guild.id):
+    async def on_join(self, guild, user):
+        if await self.check(guild):
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
                 if not user in self.data[guild.id]["queue"]:
                     self.data[guild.id]["queue"].append(user)
@@ -30,15 +30,15 @@ class Queue(commands.Cog):
                         ]
                     return True
     
-    def on_leave(self, guild, user):
-        if self.check(guild.id):
+    async def on_leave(self, guild, user):
+        if await self.check(guild):
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
                 if user in self.data[guild.id]["queue"]:
                     self.data[guild.id]["queue"].remove(user)
                     return True
 
 
-    def embed_gen(self, guild):
+    async def embed_gen(self, guild):
         if self.data[guild.id]["state"] == "queue":
             pass
         if self.data[guild.id]["state"] == "pick":
@@ -60,35 +60,35 @@ class Queue(commands.Cog):
                 await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=65535))
                 
                 if len(self.data[ctx.guild.id]["queue"]) >= 0:
-                    await ctx.send(self.embed_gen())
+                    await ctx.send(await self.embed_gen())
                     self.data[ctx.guild.id]["queue"].clear()
             
 
     @commands.command(aliases=["j"])
     async def join(self, ctx):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.message.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
-            if self.on_join(ctx.guild, ctx.author):
+            if await self.on_join(ctx.guild, ctx.author):
                 await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {ctx.author.mention} has joined the queue", color=65535))
 
     @commands.command(aliases=["fj"])
     async def forcejoin(self, ctx, user:discord.Member):
-        if self.on_join(ctx.guild, user):
+        if await self.on_join(ctx.guild, user):
             await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {ctx.author.mention} has added {user.mention} to the queue", color=65535))
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
-        if self.on_leave(ctx.guild, ctx.author):
+        if await self.on_leave(ctx.guild, ctx.author):
             await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {ctx.author.mention} has left the queue", color=65535))
 
     @commands.command(aliases=["fl"])
     async def forceleave(self, ctx, user:discord.Member):
-        if self.on_leave(ctx.guild, user):
+        if await self.on_leave(ctx.guild, user):
             await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {ctx.author.mention} has removed {user.mention} from the queue", color=65535))
 
     @commands.command(aliases=["q"])
     async def queue(self, ctx):
-        if self.check(ctx.guild):
-            await ctx.send(self.embed_gen())
+        if await self.check(ctx.guild):
+            #await ctx.send(await self.embed_gen())
             await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["queue"]), color=65535))
     
     @commands.command()

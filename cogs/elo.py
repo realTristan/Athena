@@ -36,7 +36,7 @@ class Elo(commands.Cog):
     @has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
-            cur.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});")
+            cur.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
             db.commit()
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=65535))
         await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=65535))

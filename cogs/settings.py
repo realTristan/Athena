@@ -6,7 +6,7 @@ class Settings(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def write(self, file, data):
+    async def write(self, file, data):
         with open(f"json/{file}.json", "w") as f:
             json.dump(data, f, indent=4)
 
@@ -19,7 +19,7 @@ class Settings(commands.Cog):
         if map not in data[ctx.guild.id]["maps"]:
             data[ctx.guild.id]["maps"].append(map)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535))
-            self.write("maps", data)
+            await self.write("maps", data)
 
     @commands.command(aliases=["removemap", "deletemap"])
     @has_permissions(administrator=True)
@@ -30,7 +30,7 @@ class Settings(commands.Cog):
         if map in data[ctx.guild.id]["maps"]:
             data[ctx.guild.id]["maps"].remove(map)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=65535))
-            self.write("maps", data)
+            await self.write("maps", data)
 
 
 
