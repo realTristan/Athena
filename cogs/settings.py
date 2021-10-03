@@ -30,18 +30,19 @@ class Settings(commands.Cog):
                 map_list.remove(map)
                 cur.execute(f"UPDATE maps SET map_list = '{','.join(str(e) for e in map_list)}' WHERE guild_id = {ctx.guild.id}")
                 db.commit()
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=65535))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=65535))
 
     @commands.command()
     async def maps(self, ctx):
         for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
-            await ctx.send(embed=discord.Embed(title="Maps", description=str(row[1]).replace(",", "\n"), color=65535))
+            return await ctx.send(embed=discord.Embed(title="Maps", description=str(row[1]).replace(",", "\n"), color=65535))
 
     @commands.command()
     @has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM reg_role WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
-            cur.execute(f"INSERT INTO reg_role VALUES ({ctx.guild.id}, {role.id})")
+            return cur.execute(f"INSERT INTO reg_role VALUES ({ctx.guild.id}, {role.id})")
         else:
             cur.execute(f"UPDATE reg_role SET role_id = {role.id} WHERE guild_id = {ctx.guild.id}")
         db.commit()
