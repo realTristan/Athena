@@ -119,42 +119,43 @@ class Queue(commands.Cog):
 
     @commands.command(aliases=["p"])
     async def pick(self, ctx, user:discord.Member):
-        if self.data[ctx.guild.id]["state"] == "pick":
-            if ctx.author == self.data[ctx.guild.id]["pick_logic"][0]:
-                self.data[ctx.guild.id]["pick_logic"].pop(0)
-                if self.data[ctx.guild.id]["blue_cap"] == ctx.author:
-                    self.data[ctx.guild.id]["blue_team"].append(user)
-                    self.data[ctx.guild.id]["queue"].remove(user)
-                else:
-                    self.data[ctx.guild.id]["orange_team"].append(user)
-                    self.data[ctx.guild.id]["queue"].remove(user)
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=65535))
-                
-                if len(self.data[ctx.guild.id]["queue"]) == 0:
-                    self.data[ctx.guild.id]["state"] = "maps"
-                return await self.embed_gen(ctx.guild)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=65535))
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=65535))
+        if await self.check_data(ctx.guild):
+            if self.data[ctx.guild.id]["state"] == "pick":
+                if ctx.author == self.data[ctx.guild.id]["pick_logic"][0]:
+                    self.data[ctx.guild.id]["pick_logic"].pop(0)
+                    if self.data[ctx.guild.id]["blue_cap"] == ctx.author:
+                        self.data[ctx.guild.id]["blue_team"].append(user)
+                        self.data[ctx.guild.id]["queue"].remove(user)
+                    else:
+                        self.data[ctx.guild.id]["orange_team"].append(user)
+                        self.data[ctx.guild.id]["queue"].remove(user)
+                    await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=65535))
+                    
+                    if len(self.data[ctx.guild.id]["queue"]) == 0:
+                        self.data[ctx.guild.id]["state"] = "maps"
+                    return await self.embed_gen(ctx.guild)
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=65535))
             
     @commands.command()
     async def map(self, ctx, map:str):
-        if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
-            if self.data[ctx.guild.id]["state"] == "maps":
-                for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
-                    if map in str(row[1]).split(","):
-                        self.data[ctx.guild.id]["map"] = map
-                        self.data[ctx.guild.id]["state"] = "final"
-                        return await self.embed_gen(ctx)
-                    return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=65535))
-            return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
-        return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
+        if await self.check_data(ctx.guild):
+            if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
+                if self.data[ctx.guild.id]["state"] == "maps":
+                    for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
+                        if map in str(row[1]).split(","):
+                            self.data[ctx.guild.id]["map"] = map
+                            self.data[ctx.guild.id]["state"] = "final"
+                            return await self.embed_gen(ctx)
+                        return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=65535))
+                return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
+            return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
         
     @commands.command(aliases=["j"])
     async def join(self, ctx):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
             return await self.on_join(ctx, ctx.author)
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered"))
-
 
     @commands.command(aliases=["fj"])
     async def forcejoin(self, ctx, user:discord.Member):
