@@ -65,7 +65,7 @@ class Elo(commands.Cog):
                     db.commit()
                     for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
-                        await ctx.send(embed=discord.Embed(title="Added Loss", description=f"{user.mention}[**{row[5]-1}**] ➜ {user.mention} [**{row[5]}**]", color=65535))
+                        await ctx.send(embed=discord.Embed(title="Added Loss", description=f"{user.mention} [**{row[5]-1}**] ➜ {user.mention} [**{row[5]}**]", color=65535))
 
     @commands.command()
     async def stats(self, ctx, *args):
