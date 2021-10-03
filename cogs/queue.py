@@ -1,5 +1,5 @@
 from discord.ext.commands import has_permissions
-import discord, sqlite3, random, time, json
+import discord, sqlite3, random, time
 from discord.ext import commands
 import datetime as datetime
 
@@ -73,11 +73,11 @@ class Queue(commands.Cog):
     @commands.command()
     async def map(self, ctx, map:str):
         if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
-            maps=json.load(open("json/maps.json", "r+"))
-            if map in maps[ctx.guild.id]:
-                self.data[ctx.guild.id]["map"] = map
-                self.data[ctx.guild.id]["state"] = "final"
-                await ctx.send(await self.embed_gen(ctx.guild))
+            for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
+                if map in str(row[1]).split(","):
+                    self.data[ctx.guild.id]["map"] = map
+                    self.data[ctx.guild.id]["state"] = "final"
+                    await ctx.send(await self.embed_gen(ctx.guild))
             
     @commands.command(aliases=["j"])
     async def join(self, ctx):
