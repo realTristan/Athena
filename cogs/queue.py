@@ -1,5 +1,5 @@
 from discord.ext.commands import has_permissions
-import discord, sqlite3, random, time
+import discord, sqlite3, random, time, json
 from discord.ext import commands
 
 db = sqlite3.connect('main.db')
@@ -12,7 +12,7 @@ class Queue(commands.Cog):
 
     async def check(self, guild):
         if guild.id not in self.data:
-            self.data[guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "maps": [], "state": "queue"}
+            self.data[guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
         return True
 
     async def on_join(self, guild, user):
@@ -41,11 +41,12 @@ class Queue(commands.Cog):
                     self.data[guild.id]["queue"].remove(user)
                     return True
 
-
     async def embed_gen(self, guild):
         if self.data[guild.id]["state"] == "queue":
             pass
         if self.data[guild.id]["state"] == "pick":
+            pass
+        if self.data[guild.id]["state"] == "maps":
             pass
         if self.data[guild.id]["state"] == "final":
             pass
@@ -64,13 +65,22 @@ class Queue(commands.Cog):
                 await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=65535))
                 
                 if len(self.data[ctx.guild.id]["queue"]) >= 0:
+                    self.data[ctx.guild.id]["state"] = "maps"
                     await ctx.send(await self.embed_gen())
                     self.data[ctx.guild.id]["queue"].clear()
+    
+    @commands.command()
+    async def map(self, ctx, map:str):
+        if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
+            maps=json.load(open("json/maps.json", "r+"))
+            if map in maps[ctx.guild.id]:
+                self.data[ctx.guild.id]["map"] = map
+                self.data[ctx.guild.id]["state"] = "final"
+                await ctx.send(await self.embed_gen())
             
-
     @commands.command(aliases=["j"])
     async def join(self, ctx):
-        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.message.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
             if await self.on_join(ctx.guild, ctx.author):
                 await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {ctx.author.mention} has joined the queue", color=65535))
 

@@ -13,24 +13,24 @@ class Settings(commands.Cog):
     @commands.command()
     @has_permissions(administrator=True)
     async def addmap(self, ctx, map:str):
-        data=json.load(open("json/maps.json", "r+"))
-        if ctx.guild.id not in data:
-            data[ctx.guild.id] = []
-        if map not in data[ctx.guild.id]:
-            data[ctx.guild.id].append(map)
+        maps=json.load(open("json/maps.json", "r+"))
+        if ctx.guild.id not in maps:
+            maps[ctx.guild.id] = []
+        if map not in maps[ctx.guild.id]:
+            maps[ctx.guild.id].append(map)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535))
-            await self.write("maps", data)
+            await self.write("maps", maps)
 
     @commands.command(aliases=["removemap", "deletemap"])
     @has_permissions(administrator=True)
     async def delmap(self, ctx, map:str):
-        data=json.load(open("json/maps.json", "r+"))
-        if ctx.guild.id not in data:
-            data[ctx.guild.id] = []
-        if map in data[ctx.guild.id]:
-            data[ctx.guild.id].remove(map)
+        maps=json.load(open("json/maps.json", "r+"))
+        if ctx.guild.id not in maps:
+            maps[ctx.guild.id] = []
+        if map in maps[ctx.guild.id]:
+            maps[ctx.guild.id].remove(map)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=65535))
-            await self.write("maps", data)
+            await self.write("maps", maps)
 
 
 
