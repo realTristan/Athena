@@ -23,7 +23,7 @@ class Bans(commands.Cog):
             length = int(length_str.strip("d")) * 86400
             
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
-            cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {ctx.author.id}, {length + time.time()}, '{reason}', '{ctx.author.mention}')")
+            cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{reason}', '{ctx.author.mention}')")
             db.commit()
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has banned {user.mention} for **{length_str}**", color=65535))
         await ctx.send(embed=discord.Embed(description=f"{user.mention} is already banned", color=65535))
