@@ -47,7 +47,7 @@ class Elo(commands.Cog):
         if action == "report":
             if ctx.author.permissions.manage_messages:
                 for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
-                    if row[7] != "reported" or "cancelled":
+                    if "reported" not in row[7] and "cancelled" not in row[7]:
                         cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
 
@@ -73,7 +73,7 @@ class Elo(commands.Cog):
         if action == "cancel":
             if ctx.author.permissions.manage_messages:
                 for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
-                    if row[7] != "reported" or "cancelled":
+                    if "reported" not in row[7] and "cancelled" not in row[7]:
                         cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
                         await ctx.send(embed=await self.display_match(match_id, ctx.guild))
@@ -94,7 +94,7 @@ class Elo(commands.Cog):
     @has_permissions(manage_messages=True)
     async def replace(self, ctx, match_id:int, user1:discord.Member, user2:discord.Member):
         for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
-            if row[7] != "reported" or "cancelled":
+            if "reported" not in row[7] and "cancelled" not in row[7]:
                 blue_team = str(row[6]).split(",")
                 orange_team = str(row[4]).split(",")
 
@@ -102,19 +102,19 @@ class Elo(commands.Cog):
                     cur.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
                 
-                elif user1.id in orange_team:
-                    orange_team.remove(user1.id)
-                    orange_team.append(user2.id)
+                if str(user1.id) in orange_team:
+                    orange_team.remove(str(user1.id))
+                    orange_team.append(str(user1.id))
                     cur.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
 
-                elif str(user1.id) in str(row[5]):
+                if str(user1.id) in str(row[5]):
                     cur.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
 
-                elif user1.id in blue_team:
-                    blue_team.remove(user1.id)
-                    blue_team.append(user2.id)
+                if str(user1.id) in blue_team:
+                    blue_team.remove(str(user1.id))
+                    blue_team.append(str(user2.id))
                     cur.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
                 await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
