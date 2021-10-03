@@ -104,8 +104,9 @@ class Queue(commands.Cog):
     @commands.command()
     @has_permissions(manage_messages=True)
     async def clear(self, ctx):
-        self.data[ctx.guild.id]["queue"].clear()
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=65535))
+        if await self.check_data(ctx.guild):
+            self.data[ctx.guild.id]["queue"].clear()
+            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=65535))
 
 
 def setup(client):
