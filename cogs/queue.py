@@ -147,9 +147,9 @@ class Queue(commands.Cog):
                             self.data[ctx.guild.id]["map"] = map
                             self.data[ctx.guild.id]["state"] = "final"
                             return await self.embed_gen(ctx)
-                        return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=65535))
-                return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
-            return ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=65535))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
         
     @commands.command(aliases=["j"])
     async def join(self, ctx):
