@@ -1,6 +1,6 @@
 from discord.ext.commands import has_permissions
 from discord.ext import commands
-import discord, sqlite3
+import discord, sqlite3, time
 
 db = sqlite3.connect('main.db')
 cur = db.cursor()
@@ -13,13 +13,13 @@ class Bans(commands.Cog):
     @commands.command()
     async def ban(self, ctx, user:discord.Member, time:str, reason:str):
         if "s" in time:
-            length = int(time.strip("s"))
+            length = int(time.strip("s")) + time.time()
         if "m" in time:
-            length = int(time.strip("m")) * 60
+            length = (int(time.strip("m")) * 60) + time.time()
         if "h" in time:
-            length = int(time.strip("h")) * 3600
+            length = (int(time.strip("h")) * 3600) + time.time()
         if "d" in time:
-            length = int(time.strip("d")) * 86400
+            length = (int(time.strip("d")) * 86400) + time.time()
             
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
             cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {ctx.author.id}, {length}, '{reason}', '{ctx.author}')")

@@ -1,6 +1,6 @@
 from discord.ext.commands import has_permissions
+import discord, sqlite3, random, time
 from discord.ext import commands
-import discord, sqlite3, random
 
 db = sqlite3.connect('main.db')
 cur = db.cursor()
@@ -18,17 +18,21 @@ class Queue(commands.Cog):
     async def on_join(self, guild, user):
         if await self.check(guild):
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
-                if not user in self.data[guild.id]["queue"]:
-                    self.data[guild.id]["queue"].append(user)
-                    if len(self.data[guild.id]["queue"]) >= 10:
-                        self.data[guild.id]["state"] = "pick"
-                        self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.blue_cap)
-                        self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.orange_cap)
-                        self.data[guild.id]["pick_logic"] = [
-                            self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],  
-                            self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"],
-                        ]
-                    return True
+                for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id}'):
+                    if row[2] - time.time() > 0:
+                        return
+                    
+            if not user in self.data[guild.id]["queue"]:
+                self.data[guild.id]["queue"].append(user)
+                if len(self.data[guild.id]["queue"]) >= 10:
+                    self.data[guild.id]["state"] = "pick"
+                    self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.blue_cap)
+                    self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.orange_cap)
+                    self.data[guild.id]["pick_logic"] = [
+                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],  
+                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"],
+                    ]
+                return True
     
     async def on_leave(self, guild, user):
         if await self.check(guild):
@@ -88,7 +92,6 @@ class Queue(commands.Cog):
     @commands.command(aliases=["q"])
     async def queue(self, ctx):
         if await self.check(ctx.guild):
-            #await ctx.send(await self.embed_gen())
             await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["queue"]), color=65535))
     
     @commands.command()
