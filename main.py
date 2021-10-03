@@ -16,9 +16,9 @@ cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, 
 db.commit()
 
 @client.event
-async def on_member_leave(ctx, member):
-    if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member.id});").fetchall()[0] == (1,):
-        cur.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member.id};")
+async def on_member_remove(member):
+    if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id});").fetchall()[0] == (1,):
+        cur.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id};")
         db.commit()
 
 @client.event
