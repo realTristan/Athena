@@ -16,9 +16,10 @@ class Elo(commands.Cog):
                 cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {guild.id} AND user_id = {user}")
                 db.commit()
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
-                    try: await guild.get_member(user).edit(nick=f"{row[2]} [{row[3]}]")
+                    _user = guild.get_member(int(user))
+                    try: await _user.edit(nick=f"{row[2]} [{row[3]}]")
                     except: pass
-                    return discord.Embed(title="Added Win", description=f"{user.mention} [**{row[4]-1}**] ➜ {guild.get_member(user).mention} [**{row[4]}**]", color=65535)
+                    return discord.Embed(title="Added Win", description=f"{_user.mention} [**{row[4]-1}**] ➜ {_user.mention} [**{row[4]}**]", color=65535)
 
     async def add_loss(self, guild, user):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {guild.id} AND user_id = {user});").fetchall()[0] == (1,):
@@ -28,9 +29,10 @@ class Elo(commands.Cog):
                 db.commit()
 
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
-                try: await guild.get_member(user).edit(nick=f"{row[2]} [{row[3]}]")
+                _user = guild.get_member(int(user))
+                try: await _user.edit(nick=f"{row[2]} [{row[3]}]")
                 except: pass
-                return discord.Embed(title="Added Loss", description=f"{user.mention} [**{row[5]-1}**] ➜ {user.mention} [**{row[5]}**]", color=65535)
+                return discord.Embed(title="Added Loss", description=f"{_user.mention} [**{row[5]-1}**] ➜ {_user.mention} [**{row[5]}**]", color=65535)
 
     async def display_match(self, match_id, guild):
         for row in cur.execute(f'SELECT * FROM matches WHERE guild_id = {guild.id} AND match_id = {match_id}'):
