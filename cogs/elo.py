@@ -166,13 +166,13 @@ class Elo(commands.Cog):
     @has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
-            await ctx.send(await self.add_win(ctx.guild, user.id))
+            await ctx.send(embed=await self.add_win(ctx.guild, user.id))
 
     @commands.command()
     @has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
-            await ctx.send(await self.add_loss(ctx.guild, user.id))
+            await ctx.send(embed=await self.add_loss(ctx.guild, user.id))
 
     @commands.command()
     async def stats(self, ctx, *args):
