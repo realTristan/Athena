@@ -86,26 +86,26 @@ class Queue(commands.Cog):
                 for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id}'):
                     if row[2] - time.time() > 0:
                         return discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535)
-                    else:
-                        cur.execute(f"DELETE FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id};")
-            #if not user in self.data[guild.id]["queue"]:
-            self.data[guild.id]["queue"].append(user)
-            if len(self.data[guild.id]["queue"]) == 10:
-                self.data[guild.id]["state"] = "pick"
-                self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.data[guild.id]["blue_cap"])
-                self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.data[guild.id]["orange_cap"])
-                self.data[guild.id]["pick_logic"] = [
-                    self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],
-                    self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"]]
-                return await self.embed_gen(guild)
-            return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535)
+                cur.execute(f"DELETE FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id};")
+                db.commit()
+            if not user in self.data[guild.id]["queue"]:
+                self.data[guild.id]["queue"].append(user)
+                if len(self.data[guild.id]["queue"]) == 10:
+                    self.data[guild.id]["state"] = "pick"
+                    self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.data[guild.id]["blue_cap"])
+                    self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.data[guild.id]["orange_cap"])
+                    self.data[guild.id]["pick_logic"] = [
+                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],
+                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"]]
+                    return await self.embed_gen(guild)
+                return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535)
+            return discord.Embed(description=f"{user.mention} is already in the queue", color=65535)
     
     async def on_leave(self, guild, user):
         if await self.check_data(guild):
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
-                if user in self.data[guild.id]["queue"]:
-                    self.data[guild.id]["queue"].remove(user)
-                    return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has left the queue", color=65535)
+            if user in self.data[guild.id]["queue"]:
+                self.data[guild.id]["queue"].remove(user)
+                return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has left the queue", color=65535)
 
     async def reset(self, guild):
         self.data[guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}

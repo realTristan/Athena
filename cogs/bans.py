@@ -1,6 +1,7 @@
 from discord.ext.commands import has_permissions
 from discord.ext import commands
 import discord, sqlite3, time
+import datetime as datetime
 
 db = sqlite3.connect('main.db')
 cur = db.cursor()
@@ -8,7 +9,6 @@ cur = db.cursor()
 class Bans(commands.Cog):
     def __init__(self, client):
         self.client = client
-
 
     @commands.command()
     @has_permissions(manage_messages=True)
@@ -26,7 +26,9 @@ class Bans(commands.Cog):
             cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{reason}', '{ctx.author.mention}')")
             db.commit()
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has banned {user.mention} for **{length_str}**", color=65535))
-        await ctx.send(embed=discord.Embed(description=f"{user.mention} is already banned", color=65535))
+            
+        for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+            return await ctx.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535))
 
 
     @commands.command()
