@@ -84,7 +84,7 @@ class Queue(commands.Cog):
         if await self.check_data(guild):
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
                 for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id}'):
-                    if row[2] - time.time() > 0:
+                    if row[2] - time.time() >= 0:
                         return discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535)
                 cur.execute(f"DELETE FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id};")
                 db.commit()
