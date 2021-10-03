@@ -22,10 +22,11 @@ class Queue(commands.Cog):
                 for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id}'):
                     if row[2] - time.time() > 0:
                         return discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535)
-
+                    else:
+                        cur.execute(f"DELETE FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id};")
             if not user in self.data[guild.id]["queue"]:
                 self.data[guild.id]["queue"].append(user)
-                if len(self.data[guild.id]["queue"]) >= 10:
+                if len(self.data[guild.id]["queue"]) == 10:
                     self.data[guild.id]["state"] = "pick"
                     self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.blue_cap)
                     self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.orange_cap)
