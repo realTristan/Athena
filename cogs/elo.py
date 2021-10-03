@@ -41,7 +41,6 @@ class Elo(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in str(row[6]).split(",")))
             return embed
 
-
     @commands.command()
     async def match(self, ctx, action:str, match_id:int, *args):
         if action == "report":
@@ -69,7 +68,6 @@ class Elo(commands.Cog):
                             for user in str(row[6]).split(","):
                                 await ctx.send(await self.add_loss(ctx.guild, user))
                             await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
-
         if action == "cancel":
             if ctx.author.permissions.manage_messages:
                 for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
@@ -77,7 +75,6 @@ class Elo(commands.Cog):
                         cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
                         await ctx.send(embed=await self.display_match(match_id, ctx.guild))
-
         if action == "show":
             await ctx.send(embed=await self.display_match(match_id, ctx.guild))
 
@@ -88,7 +85,6 @@ class Elo(commands.Cog):
         for _ in cur.execute(f'SELECT * FROM matches WHERE guild_id = {ctx.guild.id}'):
             match_count+=1
         await ctx.send(embed=await self.display_match(match_count, ctx.guild))
-
 
     @commands.command(aliases=["sub", "swap"])
     @has_permissions(manage_messages=True)
@@ -186,6 +182,19 @@ class Elo(commands.Cog):
             db.commit()
             await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=65535))
         
+    @commands.command(aliases=["lb"])
+    async def leaderboard(self, ctx):
+        users={}; names = ""
+        for row in cur.execute(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC;"):
+            users[ctx.guild.get_member(row[1])] = row[3]
+
+        for postion, user in enumerate(users):
+            names += f'**{postion+1}:** {user.mention} [**{users[user]}**]\n'
+            if postion+1 > 19:
+                break
+        await ctx.send(embed=discord.Embed(title=f"Leaderboard", description=names, color=65535))
+
+
 
 def setup(client):
     client.add_cog(Elo(client))
