@@ -25,7 +25,8 @@ class Bans(commands.Cog):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
             cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {ctx.author.id}, {length + time.time()}, '{reason}', '{ctx.author.mention}')")
             db.commit()
-            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has banned {user.mention} for **{length_str}**", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has banned {user.mention} for **{length_str}**", color=65535))
+        await ctx.send(embed=discord.Embed(description=f"{user.mention} is already banned", color=65535))
 
 
     @commands.command()
@@ -34,7 +35,8 @@ class Bans(commands.Cog):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
             db.commit()
-            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=65535))
+        await ctx.send(embed=discord.Embed(description=f"{user.mention} is not banned", color=65535))
 
 
 def setup(client):

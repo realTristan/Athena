@@ -131,14 +131,21 @@ class Elo(commands.Cog):
     async def rename(self, ctx, name:str):
         cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
         db.commit()
-        await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
+        for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}'):
+            await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
+            try: await ctx.author.edit(nick=f"{row[2]} [{row[3]}]")
+            except: pass
 
     @commands.command(aliases=["fr"])
     @has_permissions(manage_messages=True)
     async def forcerename(self, ctx, user:discord.Member, name:str):
         cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         db.commit()
-        await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
+        for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}'):
+            await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
+            try: await ctx.author.edit(nick=f"{row[2]} [{row[3]}]")
+            except: pass
+        
 
     @commands.command(aliases=["reg"])
     async def register(self, ctx, name:str):
@@ -151,7 +158,8 @@ class Elo(commands.Cog):
             await ctx.author.add_roles(ctx.guild.get_role(row[1]))
 
         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
-        await ctx.author.edit(nick=f"{name} [0]")
+        try: await ctx.author.edit(nick=f"{name} [0]")
+        except: pass
 
     @commands.command(aliases=["unreg"])
     @has_permissions(administrator=True)
@@ -195,7 +203,8 @@ class Elo(commands.Cog):
             cur.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             cur.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             db.commit()
-            await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=65535))
+            return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=65535))
+        await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=65535))
         
     @commands.command(aliases=["lb"])
     async def leaderboard(self, ctx):

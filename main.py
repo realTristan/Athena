@@ -1,4 +1,3 @@
-from discord.ext.commands import CommandNotFound
 from discord.ext import commands
 from datetime import datetime
 import discord, os, sqlite3
@@ -20,6 +19,8 @@ db.commit()
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
+        return
+    if isinstance(error, commands.MissingPermissions):
         return
     raise error
 
