@@ -11,13 +11,13 @@ class Queue(commands.Cog):
         self.client = client
         self.data = {}
 
-    async def check(self, guild):
+    async def check_data(self, guild):
         if guild.id not in self.data:
             self.data[guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
         return True
 
     async def on_join(self, guild, user):
-        if await self.check(guild):
+        if await self.check_data(guild):
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
                 for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id}'):
                     if row[2] - time.time() > 0:
@@ -36,7 +36,7 @@ class Queue(commands.Cog):
                 return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535)
     
     async def on_leave(self, guild, user):
-        if await self.check(guild):
+        if await self.check_data(guild):
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (0,):
                 if user in self.data[guild.id]["queue"]:
                     self.data[guild.id]["queue"].remove(user)
@@ -98,7 +98,7 @@ class Queue(commands.Cog):
 
     @commands.command(aliases=["q"])
     async def queue(self, ctx):
-        if await self.check(ctx.guild):
+        if await self.check_data(ctx.guild):
             await ctx.send(embed=await self.embed_gen(ctx.guild))
     
     @commands.command()
