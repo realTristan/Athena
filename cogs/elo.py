@@ -135,6 +135,9 @@ class Elo(commands.Cog):
 
         cur.execute(f"INSERT INTO users VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
         db.commit()
+        for row in cur.execute(f'SELECT * FROM reg_role WHERE guild_id = {ctx.guild.id}'):
+            await ctx.author.add_roles(ctx.guild.get_role(row[1]))
+
         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
         await ctx.author.edit(nick=f"{name} [0]")
 
