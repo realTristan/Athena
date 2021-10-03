@@ -8,7 +8,7 @@ class Settings(commands.Cog):
 
     async def write(self, file, data):
         with open(f"json/{file}.json", "w") as f:
-            json.dump(data, f, indent=4)
+            json.dump(data, f, indent=4); f.close()
 
     @commands.command()
     @has_permissions(administrator=True)
