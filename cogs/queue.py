@@ -16,6 +16,16 @@ class Queue(commands.Cog):
             self.data[guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
         return True
 
+    async def embed_gen(self, guild):
+        if self.data[guild.id]["state"] == "queue":
+            return discord.Embed(title=f"[{len(self.data[guild.id]['queue'])}/10] Queue", description='\n'.join(str(e.mention) for e in self.data[guild.id]["queue"]), color=65535)
+        if self.data[guild.id]["state"] == "pick":
+            pass
+        if self.data[guild.id]["state"] == "maps":
+            pass
+        if self.data[guild.id]["state"] == "final":
+            pass
+
     async def on_join(self, guild, user):
         if await self.check_data(guild):
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
@@ -42,16 +52,6 @@ class Queue(commands.Cog):
                 if user in self.data[guild.id]["queue"]:
                     self.data[guild.id]["queue"].remove(user)
                     return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has left the queue", color=65535)
-
-    async def embed_gen(self, guild):
-        if self.data[guild.id]["state"] == "queue":
-            return discord.Embed(title=f"[{len(self.data[guild.id]['queue'])}/10] Queue", description='\n'.join(str(e.mention) for e in self.data[guild.id]["queue"]), color=65535)
-        if self.data[guild.id]["state"] == "pick":
-            pass
-        if self.data[guild.id]["state"] == "maps":
-            pass
-        if self.data[guild.id]["state"] == "final":
-            pass
 
 
     @commands.command(aliases=["p"])
