@@ -16,6 +16,7 @@ class Elo(commands.Cog):
         await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
 
     @commands.command(aliases=["fr"])
+    @has_permissions(manage_messages=True)
     async def forcerename(self, ctx, user:discord.Member, name:str):
         cur.execute(f"UPDATE users SET user_name = {name} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         db.commit()
@@ -32,6 +33,7 @@ class Elo(commands.Cog):
         await ctx.author.edit(nick=f"{name} [0]")
 
     @commands.command(aliases=["unreg"])
+    @has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             cur.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});")
