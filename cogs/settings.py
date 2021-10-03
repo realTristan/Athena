@@ -1,6 +1,6 @@
 from discord.ext.commands import has_permissions
 from discord.ext import commands
-import discord, json, sqlite3
+import discord, sqlite3
 
 db = sqlite3.connect('main.db')
 cur = db.cursor()
