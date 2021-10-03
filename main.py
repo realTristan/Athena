@@ -32,6 +32,7 @@ async def on_command_error(ctx, error):
 @client.event
 async def on_ready():
     print(f'Launched: {client.user.name} // {client.user.id}')
+    await client.change_presence(activity=discord.Game(name="=help"))
 
 @client.command(description="Loads an extention")
 async def load(ctx, extention):
