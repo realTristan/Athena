@@ -68,6 +68,8 @@ class Elo(commands.Cog):
                             for user in str(row[6]).split(","):
                                 await ctx.send(await self.add_loss(ctx.guild, user))
                             await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
+                    else:
+                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported"))
         if action == "cancel":
             if ctx.author.permissions.manage_messages:
                 for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
@@ -75,6 +77,8 @@ class Elo(commands.Cog):
                         cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
                         await ctx.send(embed=await self.display_match(match_id, ctx.guild))
+                    else:
+                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported"))
         if action == "show":
             await ctx.send(embed=await self.display_match(match_id, ctx.guild))
 
@@ -97,23 +101,27 @@ class Elo(commands.Cog):
                 if str(user1.id) in str(row[3]):
                     cur.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
+
+                elif str(user1.id) in str(row[5]):
+                    cur.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    db.commit()
                 
-                if str(user1.id) in orange_team:
+                elif str(user1.id) in orange_team:
                     orange_team.remove(str(user1.id))
                     orange_team.append(str(user1.id))
                     cur.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
 
-                if str(user1.id) in str(row[5]):
-                    cur.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    db.commit()
-
-                if str(user1.id) in blue_team:
+                elif str(user1.id) in blue_team:
                     blue_team.remove(str(user1.id))
                     blue_team.append(str(user2.id))
                     cur.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
+                else:
+                    await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} user not found")); return
                 await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
+            else:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported"))
 
     @commands.command()
     async def rename(self, ctx, name:str):
