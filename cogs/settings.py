@@ -28,8 +28,8 @@ class Settings(commands.Cog):
     async def delmap(self, ctx, map:str):
         for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
             if map in str(row[1]).split(","):
-                list = str(row[1]).split(',')
-                list.remove(map)
+                map_list = str(row[1]).split(',')
+                map_list.remove(map)
                 cur.execute(f"UPDATE maps SET map_list = '{','.join(str(e) for e in list)}' WHERE guild_id = {ctx.guild.id}")
                 db.commit()
                 await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=65535))
