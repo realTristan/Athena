@@ -18,13 +18,66 @@ class Queue(commands.Cog):
 
     async def embed_gen(self, guild):
         if self.data[guild.id]["state"] == "queue":
-            return discord.Embed(title=f"[{len(self.data[guild.id]['queue'])}/10] Queue", description='\n'.join(str(e.mention) for e in self.data[guild.id]["queue"]), color=65535)
+            if len(self.data[guild.id]["queue"]) == 0:
+                current_queue = "None"
+            else:
+                current_queue = '\n'.join(str(e.mention) for e in self.data[guild.id]["queue"])
+            return discord.Embed(title=f"[{len(self.data[guild.id]['queue'])}/10] Queue", description=current_queue, color=65535)
+
         if self.data[guild.id]["state"] == "pick":
-            pass
+            if len(self.data[guild.id]["orange_team"]) == 0:
+                o_team = "None"
+            else:
+                o_team = '\n'.join(str(e.mention) for e in self.data[guild.id]["orange_team"])
+
+            if len(self.data[guild.id]["blue_team"]) == 0:
+                b_team = "None"
+            else:
+                b_team = '\n'.join(str(e.mention) for e in self.data[guild.id]["blue_team"])
+
+            embed=discord.Embed(title="Picking Phase", color=65535)
+            embed.add_field(name="Orange Captain", value=self.data[guild.id]["orange_cap"].mention)
+            embed.add_field(name="\u200b", value="\u200b")
+            embed.add_field(name="Blue Captain", value=self.data[guild.id]["blue_cap"].mention)
+            embed.add_field(name="Orange Team", value=o_team)
+            embed.add_field(name="\u200b", value="\u200b")
+            embed.add_field(name="Blue Team", value=b_team)
+            embed.add_field(name="Available Players", value="\n".join(str(e.mention) for e in self.data[guild.id]["queue"]))
+            return embed
+
         if self.data[guild.id]["state"] == "maps":
-            pass
+            for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {guild.id}'):
+                embed=discord.Embed(title="Map Phase", color=65535)
+                embed.add_field(name="Orange Captain", value=self.data[guild.id]["orange_cap"].mention)
+                embed.add_field(name="\u200b", value="\u200b")
+                embed.add_field(name="Blue Captain", value=self.data[guild.id]["blue_cap"].mention)
+                embed.add_field(name="Orange Team", value='\n'.join(str(e.mention) for e in self.data[guild.id]["orange_team"]))
+                embed.add_field(name="\u200b", value="\u200b")
+                embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[guild.id]["blue_team"]))
+                embed.add_field(name="Available Maps", value=str(row[1]).replace(",", "\n"))
+                return embed
+
         if self.data[guild.id]["state"] == "final":
-            pass
+            embed=discord.Embed(title="Final Match Up", description=f"**Map:** {self.data[guild.id]['map']}", color=65535)
+            embed.add_field(name="Orange Captain", value=self.data[guild.id]["orange_cap"].mention)
+            embed.add_field(name="\u200b", value="\u200b")
+            embed.add_field(name="Blue Captain", value=self.data[guild.id]["blue_cap"].mention)
+            embed.add_field(name="Orange Team", value='\n'.join(str(e.mention) for e in self.data[guild.id]["orange_team"]))
+            embed.add_field(name="\u200b", value="\u200b")
+            embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[guild.id]["blue_team"]))
+
+            await self.add_match(guild)
+            return embed
+
+    async def add_match(self, guild):
+        orange_team = ','.join(str(e.id) for e in self.data[guild.id]['orange_team'])
+        blue_team = ','.join(str(e.id) for e in self.data[guild.id]['blue_team'])
+        match_count=0
+
+        for _ in cur.execute(f'SELECT * FROM matches WHERE guild_id = {guild.id}'):
+            match_count+=1
+        cur.execute(f"""INSERT INTO matches VALUES ({guild.id}, {match_count}, '{self.data[guild.id]['map']}', '{self.data[guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing')""")
+        db.commit()
 
     async def on_join(self, guild, user):
         if await self.check_data(guild):
@@ -34,17 +87,17 @@ class Queue(commands.Cog):
                         return discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535)
                     else:
                         cur.execute(f"DELETE FROM bans WHERE guild_id = {guild.id} AND user_id = {user.id};")
-            if not user in self.data[guild.id]["queue"]:
-                self.data[guild.id]["queue"].append(user)
-                if len(self.data[guild.id]["queue"]) == 10:
-                    self.data[guild.id]["state"] = "pick"
-                    self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.blue_cap)
-                    self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.orange_cap)
-                    self.data[guild.id]["pick_logic"] = [
-                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],
-                        self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"]]
-                    return await self.embed_gen(guild)
-                return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535)
+            #if not user in self.data[guild.id]["queue"]:
+            self.data[guild.id]["queue"].append(user)
+            if len(self.data[guild.id]["queue"]) == 10:
+                self.data[guild.id]["state"] = "pick"
+                self.data[guild.id]["blue_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.data[guild.id]["blue_cap"])
+                self.data[guild.id]["orange_cap"] = random.choice(self.data[guild.id]["queue"]); self.data[guild.id]["queue"].remove(self.data[guild.id]["orange_cap"])
+                self.data[guild.id]["pick_logic"] = [
+                    self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"],
+                    self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"], self.data[guild.id]["blue_cap"], self.data[guild.id]["orange_cap"]]
+                return await self.embed_gen(guild)
+            return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535)
     
     async def on_leave(self, guild, user):
         if await self.check_data(guild):
@@ -53,32 +106,38 @@ class Queue(commands.Cog):
                     self.data[guild.id]["queue"].remove(user)
                     return discord.Embed(description=f"**[{len(self.data[guild.id]['queue'])}/10]** {user.mention} has left the queue", color=65535)
 
+    async def reset(self, guild):
+        self.data[guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
 
     @commands.command(aliases=["p"])
-    async def pick(self, ctx, user):
+    async def pick(self, ctx, user:discord.Member):
         if self.data[ctx.guild.id]["state"] == "pick":
-            if ctx.author == self.data[ctx.guild.id]["pick_logic"].pop(0):
+            if ctx.author == self.data[ctx.guild.id]["pick_logic"][0]:
+                self.data[ctx.guild.id]["pick_logic"].pop(0)
                 if self.data[ctx.guild.id]["blue_cap"] == ctx.author:
                     self.data[ctx.guild.id]["blue_team"].append(user)
                     self.data[ctx.guild.id]["queue"].remove(user)
                 else:
-                    self.data[ctx.guild.id]["blue_team"].append(user)
+                    self.data[ctx.guild.id]["orange_team"].append(user)
                     self.data[ctx.guild.id]["queue"].remove(user)
                 await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=65535))
                 
-                if len(self.data[ctx.guild.id]["queue"]) >= 0:
+                if len(self.data[ctx.guild.id]["queue"]) == 0:
                     self.data[ctx.guild.id]["state"] = "maps"
-                    await ctx.send(await self.embed_gen(ctx.guild))
-                    self.data[ctx.guild.id]["queue"].clear()
+                    await ctx.send(embed=await self.embed_gen(ctx.guild))
+                    await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
+                    return
+                await ctx.send(embed=await self.embed_gen(ctx.guild))
+                await ctx.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
     
     @commands.command()
     async def map(self, ctx, map:str):
-        if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
+        if ctx.author == self.data[ctx.guild.id]["blue_cap"] and self.data[ctx.guild.id]["state"] == "maps":
             for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
                 if map in str(row[1]).split(","):
                     self.data[ctx.guild.id]["map"] = map
                     self.data[ctx.guild.id]["state"] = "final"
-                    await ctx.send(await self.embed_gen(ctx.guild))
+                    await ctx.send(embed=await self.embed_gen(ctx.guild))
             
     @commands.command(aliases=["j"])
     async def join(self, ctx):
@@ -107,7 +166,7 @@ class Queue(commands.Cog):
     @has_permissions(manage_messages=True)
     async def clear(self, ctx):
         if await self.check_data(ctx.guild):
-            self.data[ctx.guild.id]["queue"].clear()
+            await self.reset(ctx.guild)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=65535))
 
 
