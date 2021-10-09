@@ -190,7 +190,6 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
 
 
-
     # MAIN COMMANDS
     # ////////////////////////
     @commands.command(aliases=["p"])

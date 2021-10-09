@@ -8,37 +8,33 @@ class Elo(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    async def add_win(self, guild, user):
-        _user = guild.get_member(int(user))
-        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {guild.id} AND user_id = {user});").fetchall()[0] == (1,):
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
-                cur.execute(f"UPDATE users SET elo = {row[3]+5} WHERE guild_id = {guild.id} AND user_id = {user}")
-                cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {guild.id} AND user_id = {user}")
+    async def _win(self, ctx, user):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                cur.execute(f"UPDATE users SET elo = {row[3]+5} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-                for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
-                    try: await _user.edit(nick=f"{row[2]} [{row[3]}]")
-                    except: pass
-                    return discord.Embed(title="Added Win", description=f"{_user.mention} [**{row[4]-1}**] ➜ {_user.mention} [**{row[4]}**]", color=65535)
-        return discord.Embed(description=f"{_user.mention} was not found", color=65535)
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                except Exception: pass
+            return await self._stats(ctx, user)
+        return discord.Embed(description=f"{user.mention} was not found", color=65535)
 
-    async def add_loss(self, guild, user):
-        _user = guild.get_member(int(user))
-        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {guild.id} AND user_id = {user});").fetchall()[0] == (1,):
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
-                cur.execute(f"UPDATE users SET elo = {row[3]-2} WHERE guild_id = {guild.id} AND user_id = {user}")
-                cur.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {guild.id} AND user_id = {user}")
+    async def _loss(self, ctx, user):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                cur.execute(f"UPDATE users SET elo = {row[3]-2} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                cur.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {guild.id} AND user_id = {user}'):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 try: 
-                    await _user.edit(nick=f"{row[2]} [{row[3]}]")
-                except Exception: 
-                    pass
-                return discord.Embed(title="Added Loss", description=f"{_user.mention} [**{row[5]-1}**] ➜ {_user.mention} [**{row[5]}**]", color=65535)
-        return discord.Embed(description=f"{_user.mention} was not found", color=65535)
+                    await user.edit(nick=f"{row[2]} [{row[3]}]")
+                except Exception: pass
+            return await self._stats(ctx, user)
+        return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
-    async def display_match(self, match_id, guild):
-        for row in cur.execute(f'SELECT * FROM matches WHERE guild_id = {guild.id} AND match_id = {match_id}'):
+    async def _match(self, ctx, match_id):
+        for row in cur.execute(f'SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}'):
             embed=discord.Embed(title=f"Match #{match_id} | {row[7].upper()}", description=f"**Map:** {row[2]}", color=65535)
             embed.add_field(name="Orange Captain", value=f"<@{row[3]}>")
             embed.add_field(name="\u200b", value="\u200b")
@@ -47,6 +43,14 @@ class Elo(commands.Cog):
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in str(row[6]).split(",")))
             return embed
+
+    async def _stats(self, ctx, user):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=65535)
+                embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=user.avatar_url)
+                return await ctx.send(embed=embed)
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
 
     @commands.command()
     async def match(self, ctx, action:str, match_id:int, *args):
@@ -59,22 +63,23 @@ class Elo(commands.Cog):
 
                         if "blue" in list(args)[0]:
                             for user in str(row[4]).split(","):
-                                await ctx.send(await self.add_loss(ctx.guild, user))
-                            await ctx.send(await self.add_loss(ctx.guild, int(row[3])))
+                                await ctx.send(await self._loss(ctx, ctx.guild.get_member(user)))
+                            await ctx.send(await self._loss(ctx, ctx.guild.get_member(row[3])))
 
                             for user in str(row[6]).split(","):
-                                await ctx.send(await self.add_win(ctx.guild, user))
-                            await ctx.send(await self.add_win(ctx.guild, int(row[5])))
+                                await ctx.send(await self._win(ctx, ctx.guild.get_member(user)))
+                            await ctx.send(await self._win(ctx, ctx.guild.get_member(row[5])))
 
 
                         if "orange" in list(args)[0]:
                             for user in str(row[4]).split(","):
-                                await ctx.send(await self.add_win(ctx.guild, user))
-                            await ctx.send(await self.add_win(ctx.guild, int(row[3])))
+                                await ctx.send(await self._win(ctx, ctx.guild.get_member(user)))
+                            await ctx.send(await self._win(ctx, ctx.guild.get_member(row[3])))
 
                             for user in str(row[6]).split(","):
-                                await ctx.send(await self.add_loss(ctx.guild, user))
-                            await ctx.send(await self.add_loss(ctx.guild, int(row[5])))
+                                await ctx.send(await self._loss(ctx, ctx.guild.get_member(user)))
+                            await ctx.send(await self._loss(ctx, ctx.guild.get_member(row[5])))
+
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
@@ -84,20 +89,56 @@ class Elo(commands.Cog):
                     if "reported" not in row[7] and "cancelled" not in row[7]:
                         cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
-                        return await ctx.send(embed=await self.display_match(match_id, ctx.guild))
+                        return await ctx.send(embed=await self._match(ctx, match_id))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
         if action == "show":
-            return await ctx.send(embed=await self.display_match(match_id, ctx.guild))
+            return await ctx.send(embed=await self._match(ctx, match_id))
 
+    @commands.command()
+    async def setelo(self, ctx, user:discord.Member, amount:int):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                cur.execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                db.commit()
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                except: pass
+                return await self._stats(ctx, user)
+        return discord.Embed(description=f"{user.mention} was not found", color=65535)
+
+
+    @commands.command(aliases=["setwin"])
+    async def setwins(self, ctx, user:discord.Member, amount:int):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                cur.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                db.commit()
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                except: pass
+                return await self._stats(ctx, user)
+        return discord.Embed(description=f"{user.mention} was not found", color=65535)
+
+    @commands.command(aliases=["setlose", "setloss"])
+    async def setlosses(self, ctx, user:discord.Member, amount:int):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                cur.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                db.commit()
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                except: pass
+                return await self._stats(ctx, user)
+        return discord.Embed(description=f"{user.mention} was not found", color=65535)
 
     @commands.command(aliases=["lm"])
     async def lastmatch(self, ctx):
         match_count=-1
         for _ in cur.execute(f'SELECT * FROM matches WHERE guild_id = {ctx.guild.id}'):
             match_count+=1
-        return await ctx.send(embed=await self.display_match(match_count, ctx.guild))
+        return await ctx.send(embed=await self._match(ctx, match_count))
 
     @commands.command(aliases=["sub", "swap"])
     @commands.has_permissions(manage_messages=True)
@@ -180,27 +221,21 @@ class Elo(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
-            await ctx.send(embed=await self.add_win(ctx.guild, user.id))
+            await ctx.send(embed=await self._win(ctx, user))
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
-            await ctx.send(embed=await self.add_loss(ctx.guild, user.id))
+            await ctx.send(embed=await self._loss(ctx, user))
 
     @commands.command()
     async def stats(self, ctx, *args):
         if len(list(args)) == 0:
-            user = ctx.author.id
+            user = ctx.author
         else:
-            user = str(list(args)[0]).strip("<").strip(">").strip("@").replace("!", "")
-
-        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user});").fetchall()[0] == (1,):
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
-                embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=65535)
-                embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=ctx.guild.get_member(int(row[1])).avatar_url)
-                return await ctx.send(embed=embed)
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
+            user = ctx.guild.get_member(int(list(args)[0]).strip("<").strip(">").strip("@").replace("!", ""))
+        await self._stats(ctx, user)
                 
     @commands.command()
     @commands.has_permissions(administrator=True)

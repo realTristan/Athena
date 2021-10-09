@@ -9,11 +9,11 @@ class Settings(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    async def emoji_select(self, guild, option):
-        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {guild.id});").fetchall()[0] == (0,):
-            cur.execute(f"INSERT INTO settings VALUES ({guild.id}, 0, 'true', 'false', 'true')")
+    async def _emojis(self, ctx, option):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
+            cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true')")
 
-        for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {guild.id}'):
+        for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
             # // MAP PICKING PHASE
             if option == "map_pick_phase":
                 if row[2] == "true":
@@ -74,9 +74,9 @@ class Settings(commands.Cog):
     @commands.command(aliases=["sets"])
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
-        picking_phase = await self.emoji_select(ctx.guild, "picking_phase")
-        map_pick_phase = await self.emoji_select(ctx.guild, "map_pick_phase")
-        team_cap_vc = await self.emoji_select(ctx.guild, "team_cap_vc")
+        picking_phase = await self._emojis(ctx, "picking_phase")
+        map_pick_phase = await self._emojis(ctx, "map_pick_phase")
+        team_cap_vc = await self._emojis(ctx, "team_cap_vc")
 
         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} **click below to view the settings panel**", color=65535),
             components=[
