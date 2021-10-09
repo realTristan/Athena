@@ -173,6 +173,9 @@ class Settings(commands.Cog):
                     await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                     
+                    if "none" in c.content:
+                        cur.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to None", color=65535))
                     channel = res.guild.get_channel(int(c.content.strip("<").strip(">").strip("#")))
                     cur.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel}", color=65535))
@@ -181,7 +184,10 @@ class Settings(commands.Cog):
                 if res.values[0] == "change_reg_channel":
                     await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
-                    
+
+                    if "none" in c.content:
+                        cur.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to None", color=65535))
                     channel = res.guild.get_channel(int(c.content.strip("<").strip(">").strip("#")))
                     cur.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel}", color=65535))
