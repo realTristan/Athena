@@ -11,7 +11,7 @@ class Settings(commands.Cog):
 
     async def _emojis(self, ctx, option):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
-            cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true')")
+            cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
 
         for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
             # // MAP PICKING PHASE
@@ -65,7 +65,7 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
-            cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, {role.id})")
+            cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
         else:
             cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
         db.commit()
@@ -86,6 +86,8 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'🔵', label="Add Map", value="add_map"),
                         SelectOption(emoji=f'🔵', label="Remove Map", value="remove_map"),
                         SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
+                        SelectOption(emoji=f'🔵', label="Change Queue Channel", value="change_queue_channel"),
+                        SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
                         SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
                         SelectOption(emoji=f'{picking_phase[0]}', label=f"{picking_phase[1]} Team Picking Phase", value="picking_phase"),
                         SelectOption(emoji=f'{team_cap_vc[0]}', label=f"{team_cap_vc[1]} Team Captain Voice Channels", value="team_cap_vc")
@@ -165,6 +167,24 @@ class Settings(commands.Cog):
                             db.commit()
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} removed **{map}** from the map pool", color=65535))
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} **{map}** is not in the map pool", color=65535))
+
+                # // CHANGE THE QUEUE CHANNEL
+                if res.values[0] == "change_queue_channel":
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                    
+                    channel = res.guild.get_channel(int(c.content.strip("<").strip(">").strip("#")))
+                    cur.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel}", color=65535))
+
+                # // CHANGE THE REGISTER CHANNEL
+                if res.values[0] == "change_reg_channel":
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                    
+                    channel = res.guild.get_channel(int(c.content.strip("<").strip(">").strip("#")))
+                    cur.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel}", color=65535))
 
 
 

@@ -180,10 +180,10 @@ class Elo(commands.Cog):
         cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
         db.commit()
         for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}'):
-            await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
-            try: 
+            try:
                 await ctx.author.edit(nick=f"{row[2]} [{row[3]}]")
             except Exception: pass
+        return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
 
     @commands.command(aliases=["fr"])
     @commands.has_permissions(manage_messages=True)
@@ -191,26 +191,32 @@ class Elo(commands.Cog):
         cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         db.commit()
         for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}'):
-            await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
             try:
                 return await ctx.author.edit(nick=f"{row[2]} [{row[3]}]")
             except Exception: pass
-        
-
+        return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
+    
     @commands.command(aliases=["reg"])
     async def register(self, ctx, name:str):
-        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
-            
-        cur.execute(f"INSERT INTO users VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
-        db.commit()
-        for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
-            await ctx.author.add_roles(ctx.guild.get_role(row[1]))
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
-        try:
-            return await ctx.author.edit(nick=f"{name} [0]")
-        except Exception: pass
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (0,): 
+            cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
+            db.commit()
 
+        for _row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+            if _row[6] == 0 or ctx.message.channel.id == _row[6]:
+                if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
+                    
+                cur.execute(f"INSERT INTO users VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
+                db.commit()
+                for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+                    try:
+                        await ctx.author.add_roles(ctx.guild.get_role(row[1]))
+                        await ctx.author.edit(nick=f"{name} [0]")
+                    except Exception: pass
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(_row[6])}"))
+                
     @commands.command(aliases=["unreg"])
     @commands.has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):

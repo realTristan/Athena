@@ -17,7 +17,7 @@ class Queue(commands.Cog):
     async def _reset(self, ctx):
         self.data[ctx.guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
         
-    async def _check(self, ctx):
+    async def _data_check(self, ctx):
         if ctx.guild.id not in self.data:
             await self._reset(ctx)
         return True
@@ -160,28 +160,39 @@ class Queue(commands.Cog):
                             self.data[ctx.guild.id]["map"] = random.choice(str(row[1]).split(","))
                         self.data[ctx.guild.id]["state"] = "final"
 
+    # // CHECK IF THE USER IS BANNED FUNCTION
+    async def _ban_check(self, ctx, user):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                if row[2] - time.time() >= 0:
+                    await ctx.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535))
+                    return False
+            cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
+            db.commit()
+        return True
+    
     # // ON JOIN FUNCTION
     async def _join(self, ctx, user):
-        if await self._check(ctx):
-            if self.data[ctx.guild.id]["state"] == "queue":
-                if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
-                    for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                        if row[2] - time.time() >= 0:
-                            return discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535)
-                    cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
-                    db.commit()
-                if not user in self.data[ctx.guild.id]["queue"]:
-                    self.data[ctx.guild.id]["queue"].append(user)
-                    if len(self.data[ctx.guild.id]["queue"]) == 10:
-                        await self._start(ctx)
-                        return await self._embeds(ctx)
-                    return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
-
+        if await self._data_check(ctx):
+            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
+                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
+            for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+                if row[5] == 0 or ctx.message.channel.id == row[5]:
+                    if await self._ban_check(ctx, user):
+                        if self.data[ctx.guild.id]["state"] == "queue":
+                            if not user in self.data[ctx.guild.id]["queue"]:
+                                self.data[ctx.guild.id]["queue"].append(user)
+                                if len(self.data[ctx.guild.id]["queue"]) == 10:
+                                    await self._start(ctx)
+                                    return await self._embeds(ctx)
+                                return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
+                        return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} join the queue in {ctx.guild.get_channel(row[5])}"))
+                
     # // ON LEAVE FUNCTION
     async def _leave(self, ctx, user):
-        if await self._check(ctx):
+        if await self._data_check(ctx):
             if self.data[ctx.guild.id]["state"] == "queue":
                 if user in self.data[ctx.guild.id]["queue"]:
                     self.data[ctx.guild.id]["queue"].remove(user)
@@ -194,7 +205,7 @@ class Queue(commands.Cog):
     # ////////////////////////
     @commands.command(aliases=["p"])
     async def pick(self, ctx, user:discord.Member):
-        if await self._check(ctx):
+        if await self._data_check(ctx):
             if self.data[ctx.guild.id]["state"] == "pick":
                 if ctx.author == self.data[ctx.guild.id]["pick_logic"][0]:
                     self.data[ctx.guild.id]["pick_logic"].pop(0)
@@ -218,7 +229,7 @@ class Queue(commands.Cog):
             
     @commands.command()
     async def map(self, ctx, map:str):
-        if await self._check(ctx):
+        if await self._data_check(ctx):
             if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
                 if self.data[ctx.guild.id]["state"] == "maps":
                     for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
@@ -251,13 +262,13 @@ class Queue(commands.Cog):
 
     @commands.command(aliases=["q"])
     async def queue(self, ctx):
-        if await self._check(ctx):
+        if await self._data_check(ctx):
             return await self._embeds(ctx)
     
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx):
-        if await self._check(ctx):
+        if await self._data_check(ctx):
             await self._reset(ctx)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=65535))
 
