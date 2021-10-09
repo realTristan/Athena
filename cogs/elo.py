@@ -18,7 +18,7 @@ class Elo(commands.Cog):
                 try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except Exception: pass
             return await self._stats(ctx, user)
-        return discord.Embed(description=f"{user.mention} was not found", color=65535)
+        return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     async def _loss(self, ctx, user):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
@@ -107,7 +107,7 @@ class Elo(commands.Cog):
                 try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except: pass
                 return await self._stats(ctx, user)
-        return discord.Embed(description=f"{user.mention} was not found", color=65535)
+        return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
 
     @commands.command(aliases=["setwin"])
@@ -121,7 +121,7 @@ class Elo(commands.Cog):
                 try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except: pass
                 return await self._stats(ctx, user)
-        return discord.Embed(description=f"{user.mention} was not found", color=65535)
+        return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     @commands.command(aliases=["setlose", "setloss"])
     @commands.has_permissions(administrator=True)
@@ -134,7 +134,7 @@ class Elo(commands.Cog):
                 try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except: pass
                 return await self._stats(ctx, user)
-        return discord.Embed(description=f"{user.mention} was not found", color=65535)
+        return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     @commands.command(aliases=["lm"])
     async def lastmatch(self, ctx):
@@ -224,13 +224,13 @@ class Elo(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
-            await ctx.send(embed=await self._win(ctx, user))
+            await self._win(ctx, user)
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
-            await ctx.send(embed=await self._loss(ctx, user))
+            await self._loss(ctx, user)
 
     @commands.command()
     async def stats(self, ctx, *args):
