@@ -9,7 +9,6 @@ class Settings(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-
     async def emoji_select(self, guild, option):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {guild.id});").fetchall()[0] == (0,):
             cur.execute(f"INSERT INTO settings VALUES ({guild.id}, 0, 'true', 'false', 'true')")
