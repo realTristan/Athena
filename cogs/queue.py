@@ -235,7 +235,7 @@ class Queue(commands.Cog):
     async def join(self, ctx):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
             return await self._join(ctx, ctx.author)
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered"))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=65535))
 
     @commands.command(aliases=["fj"])
     async def forcejoin(self, ctx, user:discord.Member):
