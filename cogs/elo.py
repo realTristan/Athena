@@ -97,6 +97,7 @@ class Elo(commands.Cog):
             return await ctx.send(embed=await self._match(ctx, match_id))
 
     @commands.command()
+    @commands.has_permissions(administrator=True)
     async def setelo(self, ctx, user:discord.Member, amount:int):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
@@ -110,6 +111,7 @@ class Elo(commands.Cog):
 
 
     @commands.command(aliases=["setwin"])
+    @commands.has_permissions(administrator=True)
     async def setwins(self, ctx, user:discord.Member, amount:int):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
@@ -122,6 +124,7 @@ class Elo(commands.Cog):
         return discord.Embed(description=f"{user.mention} was not found", color=65535)
 
     @commands.command(aliases=["setlose", "setloss"])
+    @commands.has_permissions(administrator=True)
     async def setlosses(self, ctx, user:discord.Member, amount:int):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
