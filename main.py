@@ -61,7 +61,7 @@ for filename in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__
 @client.command()
 async def help(ctx):
     embed=discord.Embed(title='TenMan Commands', color=65535)
-    embed2 = discord.Embed(timestamp=datetime.utcnow(), color=65535)
+    embed2=discord.Embed(timestamp=datetime.utcnow(), color=65535)
     embed.add_field(name='‏‏‎ ‎\nJoin', value='Join the current queue\n(Usage: =j)')
     embed.add_field(name=' ‎\nLeave', value='Leave the current queue\n(Usage: =l)')
     embed.add_field(name=' ‎\nPick', value='Pick an user to be on your team\n(Usage: =p @user)')
