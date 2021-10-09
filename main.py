@@ -13,7 +13,7 @@ cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, use
 cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS maps (guild_id int, map_list text)''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS settings (guild_id int, reg_role int, map_pick_phase text, team_cap_vcs text, picking_phase text, queue_channel int, reg_channel int)''')
-cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, map text, orange_cap text, orange_team text, blue_cap text, blue_team text, status text)''')
+cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, map text, orange_cap text, orange_team text, blue_cap text, blue_team text, status text, winners text)''')
 db.commit()
 
 @client.event
@@ -87,6 +87,7 @@ async def help(ctx):
     embed.add_field(name=' ‎\nForce Leave [Mod+]', value='Removes an user from the queue\n(Usage: =fl [@user])')
     embed.add_field(name=' ‎\nMatch Report [Mod+]', value='Reports a match\n(Usage: =match report [match id] [orange/blue])')
     embed2.add_field(name=' ‎\nMatch Cancel [Mod+]', value='Cancels a match\n(Usage: =match cancel [match id])')
+    embed.add_field(name=' ‎\nMatch Undo [Mod+]', value='Undos a match\n(Usage: =match undo [match id])')
     embed2.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
     embed2.add_field(name=' ‎\nReset Stats [Admin+]', value='Reset an users stats\n(Usage: =match cancel [match id])')
     embed2.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =setelo @user [amount])')

@@ -118,7 +118,7 @@ class Queue(commands.Cog):
 
         for _ in cur.execute(f'SELECT * FROM matches WHERE guild_id = {ctx.guild.id}'):
             match_count+=1
-        cur.execute(f"""INSERT INTO matches VALUES ({ctx.guild.id}, {match_count}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing')""")
+        cur.execute(f"""INSERT INTO matches VALUES ({ctx.guild.id}, {match_count}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
         db.commit()
 
     # // STARTING FUNCTION FOR AFTER QUEUE REACHES 10 PEOPLE

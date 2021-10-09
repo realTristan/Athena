@@ -67,6 +67,7 @@ class Elo(commands.Cog):
                 for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
                     if "reported" not in row[7] and "cancelled" not in row[7]:
                         cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        cur.execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
 
                         if "blue" in list(args)[0]:
@@ -103,6 +104,47 @@ class Elo(commands.Cog):
 
         if action == "show":
             return await self._match(ctx, match_id)
+
+        if action == "undo":
+            if ctx.author.guild_permissions.manage_messages:
+                for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
+                    if "reported" in row[7] or "cancelled" in row[7]:
+                        cur.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        db.commit()
+                        blue_team = str(row[6]).split(",")
+                        blue_team.append(row[5])
+                        orange_team = str(row[4]).split(",")
+                        orange_team.append(row[3])
+
+                        if str(row[8]) == "blue":
+                            for user in blue_team:
+                                for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
+                                    cur.execute(f"UPDATE users SET elo = {_row[3]-5} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    cur.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    db.commit()
+                            
+                            for user in orange_team:
+                                for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
+                                    cur.execute(f"UPDATE users SET elo = {_row[3]+2} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    cur.execute(f"UPDATE users SET loss = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    db.commit()
+                        
+                        if str(row[8]) == "orange":
+                            for user in blue_team:
+                                for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
+                                    cur.execute(f"UPDATE users SET elo = {_row[3]+3} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    cur.execute(f"UPDATE users SET loss = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    db.commit()
+                            
+                            for user in orange_team:
+                                for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
+                                    cur.execute(f"UPDATE users SET elo = {_row[3]-5} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    cur.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                    db.commit()
+                        return await self._match(ctx, match_id)
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=65535))
+
+
 
     @commands.command()
     @commands.has_permissions(administrator=True)
