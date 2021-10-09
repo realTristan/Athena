@@ -1,4 +1,3 @@
-from discord.ext.commands import has_permissions
 from discord.ext import commands
 import discord, sqlite3, time
 import datetime as datetime
@@ -11,7 +10,7 @@ class Bans(commands.Cog):
         self.client = client
 
     @commands.command()
-    @has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
     async def ban(self, ctx, user:discord.Member, length_str:str, reason:str):
         if "s" in length_str:
             length = int(length_str.strip("s"))
@@ -37,7 +36,7 @@ class Bans(commands.Cog):
 
 
     @commands.command()
-    @has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
     async def unban(self, ctx, user:discord.Member):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")

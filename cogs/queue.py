@@ -1,4 +1,3 @@
-from discord.ext.commands import has_permissions
 import discord, sqlite3, random, time
 from discord.ext import commands
 from discord.utils import get
@@ -257,7 +256,7 @@ class Queue(commands.Cog):
             return await self._embeds(ctx)
     
     @commands.command()
-    @has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx):
         if await self._check(ctx):
             await self._reset(ctx)

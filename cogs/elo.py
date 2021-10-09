@@ -1,4 +1,3 @@
-from discord.ext.commands import has_permissions
 from discord.ext import commands
 import discord, sqlite3
 
@@ -101,7 +100,7 @@ class Elo(commands.Cog):
         return await ctx.send(embed=await self.display_match(match_count, ctx.guild))
 
     @commands.command(aliases=["sub", "swap"])
-    @has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
     async def replace(self, ctx, match_id:int, user1:discord.Member, user2:discord.Member):
         for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
             if "reported" not in row[7] and "cancelled" not in row[7]:
@@ -143,7 +142,7 @@ class Elo(commands.Cog):
             except Exception: pass
 
     @commands.command(aliases=["fr"])
-    @has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
     async def forcerename(self, ctx, user:discord.Member, name:str):
         cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         db.commit()
@@ -169,7 +168,7 @@ class Elo(commands.Cog):
         except Exception: pass
 
     @commands.command(aliases=["unreg"])
-    @has_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             cur.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
@@ -178,13 +177,13 @@ class Elo(commands.Cog):
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=65535))
 
     @commands.command()
-    @has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
             await ctx.send(embed=await self.add_win(ctx.guild, user.id))
 
     @commands.command()
-    @has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
         for user in users:
             await ctx.send(embed=await self.add_loss(ctx.guild, user.id))
@@ -204,7 +203,7 @@ class Elo(commands.Cog):
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
                 
     @commands.command()
-    @has_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
     async def reset(self, ctx, user:discord.Member):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             cur.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")

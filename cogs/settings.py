@@ -1,4 +1,3 @@
-from discord.ext.commands import has_permissions
 from discord_components import *
 from discord.ext import commands
 import discord, sqlite3
@@ -35,7 +34,7 @@ class Settings(commands.Cog):
                 return ["🔴", "Enable"]
 
     @commands.command()
-    @has_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
     async def addmap(self, ctx, map:str):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM maps WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
             cur.execute(f"INSERT INTO maps VALUES ({ctx.guild.id}, '{map}')")
@@ -47,7 +46,7 @@ class Settings(commands.Cog):
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535))
 
     @commands.command(aliases=["removemap", "deletemap"])
-    @has_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
     async def delmap(self, ctx, map:str):
         for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
             if map in str(row[1]).split(","):
@@ -64,7 +63,7 @@ class Settings(commands.Cog):
             return await ctx.send(embed=discord.Embed(title="Maps", description=str(row[1]).replace(",", "\n"), color=65535))
 
     @commands.command()
-    @has_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
             cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, {role.id})")
@@ -74,6 +73,7 @@ class Settings(commands.Cog):
         return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=65535))
 
     @commands.command(aliases=["sets"])
+    @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
         picking_phase = await self.emoji_select(ctx.guild, "picking_phase")
         map_pick_phase = await self.emoji_select(ctx.guild, "map_pick_phase")
@@ -92,7 +92,7 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'{team_cap_vc[0]}', label=f"{team_cap_vc[1]} Team Captain Voice Channels", value="team_cap_vc")
                     ])])
         
-        
+
     @commands.Cog.listener()
     async def on_select_option(self, res):
         if res.author.guild_permissions.administrator:
@@ -166,33 +166,6 @@ class Settings(commands.Cog):
                             db.commit()
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} removed **{map}** from the map pool", color=65535))
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} **{map}** is not in the map pool", color=65535))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
