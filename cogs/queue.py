@@ -36,7 +36,6 @@ class Queue(commands.Cog):
 
         # // TEAM PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "pick":
-            # // FILTERING THE TEAM VALUES
             if len(self.data[ctx.guild.id]["orange_team"]) == 0:
                 orange_team = "None"
             else:
@@ -47,7 +46,6 @@ class Queue(commands.Cog):
             else:
                 blue_team = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"])
 
-            # // CREATING THE EMBED
             embed=discord.Embed(title="Team Picking Phase", color=65535)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
             embed.add_field(name="\u200b", value="\u200b")
@@ -62,7 +60,6 @@ class Queue(commands.Cog):
         # // MAP PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "maps":
             for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
-                # // CREATING THE EMBED
                 embed=discord.Embed(title="Map Picking Phase", color=65535)
                 embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
                 embed.add_field(name="\u200b", value="\u200b")
@@ -76,12 +73,10 @@ class Queue(commands.Cog):
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
-            # // CHECKING AMOUNT OF PREVIOUS MATCHES
             match_count=0
             for _ in cur.execute(f'SELECT * FROM matches WHERE guild_id = {ctx.guild.id}'):
                 match_count+=1
 
-            # // CREATING THE EMBED
             embed=discord.Embed(title=f"Match #{match_count}", description=f"**Map:** {self.data[ctx.guild.id]['map']}", color=65535)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
             embed.add_field(name="\u200b", value="\u200b")
@@ -90,7 +85,6 @@ class Queue(commands.Cog):
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
 
-            # // CALLING AFTER EMBED FUNCTIONS
             await self._match(ctx)
             await self._team_vc(ctx)
             await self._reset(ctx)

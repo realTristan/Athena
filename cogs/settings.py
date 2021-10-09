@@ -173,7 +173,7 @@ class Settings(commands.Cog):
                     await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                     
-                    if "none" or "None" or "all" or "All" in c.content:
+                    if "<#" not in str(c.content):
                         cur.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to **None**", color=65535))
                     channel = res.guild.get_channel(int(c.content.strip("<").strip(">").strip("#")))
@@ -185,7 +185,7 @@ class Settings(commands.Cog):
                     await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
-                    if "none" or "None" or "all" or "All" in c.content:
+                    if "<#" not in str(c.content):
                         cur.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to **None**", color=65535))
                     channel = res.guild.get_channel(int(c.content.strip("<").strip(">").strip("#")))
