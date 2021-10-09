@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord_components import *
 from datetime import datetime
 import discord, os, sqlite3
 
@@ -11,7 +12,7 @@ cur = db.cursor()
 cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, user_name text, elo int, wins int, loss int)''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS maps (guild_id int, map_list text)''')
-cur.execute(f'''CREATE TABLE IF NOT EXISTS reg_role (guild_id int, role_id int)''')
+cur.execute(f'''CREATE TABLE IF NOT EXISTS settings (guild_id int, reg_role int, map_pick_phase text, team_cap_vcs text, picking_phase text)''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, map text, orange_cap text, orange_team text, blue_cap text, blue_team text, status text)''')
 db.commit()
 
@@ -31,6 +32,7 @@ async def on_command_error(ctx, error):
 
 @client.event
 async def on_ready():
+    DiscordComponents(client)
     print(f'Launched: {client.user.name} // {client.user.id}')
     await client.change_presence(activity=discord.Game(name="=help"))
 
