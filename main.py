@@ -87,7 +87,7 @@ async def help(ctx):
     embed.add_field(name=' ‎\nForce Leave [Mod+]', value='Removes an user from the queue\n(Usage: =fl [@user])')
     embed.add_field(name=' ‎\nMatch Report [Mod+]', value='Reports a match\n(Usage: =match report [match id] [orange/blue])')
     embed2.add_field(name=' ‎\nMatch Cancel [Mod+]', value='Cancels a match\n(Usage: =match cancel [match id])')
-    embed.add_field(name=' ‎\nMatch Undo [Mod+]', value='Undos a match\n(Usage: =match undo [match id])')
+    embed2.add_field(name=' ‎\nMatch Undo [Mod+]', value='Undos a match\n(Usage: =match undo [match id])')
     embed2.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
     embed2.add_field(name=' ‎\nReset Stats [Admin+]', value='Reset an users stats\n(Usage: =match cancel [match id])')
     embed2.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =setelo @user [amount])')
