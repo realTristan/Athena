@@ -188,7 +188,7 @@ class Queue(commands.Cog):
                                 return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} join the queue in {ctx.guild.get_channel(row[5])}"))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} join the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
                 
     # // ON LEAVE FUNCTION
     async def _leave(self, ctx, user):

@@ -215,7 +215,7 @@ class Elo(commands.Cog):
                         await ctx.author.edit(nick=f"{name} [0]")
                     except Exception: pass
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(_row[6])}"))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(_row[6]).mention}", color=65535))
                 
     @commands.command(aliases=["unreg"])
     @commands.has_permissions(administrator=True)
