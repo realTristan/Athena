@@ -42,7 +42,7 @@ class Elo(commands.Cog):
             embed.add_field(name="Orange Team", value='\n'.join(f"<@{e}>" for e in str(row[4]).split(",")))
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in str(row[6]).split(",")))
-            return embed
+            return await ctx.send(embed=embed)
 
     async def _stats(self, ctx, user):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
@@ -63,22 +63,22 @@ class Elo(commands.Cog):
 
                         if "blue" in list(args)[0]:
                             for user in str(row[4]).split(","):
-                                await ctx.send(await self._loss(ctx, ctx.guild.get_member(user)))
-                            await ctx.send(await self._loss(ctx, ctx.guild.get_member(row[3])))
+                                await self._loss(ctx, ctx.guild.get_member(user))
+                            await self._loss(ctx, ctx.guild.get_member(row[3]))
 
                             for user in str(row[6]).split(","):
-                                await ctx.send(await self._win(ctx, ctx.guild.get_member(user)))
-                            await ctx.send(await self._win(ctx, ctx.guild.get_member(row[5])))
+                                await self._win(ctx, ctx.guild.get_member(user))
+                            await self._win(ctx, ctx.guild.get_member(row[5]))
 
 
                         if "orange" in list(args)[0]:
                             for user in str(row[4]).split(","):
-                                await ctx.send(await self._win(ctx, ctx.guild.get_member(user)))
-                            await ctx.send(await self._win(ctx, ctx.guild.get_member(row[3])))
+                                await self._win(ctx, ctx.guild.get_member(user))
+                            await self._win(ctx, ctx.guild.get_member(row[3]))
 
                             for user in str(row[6]).split(","):
-                                await ctx.send(await self._loss(ctx, ctx.guild.get_member(user)))
-                            await ctx.send(await self._loss(ctx, ctx.guild.get_member(row[5])))
+                                await self._loss(ctx, ctx.guild.get_member(user))
+                            await self._loss(ctx, ctx.guild.get_member(row[5]))
 
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
@@ -89,12 +89,12 @@ class Elo(commands.Cog):
                     if "reported" not in row[7] and "cancelled" not in row[7]:
                         cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
-                        return await ctx.send(embed=await self._match(ctx, match_id))
+                        return await self._match(ctx, match_id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
         if action == "show":
-            return await ctx.send(embed=await self._match(ctx, match_id))
+            return await self._match(ctx, match_id)
 
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -141,7 +141,7 @@ class Elo(commands.Cog):
         match_count=-1
         for _ in cur.execute(f'SELECT * FROM matches WHERE guild_id = {ctx.guild.id}'):
             match_count+=1
-        return await ctx.send(embed=await self._match(ctx, match_count))
+        return await self._match(ctx, match_count)
 
     @commands.command(aliases=["sub", "swap"])
     @commands.has_permissions(manage_messages=True)
