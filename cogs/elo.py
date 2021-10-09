@@ -17,6 +17,15 @@ class Elo(commands.Cog):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except Exception: pass
+            
+            _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {user.name}")
+            if _blue_vc:
+                await _blue_vc.delete()
+            
+            _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {user.name}")
+            if _orange_vc:
+                await _orange_vc.delete()
+
             return await self._stats(ctx, user)
         return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
@@ -63,23 +72,23 @@ class Elo(commands.Cog):
 
                         if "blue" in list(args)[0]:
                             for user in str(row[4]).split(","):
-                                await self._loss(ctx, ctx.guild.get_member(user))
-                            await self._loss(ctx, ctx.guild.get_member(row[3]))
+                                await self._loss(ctx, ctx.guild.get_member(int(user)))
+                            await self._loss(ctx, ctx.guild.get_member(int(row[3])))
 
                             for user in str(row[6]).split(","):
-                                await self._win(ctx, ctx.guild.get_member(user))
-                            await self._win(ctx, ctx.guild.get_member(row[5]))
+                                await self._win(ctx, ctx.guild.get_member(int(user)))
+                            await self._win(ctx, ctx.guild.get_member(int(row[5])))
 
 
                         if "orange" in list(args)[0]:
                             for user in str(row[4]).split(","):
-                                await self._win(ctx, ctx.guild.get_member(user))
-                            await self._win(ctx, ctx.guild.get_member(row[3]))
+                                await self._win(ctx, ctx.guild.get_member(int(user)))
+                            await self._win(ctx, ctx.guild.get_member(int(row[3])))
 
                             for user in str(row[6]).split(","):
-                                await self._loss(ctx, ctx.guild.get_member(user))
-                            await self._loss(ctx, ctx.guild.get_member(row[5]))
-
+                                await self._loss(ctx, ctx.guild.get_member(int(user)))
+                            await self._loss(ctx, ctx.guild.get_member(int(row[5])))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} match successfully reported", color=65535))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 

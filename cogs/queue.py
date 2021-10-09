@@ -104,12 +104,12 @@ class Queue(commands.Cog):
                 if not category:
                     category = await ctx.guild.create_category('ten mans')
 
-                blue_vc = await ctx.guild.create_voice_channel(f'🔹 Team {random.choice(self.data[ctx.guild.id]["blue_cap"]).name}', category=category)
+                blue_vc = await ctx.guild.create_voice_channel(f'🔹 Team {self.data[ctx.guild.id]["blue_cap"].name}', category=category)
                 await blue_vc.set_permissions(ctx.guild.default_role, connect=False)
                 for user in self.data[ctx.guild.id]["blue_team"]:
                     await blue_vc.set_permissions(user, connect=True)
 
-                orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {random.choice(self.data[ctx.guild.id]['orange_cap']).name}", category=category)
+                orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {self.data[ctx.guild.id]['orange_cap'].name}", category=category)
                 await orange_vc.set_permissions(ctx.guild.default_role, connect=False)
                 for user in self.data[ctx.guild.id]["orange_team"]:
                     await orange_vc.set_permissions(user, connect=True)
@@ -181,13 +181,13 @@ class Queue(commands.Cog):
                 if row[5] == 0 or ctx.message.channel.id == row[5]:
                     if await self._ban_check(ctx, user):
                         if self.data[ctx.guild.id]["state"] == "queue":
-                            if not user in self.data[ctx.guild.id]["queue"]:
-                                self.data[ctx.guild.id]["queue"].append(user)
-                                if len(self.data[ctx.guild.id]["queue"]) == 10:
-                                    await self._start(ctx)
-                                    return await self._embeds(ctx)
-                                return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
+                            #if not user in self.data[ctx.guild.id]["queue"]:
+                            self.data[ctx.guild.id]["queue"].append(user)
+                            if len(self.data[ctx.guild.id]["queue"]) == 10:
+                                await self._start(ctx)
+                                return await self._embeds(ctx)
+                            return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
+                            #return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} join the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
                 
