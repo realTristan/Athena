@@ -140,11 +140,11 @@ class Queue(commands.Cog):
                 self.data[ctx.guild.id]["orange_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["orange_cap"])
 
                 # // CREATING THE RANDOM TEAMS
-                for _ in range(4):
+                for _ in range(round(len(self.data[ctx.guild.id]["queue"] / 2))):
                     _user = random.choice(self.data[ctx.guild.id]["queue"])
                     self.data[ctx.guild.id]['orange_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
                 
-                for _ in range(4):
+                for _ in range(round(len(self.data[ctx.guild.id]["queue"]))):
                     _user = random.choice(self.data[ctx.guild.id]["queue"])
                     self.data[ctx.guild.id]['blue_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
                 
