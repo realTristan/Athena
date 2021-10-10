@@ -37,7 +37,7 @@ class Queue(commands.Cog):
         # // TEAM PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "pick":
             if len(self.data[ctx.guild.id]["orange_team"]) == 0:
-                orange_team = "None"
+                orange_team="None"
             else:
                 orange_team = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["orange_team"])
 
@@ -69,7 +69,7 @@ class Queue(commands.Cog):
                 embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
                 embed.add_field(name="Available Maps", value=str(row[1]).replace(",", "\n"))
                 await ctx.send(embed=embed)
-                return await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
+            return await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
@@ -149,13 +149,12 @@ class Queue(commands.Cog):
                     self.data[ctx.guild.id]['blue_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
                 
                 # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
-                for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
-                    if row[2] == "true":
-                        self.data[ctx.guild.id]["state"] = "maps"
-                    else:
-                        for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
-                            self.data[ctx.guild.id]["map"] = random.choice(str(row[1]).split(","))
-                        self.data[ctx.guild.id]["state"] = "final"
+                if row[2] == "true":
+                    self.data[ctx.guild.id]["state"] = "maps"
+                else:
+                    for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
+                        self.data[ctx.guild.id]["map"] = random.choice(str(row[1]).split(","))
+                    self.data[ctx.guild.id]["state"] = "final"
 
     # // CHECK IF THE USER IS BANNED FUNCTION
     async def _ban_check(self, ctx, user):
@@ -228,7 +227,7 @@ class Queue(commands.Cog):
                                 self.data[ctx.guild.id]["state"] = "maps"
                             else:
                                 self.data[ctx.guild.id]["state"] = "final"
-                            return await self._embeds(ctx)
+                    return await self._embeds(ctx)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=65535))
             
@@ -242,7 +241,7 @@ class Queue(commands.Cog):
                             self.data[ctx.guild.id]["map"] = map
                             self.data[ctx.guild.id]["state"] = "final"
                             return await self._embeds(ctx)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=65535))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
         
