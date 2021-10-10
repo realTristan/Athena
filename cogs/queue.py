@@ -202,6 +202,7 @@ class Queue(commands.Cog):
     # MAIN COMMANDS
     # ////////////////////////
     @commands.command(aliases=["fs"])
+    @commands.has_permissions(manage_messages=True)
     async def forcestart(self, ctx):
         await self._start(ctx)
         return await self._embeds(ctx)
