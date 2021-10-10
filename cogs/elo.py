@@ -14,7 +14,6 @@ class Elo(commands.Cog):
                 cur.execute(f"UPDATE users SET elo = {row[3]+5} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except Exception: pass
             
@@ -25,7 +24,7 @@ class Elo(commands.Cog):
             _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {user.name}")
             if _orange_vc:
                 await _orange_vc.delete()
-            return
+            return True
         return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     async def _loss(self, ctx, user):
@@ -34,11 +33,10 @@ class Elo(commands.Cog):
                 cur.execute(f"UPDATE users SET elo = {row[3]-2} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 cur.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 try: 
                     await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except Exception: pass
-            return
+            return True
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     async def _match(self, ctx, match_id):
@@ -50,14 +48,14 @@ class Elo(commands.Cog):
             embed.add_field(name="Orange Team", value='\n'.join(f"<@{e}>" for e in str(row[4]).split(",")))
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in str(row[6]).split(",")))
-            return await ctx.send(embed=embed)
+        return await ctx.send(embed=embed)
 
     async def _stats(self, ctx, user):
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=65535)
                 embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=user.avatar_url)
-                return await ctx.send(embed=embed)
+            return await ctx.send(embed=embed)
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
 
     @commands.command()
@@ -143,7 +141,7 @@ class Elo(commands.Cog):
                                     db.commit()
                         return await self._match(ctx, match_id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=65535))
-
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
 
     @commands.command()
@@ -153,8 +151,8 @@ class Elo(commands.Cog):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 cur.execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                try: 
+                    await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except: pass
             return await self._stats(ctx, user)
         return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
@@ -167,8 +165,8 @@ class Elo(commands.Cog):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 cur.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                try: 
+                    await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except: pass
             return await self._stats(ctx, user)
         return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
@@ -180,8 +178,8 @@ class Elo(commands.Cog):
             for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 cur.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                try: 
+                    await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except: pass
             return await self._stats(ctx, user)
         return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
@@ -221,7 +219,7 @@ class Elo(commands.Cog):
                     cur.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     db.commit()
                 else:
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found")); return
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found"))
                 return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
 
@@ -252,20 +250,19 @@ class Elo(commands.Cog):
             cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
             db.commit()
 
-        for _row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
-            if _row[6] == 0 or ctx.message.channel.id == _row[6]:
+        for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+            if row[6] == 0 or ctx.message.channel.id == row[6]:
                 if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
                     
                 cur.execute(f"INSERT INTO users VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
                 db.commit()
-                for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
-                    try:
-                        await ctx.author.add_roles(ctx.guild.get_role(row[1]))
-                        await ctx.author.edit(nick=f"{name} [0]")
-                    except Exception: pass
+                try:
+                    await ctx.author.add_roles(ctx.guild.get_role(row[1]))
+                    await ctx.author.edit(nick=f"{name} [0]")
+                except Exception: pass
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(_row[6]).mention}", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=65535))
                 
     @commands.command(aliases=["unreg"])
     @commands.has_permissions(administrator=True)
