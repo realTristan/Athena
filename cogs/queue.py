@@ -198,9 +198,15 @@ class Queue(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} leave the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
 
-
+    
     # MAIN COMMANDS
     # ////////////////////////
+    @commands.command(aliases=["fs"])
+    async def forcestart(self, ctx):
+        await self._start(ctx)
+        return await self._embeds(ctx)
+
+
     @commands.command(aliases=["p"])
     async def pick(self, ctx, user:discord.Member):
         if await self._data_check(ctx):
