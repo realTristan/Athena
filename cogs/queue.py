@@ -253,16 +253,16 @@ class Queue(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if await self._data_check(ctx):
-                if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
-                    if self.data[ctx.guild.id]["state"] == "maps":
+                if self.data[ctx.guild.id]["state"] == "maps":
+                    if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
                         for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
                             if map in str(row[1]).split(","):
                                 self.data[ctx.guild.id]["map"] = map
                                 self.data[ctx.guild.id]["state"] = "final"
                                 return await self._embeds(ctx)
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=65535))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
         
     @commands.command(aliases=["j"])
     async def join(self, ctx):
