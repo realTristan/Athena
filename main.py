@@ -7,20 +7,22 @@ intents = discord.Intents(messages=True, guilds=True, reactions=True, members=Tr
 client = commands.Bot(command_prefix='=', intents=intents)
 client.remove_command('help')
 
-db = sqlite3.connect('main.db', timeout=60)
-cur = db.cursor()
-cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, user_name text, elo int, wins int, loss int)''')
-cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')
-cur.execute(f'''CREATE TABLE IF NOT EXISTS maps (guild_id int, map_list text)''')
-cur.execute(f'''CREATE TABLE IF NOT EXISTS settings (guild_id int, reg_role int, map_pick_phase text, team_cap_vcs text, picking_phase text, queue_channel int, reg_channel int)''')
-cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, map text, orange_cap text, orange_team text, blue_cap text, blue_team text, status text, winners text)''')
-db.commit()
+with sqlite3.connect('main.db', timeout=60) as db:
+    cur = db.cursor()
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, user_name text, elo int, wins int, loss int)''')
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS maps (guild_id int, map_list text)''')
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS settings (guild_id int, reg_role int, map_pick_phase text, team_cap_vcs text, picking_phase text, queue_channel int, reg_channel int)''')
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, map text, orange_cap text, orange_team text, blue_cap text, blue_team text, status text, winners text)''')
+    db.commit()
 
 @client.event
 async def on_member_remove(member):
-    if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id});").fetchall()[0] == (1,):
-        cur.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id};")
-        db.commit()
+    with sqlite3.connect('main.db', timeout=60) as db:
+        cur = db.cursor()
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id});").fetchall()[0] == (1,):
+            cur.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id};")
+            db.commit()
 
 @client.event
 async def on_command_error(ctx, error):
@@ -35,7 +37,6 @@ async def on_ready():
     DiscordComponents(client)
     print(f'Launched: {client.user.name} // {client.user.id}')
     await client.change_presence(activity=discord.Game(name="=help"))
-    db.close()
 
 @client.command(description="Loads an extention")
 async def load(ctx, extention):
