@@ -259,9 +259,9 @@ class Elo(commands.Cog):
             cur = db.cursor()
             cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             db.commit()
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}'):
+            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 try:
-                    return await ctx.author.edit(nick=f"{row[2]} [{row[3]}]")
+                    return await user.edit(nick=f"{row[2]} [{row[3]}]")
                 except Exception: pass
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
     
