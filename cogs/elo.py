@@ -316,9 +316,11 @@ class Elo(commands.Cog):
     async def stats(self, ctx, *args):
         if len(list(args)) == 0:
             user = ctx.author
+        elif "<@" in str(list(args)[0]):
+            user = ctx.guild.get_member(int(str(list(args)[0]).strip("<").strip(">").strip("@").replace("!", "")))
         else:
-            user = ctx.guild.get_member(int(list(args)[0]).strip("<").strip(">").strip("@").replace("!", ""))
-        await self._stats(ctx, user)
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid format", color=65535))
+        return await self._stats(ctx, user)
                 
     @commands.command()
     @commands.has_permissions(administrator=True)
