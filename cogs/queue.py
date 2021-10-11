@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 import datetime as datetime
 
-db = sqlite3.connect('main.db', timeout=10)
+db = sqlite3.connect('main.db', timeout=60)
 cur = db.cursor()
 
 class Queue(commands.Cog):

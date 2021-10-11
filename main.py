@@ -7,7 +7,7 @@ intents = discord.Intents(messages=True, guilds=True, reactions=True, members=Tr
 client = commands.Bot(command_prefix='=', intents=intents)
 client.remove_command('help')
 
-db = sqlite3.connect('main.db', timeout=10)
+db = sqlite3.connect('main.db', timeout=60)
 cur = db.cursor()
 cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, user_name text, elo int, wins int, loss int)''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')
@@ -35,6 +35,7 @@ async def on_ready():
     DiscordComponents(client)
     print(f'Launched: {client.user.name} // {client.user.id}')
     await client.change_presence(activity=discord.Game(name="=help"))
+    db.close()
 
 @client.command(description="Loads an extention")
 async def load(ctx, extention):
