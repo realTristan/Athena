@@ -319,7 +319,7 @@ class Elo(commands.Cog):
         elif "<@" in str(list(args)[0]):
             user = ctx.guild.get_member(int(str(list(args)[0]).strip("<").strip(">").strip("@").replace("!", "")))
         else:
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid format", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
         return await self._stats(ctx, user)
                 
     @commands.command()
