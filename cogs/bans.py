@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord, sqlite3, time
 import datetime as datetime
 
-db = sqlite3.connect('main.db')
+db = sqlite3.connect('main.db', timeout=10)
 cur = db.cursor()
 
 class Bans(commands.Cog):

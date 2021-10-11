@@ -7,7 +7,7 @@ intents = discord.Intents(messages=True, guilds=True, reactions=True, members=Tr
 client = commands.Bot(command_prefix='=', intents=intents)
 client.remove_command('help')
 
-db = sqlite3.connect('main.db')
+db = sqlite3.connect('main.db', timeout=10)
 cur = db.cursor()
 cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, user_name text, elo int, wins int, loss int)''')
 cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')

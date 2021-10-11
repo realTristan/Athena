@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord, sqlite3
 
-db = sqlite3.connect('main.db')
+db = sqlite3.connect('main.db', timeout=10)
 cur = db.cursor()
 
 class Elo(commands.Cog):
