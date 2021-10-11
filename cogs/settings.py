@@ -11,6 +11,7 @@ class Settings(commands.Cog):
             cur = db.cursor()
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
                 cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
+                db.commit()
 
             for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
                 # // MAP PICKING PHASE
@@ -38,11 +39,12 @@ class Settings(commands.Cog):
             cur = db.cursor()
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM maps WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
                 cur.execute(f"INSERT INTO maps VALUES ({ctx.guild.id}, '{map}')")
+                db.commit()
             else:
                 for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
                     if map not in str(row[1]).split(","):
                         cur.execute(f"UPDATE maps SET map_list = '{str(row[1])},{map}' WHERE guild_id = {ctx.guild.id}")
-            db.commit()
+                        db.commit()
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535))
 
     @commands.command(aliases=["removemap", "deletemap"])
@@ -73,9 +75,10 @@ class Settings(commands.Cog):
             cur = db.cursor()
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
                 cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
+                db.commit()
             else:
                 cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
-            db.commit()
+                db.commit()
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=65535))
 
     @commands.command(aliases=["sets"])
@@ -155,11 +158,12 @@ class Settings(commands.Cog):
 
                         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM maps WHERE guild_id = {res.guild.id});").fetchall()[0] == (0,):
                             cur.execute(f"INSERT INTO maps VALUES ({res.guild.id}, '{map}')")
+                            db.commit()
                         else:
                             for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {res.guild.id}'):
                                 if map not in str(row[1]).split(","):
                                     cur.execute(f"UPDATE maps SET map_list = '{str(row[1])},{map}' WHERE guild_id = {res.guild.id}")
-                        db.commit()
+                                    db.commit()
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} added **{map}** to the map pool", color=65535))
 
                     # // REMOVE MAP

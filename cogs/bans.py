@@ -21,8 +21,7 @@ class Bans(commands.Cog):
                 length = int(length_str.strip("d")) * 86400
             
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
-                cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};"); db.commit()
-
+                cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
             cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{' '.join(str(e) for e in args)}', '{ctx.author.mention}')")
             db.commit()
             for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):

@@ -114,14 +114,13 @@ class Elo(commands.Cog):
                 if ctx.author.guild_permissions.manage_messages:
                     for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
                         if "reported" in row[7] or "cancelled" in row[7]:
-                            cur.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                            db.commit()
                             blue_team = str(row[6]).split(",")
                             blue_team.append(row[5])
                             orange_team = str(row[4]).split(",")
                             orange_team.append(row[3])
 
                             if str(row[8]) == "blue":
+                                cur.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                                 for user in blue_team:
                                     for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
                                         cur.execute(f"UPDATE users SET elo = {_row[3]-5} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
@@ -134,7 +133,8 @@ class Elo(commands.Cog):
                                         cur.execute(f"UPDATE users SET loss = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
                                         db.commit()
                             
-                            if str(row[8]) == "orange":
+                            elif str(row[8]) == "orange":
+                                cur.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                                 for user in blue_team:
                                     for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
                                         cur.execute(f"UPDATE users SET elo = {_row[3]+3} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
