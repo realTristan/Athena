@@ -8,7 +8,7 @@ class Bans(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
-    async def ban(self, ctx, user:discord.Member, length_str:str, reason:str):
+    async def ban(self, ctx, user:discord.Member, length_str:str, *args):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if "s" in length_str:
@@ -21,16 +21,12 @@ class Bans(commands.Cog):
                 length = int(length_str.strip("d")) * 86400
             
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
-                for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                    if row[2] - time.time() <= 0:
-                        cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
-            else:
-                cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{reason}', '{ctx.author.mention}')")
-                db.commit()
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has banned {user.mention} for **{length_str}**", color=65535))
-                
+                cur.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};"); db.commit()
+
+            cur.execute(f"INSERT INTO bans VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{' '.join(str(e) for e in args)}', '{ctx.author.mention}')")
+            db.commit()
             for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                return await ctx.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535))
+                return await ctx.send(embed=discord.Embed(title=f"{user.name} banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535))
 
 
     @commands.command()
