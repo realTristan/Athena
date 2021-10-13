@@ -86,4 +86,8 @@ async def help(ctx):
 
 
 
+<<<<<<< HEAD
 client.run('')
+=======
+client.run('YOUR BOT TOKEN')
+>>>>>>> 05953a46030cf20bf9c14da5c7bbf2fd7be9556e
