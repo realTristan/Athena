@@ -309,7 +309,7 @@ class Elo(commands.Cog):
     @commands.command()
     async def stats(self, ctx, *args):
         user = ctx.author
-        if "<@" in str(list(args)[0]):
+        if len(list(args)) > 0 and "<@" in str(list(args)[0]):
             user = ctx.guild.get_member(int(str(list(args)[0]).strip("<").strip(">").strip("@").replace("!", "")))
         return await self._stats(ctx, user)
                 
