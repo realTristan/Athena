@@ -36,7 +36,7 @@ async def on_command_error(ctx, error):
 async def on_ready():
     DiscordComponents(client)
     print(f'Launched: {client.user.name} // {client.user.id}')
-    await client.change_presence(activity=discord.Game(name="=help"))
+    await client.change_presence(activity=discord.Game(name="Commands | =help"))
 
 @client.command(description="Loads an extention")
 async def load(ctx, extention):

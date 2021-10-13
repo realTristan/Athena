@@ -269,23 +269,18 @@ class Elo(commands.Cog):
     async def register(self, ctx, name:str):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (0,): 
-                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
-                db.commit()
-
-            for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
-                if row[6] == 0 or ctx.message.channel.id == row[6]:
-                    if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (1,):
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
-                        
-                    cur.execute(f"INSERT INTO users VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
-                    db.commit()
-                    try:
-                        await ctx.author.add_roles(ctx.guild.get_role(row[1]))
-                        await ctx.author.edit(nick=f"{name} [0]")
-                    except Exception: pass
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=65535))
+            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (0,):
+                for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+                    if row[6] == 0 or ctx.message.channel.id == row[6]:
+                        cur.execute(f"INSERT INTO users VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
+                        db.commit()
+                        try:
+                            await ctx.author.add_roles(ctx.guild.get_role(row[1]))
+                            await ctx.author.edit(nick=f"{name} [0]")
+                        except Exception: pass
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
                 
     @commands.command(aliases=["unreg"])
     @commands.has_permissions(administrator=True)
@@ -314,12 +309,9 @@ class Elo(commands.Cog):
 
     @commands.command()
     async def stats(self, ctx, *args):
-        if len(list(args)) == 0:
-            user = ctx.author
-        elif "<@" in str(list(args)[0]):
+        user = ctx.author
+        if "<@" in str(list(args)[0]):
             user = ctx.guild.get_member(int(str(list(args)[0]).strip("<").strip(">").strip("@").replace("!", "")))
-        else:
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
         return await self._stats(ctx, user)
                 
     @commands.command()

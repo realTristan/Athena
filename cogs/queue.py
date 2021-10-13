@@ -28,24 +28,22 @@ class Queue(commands.Cog):
     async def _embeds(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
+            
             # // QUEUE PHASE EMBED
             if self.data[ctx.guild.id]["state"] == "queue":
-                if len(self.data[ctx.guild.id]["queue"]) == 0:
-                    current_queue = "None"
-                else:
+                current_queue = "None"
+                if len(self.data[ctx.guild.id]["queue"]) != 0:
                     current_queue = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["queue"])
                 return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=65535))
 
             # // TEAM PICKING PHASE EMBED
             if self.data[ctx.guild.id]["state"] == "pick":
+                orange_team="None"
+                blue_team="None"
                 if len(self.data[ctx.guild.id]["orange_team"]) == 0:
-                    orange_team="None"
-                else:
                     orange_team = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["orange_team"])
 
                 if len(self.data[ctx.guild.id]["blue_team"]) == 0:
-                    blue_team = "None"
-                else:
                     blue_team = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"])
 
                 embed=discord.Embed(title="Team Picking Phase", color=65535)
