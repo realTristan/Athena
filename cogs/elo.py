@@ -5,6 +5,17 @@ class Elo(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+
+    async def _del_vcs(self, ctx, user):
+        _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {user.name}")
+        if _blue_vc:
+            await _blue_vc.delete()
+
+        _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {user.name}")
+        if _orange_vc:
+            await _orange_vc.delete()
+        return True
+
     async def _win(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -15,14 +26,7 @@ class Elo(commands.Cog):
                     db.commit()
                     try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except Exception: pass
-            
-                _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {user.name}")
-                if _blue_vc:
-                    await _blue_vc.delete()
-                
-                _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {user.name}")
-                if _orange_vc:
-                    await _orange_vc.delete()
+                await self._del_vcs(ctx, user)
                 return True
             return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
@@ -37,6 +41,7 @@ class Elo(commands.Cog):
                     try: 
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except Exception: pass
+                    await self._del_vcs(ctx, user)
                 return True
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
