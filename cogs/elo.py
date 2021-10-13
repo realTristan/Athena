@@ -5,7 +5,6 @@ class Elo(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-
     async def _del_vcs(self, ctx, user):
         _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {user.name}")
         if _blue_vc:
