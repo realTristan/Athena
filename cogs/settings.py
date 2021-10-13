@@ -149,7 +149,7 @@ class Settings(commands.Cog):
 
                     # // CHANGE THE REGISTER ROLE
                     if res.values[0] == "change_reg_role":
-                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=65535), delete_after=10)
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=65535))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                         if "<@" in str(c.content):
                             role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
@@ -159,19 +159,19 @@ class Settings(commands.Cog):
 
                     # // ADD MAP
                     if res.values[0] == "add_map":
-                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535), delete_after=10)
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                         await self._add_map(res, c.content)
 
                     # // REMOVE MAP
                     if res.values[0] == "remove_map":
-                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535), delete_after=10)
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                         await self._del_map(res, c.content)
 
                     # // CHANGE THE QUEUE CHANNEL
                     if res.values[0] == "change_queue_channel":
-                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535), delete_after=10)
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                         
                         if "<#" not in str(c.content):
@@ -183,7 +183,7 @@ class Settings(commands.Cog):
 
                     # // CHANGE THE REGISTER CHANNEL
                     if res.values[0] == "change_reg_channel":
-                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535), delete_after=10)
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
                         if "<#" not in str(c.content):
