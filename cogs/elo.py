@@ -84,7 +84,6 @@ class Elo(commands.Cog):
                                     await self._win(ctx, ctx.guild.get_member(int(user)))
                                 await self._win(ctx, ctx.guild.get_member(int(row[5])))
 
-
                             if "orange" in list(args)[0]:
                                 for user in str(row[4]).split(","):
                                     await self._win(ctx, ctx.guild.get_member(int(user)))
