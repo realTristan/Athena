@@ -117,84 +117,81 @@ class Settings(commands.Cog):
     @commands.Cog.listener()
     async def on_select_option(self, res):
         if res.author.guild_permissions.administrator:
-            try:
-                with sqlite3.connect('main.db', timeout=60) as db:
-                    cur = db.cursor()
-                    for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {res.guild.id}'):
-                        # // MAP PICKING PHASE
-                        if res.values[0] == 'map_pick_phase':
-                            if row[2] == "false":
-                                cur.execute(f"UPDATE settings SET map_pick_phase = 'true' WHERE guild_id = {res.guild.id}"); db.commit()
-                                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Map Picking Phase**", color=65535), delete_after=2)
+            with sqlite3.connect('main.db', timeout=60) as db:
+                cur = db.cursor()
+                for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {res.guild.id}'):
+                    # // MAP PICKING PHASE
+                    if res.values[0] == 'map_pick_phase':
+                        if row[2] == "false":
+                            cur.execute(f"UPDATE settings SET map_pick_phase = 'true' WHERE guild_id = {res.guild.id}"); db.commit()
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Map Picking Phase**", color=65535), delete_after=2)
 
-                            cur.execute(f"UPDATE settings SET map_pick_phase = 'false' WHERE guild_id = {res.guild.id}"); db.commit()
-                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Map Picking Phase**", color=65535), delete_after=2)
+                        cur.execute(f"UPDATE settings SET map_pick_phase = 'false' WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Map Picking Phase**", color=65535), delete_after=2)
 
-                        # // TEAM CAPTAIN VOICE CHANNELS
-                        if res.values[0] == 'team_cap_vc':
-                            if row[3] == "false":
-                                cur.execute(f"UPDATE settings SET team_cap_vcs = 'true' WHERE guild_id = {res.guild.id}"); db.commit()
-                                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Captain Voice Channels**", color=65535), delete_after=2)
+                    # // TEAM CAPTAIN VOICE CHANNELS
+                    if res.values[0] == 'team_cap_vc':
+                        if row[3] == "false":
+                            cur.execute(f"UPDATE settings SET team_cap_vcs = 'true' WHERE guild_id = {res.guild.id}"); db.commit()
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Captain Voice Channels**", color=65535), delete_after=2)
 
-                            cur.execute(f"UPDATE settings SET team_cap_vcs = 'false' WHERE guild_id = {res.guild.id}"); db.commit()
-                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Captain Voice Channels**", color=65535), delete_after=2)
+                        cur.execute(f"UPDATE settings SET team_cap_vcs = 'false' WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Captain Voice Channels**", color=65535), delete_after=2)
 
-                        # // TEAM CAPTAINS
-                        if res.values[0] == 'picking_phase':
-                            if row[4] == "false":
-                                cur.execute(f"UPDATE settings SET picking_phase = 'true' WHERE guild_id = {res.guild.id}"); db.commit()
-                                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Captains**", color=65535), delete_after=2)
+                    # // TEAM CAPTAINS
+                    if res.values[0] == 'picking_phase':
+                        if row[4] == "false":
+                            cur.execute(f"UPDATE settings SET picking_phase = 'true' WHERE guild_id = {res.guild.id}"); db.commit()
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Captains**", color=65535), delete_after=2)
 
-                            cur.execute(f"UPDATE settings SET picking_phase = 'false' WHERE guild_id = {res.guild.id}"); db.commit()
-                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Captains**", color=65535), delete_after=2)
+                        cur.execute(f"UPDATE settings SET picking_phase = 'false' WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Captains**", color=65535), delete_after=2)
 
-                        # // CHANGE THE REGISTER ROLE
-                        if res.values[0] == "change_reg_role":
-                            await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=65535), delete_after=10)
-                            c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
-                            if "<@" in str(c.content):
-                                role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
-                                cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}"); db.commit()
-                                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=65535), delete_after=2)
-                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} role not found", color=65535))
+                    # // CHANGE THE REGISTER ROLE
+                    if res.values[0] == "change_reg_role":
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=65535), delete_after=10)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        if "<@" in str(c.content):
+                            role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
+                            cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=65535), delete_after=2)
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} role not found", color=65535))
 
-                        # // ADD MAP
-                        if res.values[0] == "add_map":
-                            await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535), delete_after=10)
-                            c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
-                            await self._add_map(res, c.content)
+                    # // ADD MAP
+                    if res.values[0] == "add_map":
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535), delete_after=10)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        await self._add_map(res, c.content)
 
-                        # // REMOVE MAP
-                        if res.values[0] == "remove_map":
-                            await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535), delete_after=10)
-                            c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
-                            await self._del_map(res, c.content)
+                    # // REMOVE MAP
+                    if res.values[0] == "remove_map":
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=65535), delete_after=10)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        await self._del_map(res, c.content)
 
-                        # // CHANGE THE QUEUE CHANNEL
-                        if res.values[0] == "change_queue_channel":
-                            await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535), delete_after=10)
-                            c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
-                            
-                            if "<#" not in str(c.content):
-                                cur.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
-                                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to **None**", color=65535), delete_after=2)
-                            channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                            cur.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
-                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel.mention}", color=65535), delete_after=2)
+                    # // CHANGE THE QUEUE CHANNEL
+                    if res.values[0] == "change_queue_channel":
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535), delete_after=10)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        
+                        if "<#" not in str(c.content):
+                            cur.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to **None**", color=65535), delete_after=2)
+                        channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                        cur.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel.mention}", color=65535), delete_after=2)
 
-                        # // CHANGE THE REGISTER CHANNEL
-                        if res.values[0] == "change_reg_channel":
-                            await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535), delete_after=10)
-                            c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
+                    # // CHANGE THE REGISTER CHANNEL
+                    if res.values[0] == "change_reg_channel":
+                        await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535), delete_after=10)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
-                            if "<#" not in str(c.content):
-                                cur.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
-                                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to **None**", color=65535), delete_after=2)
-                            channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                            cur.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
-                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel.mention}", color=65535), delete_after=2)
-            except asyncio.TimeoutError:
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond with anything in time", color=65535), delete_after=2)
+                        if "<#" not in str(c.content):
+                            cur.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to **None**", color=65535), delete_after=2)
+                        channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                        cur.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel.mention}", color=65535), delete_after=2)
 
 
 def setup(client):
