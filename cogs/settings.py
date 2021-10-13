@@ -193,7 +193,7 @@ class Settings(commands.Cog):
                             channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                             cur.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel.mention}", color=65535), delete_after=2)
-            except asyncio.exceptions.TimeoutError:
+            except asyncio.TimeoutError:
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond with anything in time", color=65535), delete_after=2)
 
 
