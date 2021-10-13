@@ -86,4 +86,4 @@ async def help(ctx):
 
 
 
-client.run('ODgzMDA2NjA5MjgwODY0MjU3.YTDp_Q.VSqoBO3y84n3ZyNqFcda1ug1kZc')
+client.run('YOUR BOT TOKEN')
