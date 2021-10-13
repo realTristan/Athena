@@ -13,7 +13,6 @@ class Elo(commands.Cog):
         _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {user.name}")
         if _orange_vc:
             await _orange_vc.delete()
-        return True
 
     async def _win(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -25,8 +24,7 @@ class Elo(commands.Cog):
                     db.commit()
                     try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except Exception: pass
-                await self._del_vcs(ctx, user)
-                return True
+                return await self._del_vcs(ctx, user)
             return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     async def _loss(self, ctx, user):
@@ -40,8 +38,7 @@ class Elo(commands.Cog):
                     try: 
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except Exception: pass
-                    await self._del_vcs(ctx, user)
-                return True
+                return await self._del_vcs(ctx, user)
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     async def _match(self, ctx, match_id):

@@ -109,8 +109,6 @@ class Queue(commands.Cog):
                     await orange_vc.set_permissions(ctx.guild.default_role, connect=False)
                     for user in self.data[ctx.guild.id]["orange_team"]:
                         await orange_vc.set_permissions(user, connect=True)
-                    return True
-                return False
 
     # // MATCH LOGGING FUNCTION
     async def _match(self, ctx):
