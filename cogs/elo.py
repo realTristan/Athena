@@ -5,6 +5,8 @@ class Elo(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
+    # ///////////////////////////////////////////////
     async def _del_vcs(self, ctx, user):
         _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {user.name}")
         if _blue_vc:
@@ -14,10 +16,19 @@ class Elo(commands.Cog):
         if _orange_vc:
             await _orange_vc.delete()
 
+    # // CHECK IF USER IS REGISTERED FUNCTION
+    # /////////////////////////////////////////
+    async def _check_user(self, ctx, user, cur):
+        if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            return True # // User is registered
+        return False # // User is not registered
+
+    # // GIVE AN USER A WIN FUNCTION
+    # /////////////////////////////////////////
     async def _win(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                     cur.execute(f"UPDATE users SET elo = {row[3]+5} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -27,10 +38,12 @@ class Elo(commands.Cog):
                 return await self._del_vcs(ctx, user)
             return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
+    # // GIVE AN USER A LOSS FUNCTION
+    # /////////////////////////////////////////
     async def _loss(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                     cur.execute(f"UPDATE users SET elo = {row[3]-2} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     cur.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -41,6 +54,8 @@ class Elo(commands.Cog):
                 return await self._del_vcs(ctx, user)
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
+    # // LOG A MATCH TO THE DATABASE FUNCTION
+    # /////////////////////////////////////////
     async def _match(self, ctx, match_id):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -54,16 +69,21 @@ class Elo(commands.Cog):
                 embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in str(row[6]).split(",")))
             return await ctx.send(embed=embed)
 
+    # // SHOW THE USERS STATS FUNCTION
+    # /////////////////////////////////////////
     async def _stats(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                     embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=65535)
                     embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=user.avatar_url)
                 return await ctx.send(embed=embed)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
 
+
+    # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     async def match(self, ctx, action:str, match_id:int, *args):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -151,12 +171,14 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
 
+    # // SET AN USERS ELO COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def setelo(self, ctx, user:discord.Member, amount:int):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor() 
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                     cur.execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     db.commit()
@@ -166,13 +188,14 @@ class Elo(commands.Cog):
                 return await self._stats(ctx, user)
             return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
-
+    # // SET AN USERS WINS COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["setwin"])
     @commands.has_permissions(administrator=True)
     async def setwins(self, ctx, user:discord.Member, amount:int):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                     cur.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     db.commit()
@@ -182,12 +205,14 @@ class Elo(commands.Cog):
                 return await self._stats(ctx, user)
             return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
+    # // SET AN USERS LOSSES COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["setlose", "setloss"])
     @commands.has_permissions(administrator=True)
     async def setlosses(self, ctx, user:discord.Member, amount:int):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                     cur.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     db.commit()
@@ -197,6 +222,8 @@ class Elo(commands.Cog):
                 return await self._stats(ctx, user)
             return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
 
+    # // SHOW THE LAST MATCH PLAYED COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["lm"])
     async def lastmatch(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -206,6 +233,8 @@ class Elo(commands.Cog):
                 match_count+=1
             return await self._match(ctx, match_count)
 
+    # // REPLACE / SUB TWO PLAYERS COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["sub", "swap"])
     @commands.has_permissions(manage_messages=True)
     async def replace(self, ctx, match_id:int, user1:discord.Member, user2:discord.Member):
@@ -240,6 +269,8 @@ class Elo(commands.Cog):
                     return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
 
+    # // CHANGE YOUR USERNAME COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     async def rename(self, ctx, name:str):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -252,6 +283,8 @@ class Elo(commands.Cog):
                 except Exception: pass
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
 
+    # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
+    # ////////////////////////////////////////////
     @commands.command(aliases=["fr"])
     @commands.has_permissions(manage_messages=True)
     async def forcerename(self, ctx, user:discord.Member, name:str):
@@ -265,6 +298,8 @@ class Elo(commands.Cog):
                 except Exception: pass
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
     
+    # // REGISTER USER INTO THE DATABASE COMMAND
+    # ///////////////////////////////////////////
     @commands.command(aliases=["reg"])
     async def register(self, ctx, name:str):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -281,18 +316,22 @@ class Elo(commands.Cog):
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
-                
+    
+    # // UNREGISTER AN USER FROM THE DATABASE COMMAND
+    # ////////////////////////////////////////////////
     @commands.command(aliases=["unreg"])
     @commands.has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 cur.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
                 db.commit()
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=65535))
 
+    # // GIVES AN USER A WIN COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
@@ -300,6 +339,8 @@ class Elo(commands.Cog):
             await self._win(ctx, user)
             await self._stats(ctx, user)
 
+    # // GIVES AN USER A LOSS COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
@@ -307,26 +348,32 @@ class Elo(commands.Cog):
             await self._loss(ctx, user)
             await self._stats(ctx, user)
 
+    # // SHOW YOUR OR ANOTHER PLAYER'S STATS COMMAND
+    # ////////////////////////////////////////////////
     @commands.command()
     async def stats(self, ctx, *args):
         user = ctx.author
         if len(list(args)) > 0 and "<@" in str(list(args)[0]):
             user = ctx.guild.get_member(int(str(list(args)[0]).strip("<").strip(">").strip("@").replace("!", "")))
         return await self._stats(ctx, user)
-                
+
+    # // RESET AN USERS STATS COMMAND
+    # /////////////////////////////////////////   
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def reset(self, ctx, user:discord.Member):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id});").fetchall()[0] == (1,):
+            if await self._check_user(ctx, user, cur):
                 cur.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 cur.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 cur.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
                 return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=65535))
             return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=65535))
-        
+    
+    # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["lb"])
     async def leaderboard(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:

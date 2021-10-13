@@ -6,6 +6,8 @@ class Bans(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    # // ADD USER TO BAN DATABASE COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def ban(self, ctx, user:discord.Member, length_str:str, *args):
@@ -27,6 +29,8 @@ class Bans(commands.Cog):
             for row in cur.execute(f'SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                 return await ctx.send(embed=discord.Embed(title=f"{user.name} banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=65535))
 
+    # // REMOVE USER FROM BAN DATABASE COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def unban(self, ctx, user:discord.Member):

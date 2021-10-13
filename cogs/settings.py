@@ -6,6 +6,8 @@ class Settings(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    # // RETURN CORRESPONDING EMOJI TO SETTING
+    # /////////////////////////////////////////
     async def _emojis(self, ctx, option):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -32,7 +34,8 @@ class Settings(commands.Cog):
                         return ["🟢", "Disable"]
                     return ["🔴", "Enable"]
 
-    
+    # // ADD MAP TO THE DATABASE
+    # /////////////////////////////////////////
     async def _add_map(self, ctx, map):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -46,6 +49,8 @@ class Settings(commands.Cog):
                         db.commit()
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=65535), delete_after=2)
 
+    # // REMOVE MAP FROM THE DATABASE
+    # /////////////////////////////////////////
     async def _del_map(self, ctx, map):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -60,17 +65,22 @@ class Settings(commands.Cog):
                     return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=65535), delete_after=2)
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} the map pool is empty", color=65535), delete_after=2)
 
-
+    # // ADD MAP COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def addmap(self, ctx, map:str):
         await self._add_map(ctx, map)
 
+    # // DELETE MAP COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["removemap", "deletemap"])
     @commands.has_permissions(administrator=True)
     async def delmap(self, ctx, map:str):
         await self._del_map(ctx, map)
 
+    # // SHOW LIST OF MAPS COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     async def maps(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -78,6 +88,8 @@ class Settings(commands.Cog):
             for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
                 return await ctx.send(embed=discord.Embed(title="Maps", description=str(row[1]).replace(",", "\n"), color=65535))
 
+    # // SET THE REGISTER ROLE COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
@@ -91,6 +103,8 @@ class Settings(commands.Cog):
                 db.commit()
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=65535), delete_after=2)
 
+    # // SHOW SETTINGS PANEL COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["sets"])
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
@@ -113,7 +127,8 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'{team_cap_vc[0]}', label=f"{team_cap_vc[1]} Team Captain Voice Channels", value="team_cap_vc")
                     ])])
 
-
+    # // SELECT MENU LISTENER
+    # /////////////////////////////////////////
     @commands.Cog.listener()
     async def on_select_option(self, res):
         if res.author.guild_permissions.administrator:

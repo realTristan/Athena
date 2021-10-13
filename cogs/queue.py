@@ -8,12 +8,13 @@ class Queue(commands.Cog):
         self.client = client
         self.data = {}
 
-
-    # MAIN FUNCTIONS
-    # ////////////////////////
+    # // RESET THE GUILD'S VARIABLES FUNCTION
+    # /////////////////////////////////////////
     async def _reset(self, ctx):
         self.data[ctx.guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
         
+    # // CHECK IF GUILD IS IN "self.data" FUNCTION
+    # /////////////////////////////////////////
     async def _data_check(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -25,6 +26,8 @@ class Queue(commands.Cog):
                 await self._reset(ctx)
             return True
 
+    # // EMBED GENERATOR FUNCTION
+    # /////////////////////////////////////////
     async def _embeds(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -91,6 +94,7 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=embed)
 
     # // CREATE TEAM VOICE CHANNELS FUNCTION
+    # /////////////////////////////////////////
     async def _team_vc(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -111,6 +115,7 @@ class Queue(commands.Cog):
                         await orange_vc.set_permissions(user, connect=True)
 
     # // MATCH LOGGING FUNCTION
+    # /////////////////////////////////////////
     async def _match(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -123,7 +128,8 @@ class Queue(commands.Cog):
             cur.execute(f"""INSERT INTO matches VALUES ({ctx.guild.id}, {match_count}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
             db.commit()
 
-    # // STARTING FUNCTION FOR AFTER QUEUE REACHES 10 PEOPLE
+    # // WHEN QUEUE REACHES 10 PEOPLE FUNCTION
+    # /////////////////////////////////////////
     async def _start(self, ctx):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -161,6 +167,7 @@ class Queue(commands.Cog):
                         self.data[ctx.guild.id]["state"] = "final"
 
     # // CHECK IF THE USER IS BANNED FUNCTION
+    # /////////////////////////////////////////
     async def _ban_check(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -173,7 +180,8 @@ class Queue(commands.Cog):
                 db.commit()
             return True
     
-    # // ON JOIN FUNCTION
+    # // WHEN AN USER JOINS THE QUEUE FUNCTION
+    # /////////////////////////////////////////
     async def _join(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -196,7 +204,8 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
 
-    # // ON LEAVE FUNCTION
+    # // WHEN AN USER LEAVES THE QUEUE FUNCTION
+    # /////////////////////////////////////////
     async def _leave(self, ctx, user):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
@@ -213,15 +222,16 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
 
     
-    # MAIN COMMANDS
-    # ////////////////////////
+    # // FORCE START THE QUEUE COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["fs"])
     @commands.has_permissions(manage_messages=True)
     async def forcestart(self, ctx):
         await self._start(ctx)
         return await self._embeds(ctx)
 
-
+    # // PICK TEAMMATES (TEAM CAPTAIN) COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["p"])
     async def pick(self, ctx, user:discord.Member):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -248,7 +258,9 @@ class Queue(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
-            
+    
+    # // PICK MAP TO PLAY (BLUE CAPTAIN) COMMAND
+    # ///////////////////////////////////////////
     @commands.command()
     async def map(self, ctx, map:str):
         with sqlite3.connect('main.db', timeout=60) as db:
@@ -265,29 +277,41 @@ class Queue(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=65535))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
-        
+    
+    # // JOIN THE QUEUE COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["j"])
     async def join(self, ctx):
         return await self._join(ctx, ctx.author)
 
+    # // FORCE ADD AN USER TO THE QUEUE COMMAND
+    # //////////////////////////////////////////
     @commands.command(aliases=["fj"])
     async def forcejoin(self, ctx, user:discord.Member):
         return await self._join(ctx, user)
 
+    # // LEAVE THE QUEUE COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
         return await self._leave(ctx, ctx.author)
 
+    # // FORCE REMOVE A PLAYER FROM THE QUEUE COMMAND
+    # ////////////////////////////////////////////////
     @commands.command(aliases=["fl"])
     async def forceleave(self, ctx, user:discord.Member):
         return await self._leave(ctx, user)
 
+    # // SHOW THE CURRENT QUEUE COMMAND
+    # /////////////////////////////////////////
     @commands.command(aliases=["q"])
     async def queue(self, ctx):
         if await self._data_check(ctx):
             return await self._embeds(ctx)
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
     
+    # // CLEAR THE CURRENT QUEUE COMMAND
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx):
