@@ -88,6 +88,8 @@ class Elo(commands.Cog):
     async def match(self, ctx, action:str, match_id:int, *args):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
+
+            # // REPORTING AN ONGOING MATCH
             if action == "report":
                 if ctx.author.guild_permissions.manage_messages:
                     for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
@@ -117,6 +119,7 @@ class Elo(commands.Cog):
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
+            # // CANCELLING AN ONGOING MATCH
             if action == "cancel":
                 if ctx.author.guild_permissions.manage_messages:
                     for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
@@ -127,18 +130,23 @@ class Elo(commands.Cog):
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
+            # // SHOWING A LOGGED MATCH
             if action == "show":
                 return await self._match(ctx, match_id)
 
+            # // UNDOING A REPORTED MATCH
             if action == "undo":
                 if ctx.author.guild_permissions.manage_messages:
                     for row in cur.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"):
                         if "reported" in row[7] or "cancelled" in row[7]:
+
+                            # // ADD THE CAPTAINS TO EACH TEAM
                             blue_team = str(row[6]).split(",")
                             blue_team.append(row[5])
                             orange_team = str(row[4]).split(",")
                             orange_team.append(row[3])
 
+                            # // REMOVE WIN FROM BLUE TEAM
                             if str(row[8]) == "blue":
                                 cur.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                                 for user in blue_team:
@@ -147,20 +155,23 @@ class Elo(commands.Cog):
                                         cur.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
                                         db.commit()
                                 
+                                # // REMOVE LOSS FROM ORANGE TEAM
                                 for user in orange_team:
                                     for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
                                         cur.execute(f"UPDATE users SET elo = {_row[3]+2} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-                                        cur.execute(f"UPDATE users SET loss = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                        cur.execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
                                         db.commit()
                             
+                            # // REMOVE LOSS FROM BLUE TEAM
                             elif str(row[8]) == "orange":
                                 cur.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                                 for user in blue_team:
                                     for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
                                         cur.execute(f"UPDATE users SET elo = {_row[3]+3} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-                                        cur.execute(f"UPDATE users SET loss = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+                                        cur.execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
                                         db.commit()
                                 
+                                # // REMOVE WIN FROM ORANGE TEAM
                                 for user in orange_team:
                                     for _row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}'):
                                         cur.execute(f"UPDATE users SET elo = {_row[3]-5} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
@@ -245,20 +256,24 @@ class Elo(commands.Cog):
                     blue_team = str(row[6]).split(",")
                     orange_team = str(row[4]).split(",")
 
+                    # // REPLACE USER FROM ORANGE CAPTAIN
                     if str(user1.id) in str(row[3]):
                         cur.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
 
+                    # // REPLACE USER FROM BLUE CAPTAIN
                     elif str(user1.id) in str(row[5]):
                         cur.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
                     
+                    # // REPLACE USER FROM ORANGE TEAM
                     elif str(user1.id) in orange_team:
                         orange_team.remove(str(user1.id))
                         orange_team.append(str(user1.id))
                         cur.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
 
+                    # // REPLACE USER FROM BLUE TEAM
                     elif str(user1.id) in blue_team:
                         blue_team.remove(str(user1.id))
                         blue_team.append(str(user2.id))
