@@ -373,7 +373,7 @@ class Elo(commands.Cog):
         return await self._stats(ctx, user)
 
     # // RESET AN USERS STATS COMMAND
-    # /////////////////////////////////////////   
+    # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def reset(self, ctx, user:discord.Member):
