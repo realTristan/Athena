@@ -305,13 +305,15 @@ class Elo(commands.Cog):
     async def forcerename(self, ctx, user:discord.Member, name:str):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            db.commit()
-            for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                try:
-                    await user.edit(nick=f"{row[2]} [{row[3]}]")
-                except Exception: pass
-            return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
+            if await self._check_user(ctx, user, cur):
+                cur.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                db.commit()
+                for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                    try:
+                        await user.edit(nick=f"{row[2]} [{row[3]}]")
+                    except Exception: pass
+                return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
     
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
@@ -319,7 +321,7 @@ class Elo(commands.Cog):
     async def register(self, ctx, name:str):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
-            if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id});").fetchall()[0] == (0,):
+            if not await self._check_user(ctx, ctx.author, cur):
                 for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
                     if row[6] == 0 or ctx.message.channel.id == row[6]:
                         cur.execute(f"INSERT INTO users VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
