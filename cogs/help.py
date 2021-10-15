@@ -49,7 +49,7 @@ class Help(commands.Cog):
     administrator_embed.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =setelo [@user] [amount])')
     administrator_embed.add_field(name=' ‎\nSet Wins [Admin+]', value='Sets an users wins\n(Usage: =setwins [@user] [amount])')
     administrator_embed.add_field(name=' ‎\nSet Losses [Admin+]', value='Sets an users losses\n(Usage: =setloss [@user] [amount])')
-    administrator_embed.add_field(name=' ‎\nSettings Panel [Admin+]', value='Open Settings Panel\n(Usage: =settings)')
+    administrator_embed.add_field(name=' ‎\nSettings Menu [Admin+]', value='Open Settings Menu\n(Usage: =settings)')
 
 
     # // CREATING THE SELECT MENU COMMAND
@@ -57,10 +57,10 @@ class Help(commands.Cog):
     @commands.command()
     async def help(self, ctx):
         await ctx.message.delete()
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Panel**", color=65535),
+        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=65535),
             components=[
                 Select(
-                    placeholder="View",
+                    placeholder="View Commands",
                     options=[
                         SelectOption(emoji='🔵', label="Player Commands", value="player"),
                         SelectOption(emoji='🔵', label="Moderator Commands", value="mod"),

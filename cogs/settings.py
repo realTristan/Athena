@@ -104,7 +104,7 @@ class Settings(commands.Cog):
                 db.commit()
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=65535), delete_after=2)
 
-    # // SHOW SETTINGS PANEL COMMAND
+    # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
     @commands.command(aliases=["sets"])
     @commands.has_permissions(administrator=True)
@@ -114,10 +114,10 @@ class Settings(commands.Cog):
         map_pick_phase = await self._emojis(ctx, "map_pick_phase")
         team_cap_vc = await self._emojis(ctx, "team_cap_vc")
 
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Panel**", color=65535),
+        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=65535),
             components=[
                 Select(
-                    placeholder="View",
+                    placeholder="View Settings",
                     options=[
                         SelectOption(emoji=f'🔵', label="Add Map", value="add_map"),
                         SelectOption(emoji=f'🔵', label="Remove Map", value="remove_map"),
