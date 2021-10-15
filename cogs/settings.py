@@ -277,10 +277,11 @@ class Settings(commands.Cog):
 
         # // QUEUE EMBED
         if res.values[0] == "queue_embed":
-            await res.channel.send(embed=discord.Embed(title=f'[0/10] Queue', description='None', color=65535), 
-            components=[[
-                Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
-                Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
+            if res.author.guild_permissions.administrator:
+                await res.channel.send(embed=discord.Embed(title=f'[0/10] Queue', description='None', color=65535), 
+                components=[[
+                    Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
+                    Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
 
 def setup(client):
     client.add_cog(Settings(client))
