@@ -17,7 +17,11 @@ with sqlite3.connect('main.db', timeout=60) as db:
 
 @client.event
 async def on_command_error(ctx, error):
-    return
+    if isinstance(error, commands.CommandNotFound):
+        return
+    if isinstance(error, commands.MissingPermissions):
+        return
+    raise error
     
 @client.event
 async def on_member_remove(member):
