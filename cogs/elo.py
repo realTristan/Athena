@@ -10,11 +10,11 @@ class Elo(commands.Cog):
     async def _del_vcs(self, ctx, user):
         _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {user.name}")
         if _blue_vc:
-            await _blue_vc.delete()
+            return await _blue_vc.delete()
 
         _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {user.name}")
         if _orange_vc:
-            await _orange_vc.delete()
+            return await _orange_vc.delete()
 
     # // CHECK IF USER IS REGISTERED FUNCTION
     # /////////////////////////////////////////
@@ -29,14 +29,15 @@ class Elo(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if await self._check_user(ctx, user, cur):
-                for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                    cur.execute(f"UPDATE users SET elo = {row[3]+5} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                    cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                    db.commit()
-                    try: await user.edit(nick=f"{row[2]} [{row[3]}]")
-                    except Exception: pass
-                return await self._del_vcs(ctx, user)
-            return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
+                for _row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+                    for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                        cur.execute(f"UPDATE users SET elo = {row[3]+_row[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        cur.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        db.commit()
+                        try: await user.edit(nick=f"{row[2]} [{row[3]}]")
+                        except Exception: pass
+                    return await self._del_vcs(ctx, user)
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // GIVE AN USER A LOSS FUNCTION
     # /////////////////////////////////////////
@@ -44,14 +45,15 @@ class Elo(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if await self._check_user(ctx, user, cur):
-                for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
-                    cur.execute(f"UPDATE users SET elo = {row[3]-2} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                    cur.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                    db.commit()
-                    try: 
-                        await user.edit(nick=f"{row[2]} [{row[3]}]")
-                    except Exception: pass
-                return await self._del_vcs(ctx, user)
+                for _row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+                    for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
+                        cur.execute(f"UPDATE users SET elo = {row[3]-_row[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        cur.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        db.commit()
+                        try:
+                            await user.edit(nick=f"{row[2]} [{row[3]}]")
+                        except Exception: pass
+                    return await self._del_vcs(ctx, user)
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // LOG A MATCH TO THE DATABASE FUNCTION
@@ -197,7 +199,7 @@ class Elo(commands.Cog):
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except: pass
                 return await self._stats(ctx, user)
-            return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // SET AN USERS WINS COMMAND
     # /////////////////////////////////////////
@@ -214,7 +216,7 @@ class Elo(commands.Cog):
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except: pass
                 return await self._stats(ctx, user)
-            return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // SET AN USERS LOSSES COMMAND
     # /////////////////////////////////////////
@@ -231,7 +233,7 @@ class Elo(commands.Cog):
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except: pass
                 return await self._stats(ctx, user)
-            return await ctx.send(discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // SHOW THE LAST MATCH PLAYED COMMAND
     # /////////////////////////////////////////

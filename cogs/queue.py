@@ -19,7 +19,7 @@ class Queue(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
-                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0)")
+                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2)")
                 db.commit()
 
             if ctx.guild.id not in self.data:
