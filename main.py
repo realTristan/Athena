@@ -16,20 +16,16 @@ with sqlite3.connect('main.db', timeout=60) as db:
     db.commit()
 
 @client.event
+async def on_command_error():
+    return
+    
+@client.event
 async def on_member_remove(member):
     with sqlite3.connect('main.db', timeout=60) as db:
         cur = db.cursor()
         if cur.execute(f"SELECT EXISTS(SELECT 1 FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id});").fetchall()[0] == (1,):
             cur.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id};")
             db.commit()
-
-@client.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        return
-    if isinstance(error, commands.MissingPermissions):
-        return
-    raise error
 
 @client.event
 async def on_ready():
