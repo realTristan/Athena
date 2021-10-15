@@ -16,7 +16,7 @@ with sqlite3.connect('main.db', timeout=60) as db:
     db.commit()
 
 @client.event
-async def on_command_error():
+async def on_command_error(ctx, error):
     return
     
 @client.event
