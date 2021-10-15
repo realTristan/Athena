@@ -43,4 +43,4 @@ for filename in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__
         print(f'Loaded: cog.{filename[:-3]}')
 
 
-client.run('ODgzMDA2NjA5MjgwODY0MjU3.YTDp_Q.TE1n942meMxyEUc2DLEgB9xY_gM')
+client.run('YOUR BOT TOKEN')

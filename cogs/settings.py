@@ -134,7 +134,7 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                         SelectOption(emoji=f'🔵', label="Change Queue Channel", value="change_queue_channel"),
                         SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
-                        SelectOption(emoji=f'{match_logging[0]}', label=f"{team_cap_vc[1]} Match Logging", value="match_logging"),
+                        SelectOption(emoji=f'{match_logging[0]}', label=f"{match_logging[1]} Match Logging", value="match_logging"),
                         SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
                         SelectOption(emoji=f'{picking_phase[0]}', label=f"{picking_phase[1]} Team Picking Phase", value="picking_phase"),
                         SelectOption(emoji=f'{team_cap_vc[0]}', label=f"{team_cap_vc[1]} Team Captain Voice Channels", value="team_cap_vc")
