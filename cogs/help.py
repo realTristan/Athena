@@ -15,13 +15,13 @@ class Help(commands.Cog):
     # // ADDING FIELDS TO PLAYERS EMBED
     player_embed.add_field(name='‏‏‎ ‎\nJoin', value='Join the current queue\n(Usage: =j)')
     player_embed.add_field(name=' ‎\nLeave', value='Leave the current queue\n(Usage: =l)')
-    player_embed.add_field(name=' ‎\nPick', value='Pick an user to be on your team\n(Usage: =p @user)')
-    player_embed.add_field(name=' ‎\nSelect Map', value='Pick a map to play\n(Usage: =map name)')
+    player_embed.add_field(name=' ‎\nPick', value='Pick an user to be on your team\n(Usage: =p [@user])')
+    player_embed.add_field(name=' ‎\nSelect Map', value='Pick a map to play\n(Usage: =map [name])')
     player_embed.add_field(name=' ‎\nRename', value='Change your Ten Man username\n(Usage: =rename [name])')
     player_embed.add_field(name=' ‎\nRegister', value='Register yourself to play in the ten mans\n(Usage: =reg [name])')
     player_embed.add_field(name=' ‎\nShow Queue', value='Show the current queue\n(Usage: =q)')
     player_embed.add_field(name=' ‎\nShow Maps', value='Show the current map pool\n(Usage: =maps)')
-    player_embed.add_field(name=' ‎\nShow Stats', value='Show your ten man stats\n(Usage: =stats or =stats @user)')
+    player_embed.add_field(name=' ‎\nShow Stats', value='Show your ten man stats\n(Usage: =stats or =stats [@user])')
     player_embed.add_field(name=' ‎\nLeaderboard', value='Show the ten man leaderboard\n(Usage: =lb)')
     player_embed.add_field(name='‏‏‎ ‎\nShow Last Match', value='Shows the last match played\n(Usage: =lm)')
     player_embed.add_field(name=' ‎\nMatch Show', value='Shows a match\n(Usage: =match show [match id]')
@@ -46,9 +46,9 @@ class Help(commands.Cog):
     # // ADDING FIELDS TO ADMINISTRATOR EMBED
     administrator_embed.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
     administrator_embed.add_field(name=' ‎\nReset Stats [Admin+]', value='Reset an users stats\n(Usage: =match cancel [match id])')
-    administrator_embed.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =setelo @user [amount])')
-    administrator_embed.add_field(name=' ‎\nSet Wins [Admin+]', value='Sets an users wins\n(Usage: =setwins @user [amount])')
-    administrator_embed.add_field(name=' ‎\nSet Losses [Admin+]', value='Sets an users losses\n(Usage: =setloss @user [amount])')
+    administrator_embed.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =setelo [@user] [amount])')
+    administrator_embed.add_field(name=' ‎\nSet Wins [Admin+]', value='Sets an users wins\n(Usage: =setwins [@user] [amount])')
+    administrator_embed.add_field(name=' ‎\nSet Losses [Admin+]', value='Sets an users losses\n(Usage: =setloss [@user] [amount])')
     administrator_embed.add_field(name=' ‎\nSettings Panel [Admin+]', value='Open Settings Panel\n(Usage: =settings)')
 
 
