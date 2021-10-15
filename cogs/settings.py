@@ -176,13 +176,15 @@ class Settings(commands.Cog):
         # // CHANGE THE REGISTER ROLE
         if res.values[0] == "change_reg_role":
             if res.author.guild_permissions.administrator:
-                await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=65535))
-                c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
-                if "<@" in str(c.content):
-                    role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
-                    cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}"); db.commit()
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=65535), delete_after=2)
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} role not found", color=65535))
+                with sqlite3.connect('main.db', timeout=60) as db:
+                    cur = db.cursor()
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                    if "<@" in str(c.content):
+                        role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
+                        cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=65535), delete_after=2)
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} role not found", color=65535))
 
         # // ADD MAP
         if res.values[0] == "add_map":
@@ -201,46 +203,54 @@ class Settings(commands.Cog):
         # // CHANGE THE QUEUE CHANNEL
         if res.values[0] == "change_queue_channel":
             if res.author.guild_permissions.administrator:
-                await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
-                c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
-                
-                if "<#" not in str(c.content):
-                    cur.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to **None**", color=65535), delete_after=2)
-                channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                cur.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel.mention}", color=65535), delete_after=2)
+                with sqlite3.connect('main.db', timeout=60) as db:
+                    cur = db.cursor()
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                    
+                    if "<#" not in str(c.content):
+                        cur.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to **None**", color=65535), delete_after=2)
+                    channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                    cur.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel.mention}", color=65535), delete_after=2)
 
         # // CHANGE THE REGISTER CHANNEL
         if res.values[0] == "change_reg_channel":
             if res.author.guild_permissions.administrator:
-                await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
-                c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                with sqlite3.connect('main.db', timeout=60) as db:
+                    cur = db.cursor()
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
-                if "<#" not in str(c.content):
-                    cur.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to **None**", color=65535), delete_after=2)
-                channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                cur.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel.mention}", color=65535), delete_after=2)
+                    if "<#" not in str(c.content):
+                        cur.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}"); db.commit()
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to **None**", color=65535), delete_after=2)
+                    channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                    cur.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel.mention}", color=65535), delete_after=2)
         
         # // CHANGE THE ELO PER WIN
         if res.values[0] == "change_win_elo":
             if res.author.guild_permissions.administrator:
-                await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to gain", color=65535))
-                c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                with sqlite3.connect('main.db', timeout=60) as db:
+                    cur = db.cursor()
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to gain", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
-                cur.execute(f"UPDATE settings SET win_elo = {int(c.content)} WHERE guild_id = {res.guild.id}"); db.commit()
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the win elo to **{c.content}**", color=65535), delete_after=2)
+                    cur.execute(f"UPDATE settings SET win_elo = {int(c.content)} WHERE guild_id = {res.guild.id}"); db.commit()
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the win elo to **{c.content}**", color=65535), delete_after=2)
             
         # // CHANGE THE ELO PER LOSS
         if res.values[0] == "change_loss_elo":
             if res.author.guild_permissions.administrator:
-                await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to lose", color=65535))
-                c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                with sqlite3.connect('main.db', timeout=60) as db:
+                    cur = db.cursor()
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to lose", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
-                cur.execute(f"UPDATE settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id}"); db.commit()
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the loss elo to **{c.content}**", color=65535), delete_after=2)
+                    cur.execute(f"UPDATE settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id}"); db.commit()
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the loss elo to **{c.content}**", color=65535), delete_after=2)
 
 
 def setup(client):
