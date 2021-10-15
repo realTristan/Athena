@@ -35,7 +35,7 @@ async def on_command_error(ctx, error):
 async def on_ready():
     DiscordComponents(client)
     print(f'Launched: {client.user.name} // {client.user.id}')
-    await client.change_presence(activity=discord.Game(name="Commands | =help"))
+    await client.change_presence(activity=discord.Game(name="Ten Man's | =help"))
 
 for filename in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cogs')):
     if filename.endswith('.py'):
