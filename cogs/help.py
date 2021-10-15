@@ -56,7 +56,8 @@ class Help(commands.Cog):
     # //////////////////////////////////////
     @commands.command()
     async def help(self, ctx):
-        await ctx.author.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Panel**", color=65535),
+        await ctx.message.delete()
+        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Panel**", color=65535),
             components=[
                 Select(
                     placeholder="View",

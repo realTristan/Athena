@@ -109,6 +109,7 @@ class Settings(commands.Cog):
     @commands.command(aliases=["sets"])
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
+        await ctx.message.delete()
         picking_phase = await self._emojis(ctx, "picking_phase")
         map_pick_phase = await self._emojis(ctx, "map_pick_phase")
         team_cap_vc = await self._emojis(ctx, "team_cap_vc")
