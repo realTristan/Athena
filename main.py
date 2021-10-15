@@ -11,7 +11,7 @@ with sqlite3.connect('main.db', timeout=60) as db:
     cur.execute(f'''CREATE TABLE IF NOT EXISTS users (guild_id int, user_id int, user_name text, elo int, wins int, loss int)''')
     cur.execute(f'''CREATE TABLE IF NOT EXISTS bans (guild_id int, user_id int, length int, reason text, banned_by text)''')
     cur.execute(f'''CREATE TABLE IF NOT EXISTS maps (guild_id int, map_list text)''')
-    cur.execute(f'''CREATE TABLE IF NOT EXISTS settings (guild_id int, reg_role int, map_pick_phase text, team_cap_vcs text, picking_phase text, queue_channel int, reg_channel int, win_elo int, loss_elo int)''')
+    cur.execute(f'''CREATE TABLE IF NOT EXISTS settings (guild_id int, reg_role int, map_pick_phase text, team_cap_vcs text, picking_phase text, queue_channel int, reg_channel int, win_elo int, loss_elo int, match_logs int)''')
     cur.execute(f'''CREATE TABLE IF NOT EXISTS matches (guild_id int, match_id int, map text, orange_cap text, orange_team text, blue_cap text, blue_team text, status text, winners text)''')
     db.commit()
 
@@ -43,4 +43,4 @@ for filename in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__
         print(f'Loaded: cog.{filename[:-3]}')
 
 
-client.run('YOUR BOT TOKEN')
+client.run('ODgzMDA2NjA5MjgwODY0MjU3.YTDp_Q.TE1n942meMxyEUc2DLEgB9xY_gM')

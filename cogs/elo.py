@@ -16,6 +16,11 @@ class Elo(commands.Cog):
         if _orange_vc:
             return await _orange_vc.delete()
 
+    # // GET THE USERS ID FROM A STRING
+    # /////////////////////////////////////////
+    async def _clean(self, user):
+        return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
+
     # // CHECK IF USER IS REGISTERED FUNCTION
     # /////////////////////////////////////////
     async def _check_user(self, ctx, user, cur):
@@ -37,7 +42,7 @@ class Elo(commands.Cog):
                         try: await user.edit(nick=f"{row[2]} [{row[3]}]")
                         except Exception: pass
                     return await self._del_vcs(ctx, user)
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // GIVE AN USER A LOSS FUNCTION
     # /////////////////////////////////////////
@@ -54,7 +59,7 @@ class Elo(commands.Cog):
                             await user.edit(nick=f"{row[2]} [{row[3]}]")
                         except Exception: pass
                     return await self._del_vcs(ctx, user)
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // LOG A MATCH TO THE DATABASE FUNCTION
     # /////////////////////////////////////////
@@ -69,7 +74,7 @@ class Elo(commands.Cog):
                 embed.add_field(name="Orange Team", value='\n'.join(f"<@{e}>" for e in str(row[4]).split(",")))
                 embed.add_field(name="\u200b", value="\u200b")
                 embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in str(row[6]).split(",")))
-            return await ctx.send(embed=embed)
+            return await ctx.channel.send(embed=embed)
 
     # // SHOW THE USERS STATS FUNCTION
     # /////////////////////////////////////////
@@ -373,7 +378,7 @@ class Elo(commands.Cog):
     async def stats(self, ctx, *args):
         user = ctx.author
         if len(list(args)) > 0 and "<@" in str(list(args)[0]):
-            user = ctx.guild.get_member(int(str(list(args)[0]).strip("<").strip(">").strip("@").replace("!", "")))
+            user = ctx.guild.get_member(await self._clean(list(args)[0]))
         return await self._stats(ctx, user)
 
     # // RESET AN USERS STATS COMMAND
@@ -408,6 +413,72 @@ class Elo(commands.Cog):
             await ctx.send(embed=discord.Embed(title=f"Leaderboard", description=names, color=65535))
 
 
+    # // BUTTON CLICK LISTENER
+    # /////////////////////////////////////////
+    @commands.Cog.listener()
+    async def on_button_click(self, res):
+        if res.component.id == 'blue_report' or res.component.id == 'orange_report' or 'match_cancel':
+            if res.author.guild_permissions.manage_messages:
+                with sqlite3.connect('main.db', timeout=60) as db:
+                    cur = db.cursor()
+                    # // GETTING THE MATCH ID
+                    match_id = int(str(res.message.embeds[0].title).replace("Match #", ""))
+
+                    # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
+                    blue_team=res.message.embeds[0].fields[5].value.split("\n")
+                    blue_team.append(await self._clean(res.message.embeds[0].fields[2].value))
+
+                    # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
+                    orange_team=res.message.embeds[0].fields[3].value.split("\n")
+                    orange_team.append(await self._clean(res.message.embeds[0].fields[0].value))
+
+                    if res.component.id == "match_cancel":
+                        # // CHANGING MATCH STATUS
+                        cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        db.commit()
+
+                    if res.component.id == 'blue_report':
+                        # // CHANGING MATCH STATUS AND ADDING WINNER
+                        cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        cur.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        db.commit()
+
+                        # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
+                        for user in blue_team:
+                            member=res.guild.get_member(await self._clean(user))
+                            await self._win(res, member)
+
+                        # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
+                        for user in orange_team:
+                            member=res.guild.get_member(await self._clean(user))
+                            await self._loss(res, member)
+
+                    if res.component.id == 'orange_report':
+                        # // CHANGING MATCH STATUS AND ADDING WINNER
+                        cur.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        cur.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        db.commit()
+
+                        # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
+                        blue_team=res.message.embeds[0].fields[2].value.split("\n")
+                        blue_team.append(await self._clean(res.message.embeds[0].fields[0].value))
+
+                        # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
+                        orange_team=res.message.embeds[0].fields[3].value.split("\n")
+                        orange_team.append(await self._clean(res.message.embeds[0].fields[1].value))
+
+                        if res.component.id == 'blue_report':
+                            # // ADDING A LOSS FOR EACH BLUE TEAM PLAYER
+                            for user in blue_team:
+                                member=res.guild.get_member(await self._clean(user))
+                                await self._loss(res, member)
+
+                            # // ADDING A WIN FOR EACH ORANGE TEAM PLAYER
+                            for user in orange_team:
+                                member=res.guild.get_member(await self._clean(user))
+                                await self._win(res, member)
+                    await res.message.delete()
+                    return await self._match(res, match_id)
 
 def setup(client):
     client.add_cog(Elo(client))

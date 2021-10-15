@@ -1,4 +1,5 @@
 import discord, sqlite3, random, time
+from discord_components import *
 from discord.ext import commands
 from discord.utils import get
 import datetime as datetime
@@ -19,7 +20,7 @@ class Queue(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
-                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2)")
+                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
                 db.commit()
 
             if ctx.guild.id not in self.data:
@@ -43,10 +44,10 @@ class Queue(commands.Cog):
             if self.data[ctx.guild.id]["state"] == "pick":
                 orange_team="None"
                 blue_team="None"
-                if len(self.data[ctx.guild.id]["orange_team"]) == 0:
+                if len(self.data[ctx.guild.id]["orange_team"]) != 0:
                     orange_team = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["orange_team"])
 
-                if len(self.data[ctx.guild.id]["blue_team"]) == 0:
+                if len(self.data[ctx.guild.id]["blue_team"]) != 0:
                     blue_team = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"])
 
                 embed=discord.Embed(title="Team Picking Phase", color=65535)
@@ -91,6 +92,17 @@ class Queue(commands.Cog):
                 await self._match(ctx)
                 await self._team_vc(ctx)
                 await self._reset(ctx)
+
+                for _row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
+                    if _row[9] != 0:
+                        channel = ctx.guild.get_channel(int(_row[9]))
+                        await channel.send(
+                            embed=embed,
+                            components=[[
+                                Button(style=ButtonStyle.blue, label="Blue", custom_id='blue_report'),
+                                Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
+                                Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
+                            ]])
                 return await ctx.send(embed=embed)
 
     # // CREATE TEAM VOICE CHANNELS FUNCTION
@@ -150,7 +162,7 @@ class Queue(commands.Cog):
                     self.data[ctx.guild.id]["orange_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["orange_cap"])
 
                     # // CREATING THE RANDOM TEAMS
-                    for _ in range(round(len(self.data[ctx.guild.id]["queue"] / 2))):
+                    for _ in range(round(len(self.data[ctx.guild.id]["queue"]) / 2)):
                         _user = random.choice(self.data[ctx.guild.id]["queue"])
                         self.data[ctx.guild.id]['orange_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
                     
@@ -191,13 +203,13 @@ class Queue(commands.Cog):
                         if await self._ban_check(ctx, user):
                             if row[5] == 0 or ctx.message.channel.id == row[5]:
                                 if self.data[ctx.guild.id]["state"] == "queue":
-                                    if not user in self.data[ctx.guild.id]["queue"]:
+                                    #if not user in self.data[ctx.guild.id]["queue"]:
                                         self.data[ctx.guild.id]["queue"].append(user)
                                         if len(self.data[ctx.guild.id]["queue"]) == 10:
                                             await self._start(ctx)
                                             return await self._embeds(ctx)
                                         return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
-                                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
+                                    #return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
                                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
                             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} join the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
                         return False
@@ -319,7 +331,6 @@ class Queue(commands.Cog):
             await self._reset(ctx)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=65535))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
-
 
 def setup(client):
     client.add_cog(Queue(client))

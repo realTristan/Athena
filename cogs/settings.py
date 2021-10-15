@@ -12,7 +12,7 @@ class Settings(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
-                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2)")
+                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
                 db.commit()
 
             for row in cur.execute(f'SELECT * FROM settings WHERE guild_id = {ctx.guild.id}'):
@@ -33,6 +33,13 @@ class Settings(commands.Cog):
                     if row[4] == "true":
                         return ["🟢", "Disable"]
                     return ["🔴", "Enable"]
+
+                # // MATCH LOGGING
+                if option == "match_logging":
+                    if row[9] != 0:
+                        return ["🟢", "Disable"]
+                    return ["🔴", "Enable"]
+
 
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
@@ -97,7 +104,7 @@ class Settings(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             if cur.execute(f"SELECT EXISTS(SELECT 1 FROM settings WHERE guild_id = {ctx.guild.id});").fetchall()[0] == (0,):
-                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2)")
+                cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
                 db.commit()
             else:
                 cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
@@ -113,6 +120,7 @@ class Settings(commands.Cog):
         picking_phase = await self._emojis(ctx, "picking_phase")
         map_pick_phase = await self._emojis(ctx, "map_pick_phase")
         team_cap_vc = await self._emojis(ctx, "team_cap_vc")
+        match_logging = await self._emojis(ctx, "match_logging")
 
         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=65535),
             components=[
@@ -126,6 +134,7 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                         SelectOption(emoji=f'🔵', label="Change Queue Channel", value="change_queue_channel"),
                         SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
+                        SelectOption(emoji=f'{match_logging[0]}', label=f"{team_cap_vc[1]} Match Logging", value="match_logging"),
                         SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
                         SelectOption(emoji=f'{picking_phase[0]}', label=f"{picking_phase[1]} Team Picking Phase", value="picking_phase"),
                         SelectOption(emoji=f'{team_cap_vc[0]}', label=f"{team_cap_vc[1]} Team Captain Voice Channels", value="team_cap_vc")
@@ -252,6 +261,19 @@ class Settings(commands.Cog):
 
                     cur.execute(f"UPDATE settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id}"); db.commit()
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the loss elo to **{c.content}**", color=65535), delete_after=2)
+
+        # // MATCH LOGGING
+        if res.values[0] == "match_logging":
+            if res.author.guild_permissions.administrator:
+                with sqlite3.connect('main.db', timeout=60) as db:
+                    cur = db.cursor()
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=65535))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+
+                    channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                    cur.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the match log channel to **{channel.mention}**", color=65535), delete_after=2)
+
 
 
 def setup(client):
