@@ -85,8 +85,8 @@ class Elo(commands.Cog):
                 for row in cur.execute(f'SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}'):
                     embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=65535)
                     embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=user.avatar_url)
-                return await ctx.send(embed=embed)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
+                return await ctx.channel.send(embed=embed)
+            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
 
 
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
@@ -123,8 +123,8 @@ class Elo(commands.Cog):
                                     await self._loss(ctx, ctx.guild.get_member(int(user)))
                                 await self._loss(ctx, ctx.guild.get_member(int(row[5])))
                             return await self._match(ctx, match_id)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
+                        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
+                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
             # // CANCELLING AN ONGOING MATCH
             if action == "cancel":
@@ -134,8 +134,8 @@ class Elo(commands.Cog):
                             cur.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                             db.commit()
                             return await self._match(ctx, match_id)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
+                        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
+                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
             # // SHOWING A LOGGED MATCH
             if action == "show":
@@ -185,8 +185,8 @@ class Elo(commands.Cog):
                                         cur.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
                                         db.commit()
                             return await self._match(ctx, match_id)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
+                        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=65535))
+                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=65535))
 
 
     # // SET AN USERS ELO COMMAND
@@ -204,7 +204,7 @@ class Elo(commands.Cog):
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except: pass
                 return await self._stats(ctx, user)
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // SET AN USERS WINS COMMAND
     # /////////////////////////////////////////
@@ -221,7 +221,7 @@ class Elo(commands.Cog):
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except: pass
                 return await self._stats(ctx, user)
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // SET AN USERS LOSSES COMMAND
     # /////////////////////////////////////////
@@ -238,7 +238,7 @@ class Elo(commands.Cog):
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except: pass
                 return await self._stats(ctx, user)
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // SHOW THE LAST MATCH PLAYED COMMAND
     # /////////////////////////////////////////
@@ -287,9 +287,9 @@ class Elo(commands.Cog):
                         cur.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         db.commit()
                     else:
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found"))
-                    return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
+                        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found"))
+                    return await ctx.channel.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
+                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
 
     # // CHANGE YOUR USERNAME COMMAND
     # /////////////////////////////////////////
@@ -303,7 +303,7 @@ class Elo(commands.Cog):
                 try:
                     await ctx.author.edit(nick=f"{row[2]} [{row[3]}]")
                 except Exception: pass
-            return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
 
     # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
     # ////////////////////////////////////////////
@@ -319,8 +319,8 @@ class Elo(commands.Cog):
                     try:
                         await user.edit(nick=f"{row[2]} [{row[3]}]")
                     except Exception: pass
-                return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
+                return await ctx.channel.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
     
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
@@ -337,9 +337,9 @@ class Elo(commands.Cog):
                             await ctx.author.add_roles(ctx.guild.get_role(row[1]))
                             await ctx.author.edit(nick=f"{name} [0]")
                         except Exception: pass
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=65535))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
+                        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
+                    return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
     
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////
@@ -351,8 +351,8 @@ class Elo(commands.Cog):
             if await self._check_user(ctx, user, cur):
                 cur.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
                 db.commit()
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=65535))
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=65535))
+                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=65535))
 
     # // GIVES AN USER A WIN COMMAND
     # /////////////////////////////////////////
@@ -393,8 +393,8 @@ class Elo(commands.Cog):
                 cur.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 cur.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 db.commit()
-                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=65535))
-            return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=65535))
+                return await ctx.channel.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=65535))
     
     # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
     # /////////////////////////////////////////
@@ -410,14 +410,14 @@ class Elo(commands.Cog):
                 names += f'**{postion+1}:** {user.mention} [**{users[user]}**]\n'
                 if postion+1 > 19:
                     break
-            await ctx.send(embed=discord.Embed(title=f"Leaderboard", description=names, color=65535))
+            await ctx.channel.send(embed=discord.Embed(title=f"Leaderboard", description=names, color=65535))
 
 
     # // BUTTON CLICK LISTENER
     # /////////////////////////////////////////
     @commands.Cog.listener()
     async def on_button_click(self, res):
-        if res.component.id == 'blue_report' or res.component.id == 'orange_report' or 'match_cancel':
+        if res.component.id == 'blue_report' or res.component.id == 'orange_report' or res.component.id == 'match_cancel':
             if res.author.guild_permissions.manage_messages:
                 with sqlite3.connect('main.db', timeout=60) as db:
                     cur = db.cursor()

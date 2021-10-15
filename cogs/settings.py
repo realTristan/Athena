@@ -94,7 +94,7 @@ class Settings(commands.Cog):
         with sqlite3.connect('main.db', timeout=60) as db:
             cur = db.cursor()
             for row in cur.execute(f'SELECT * FROM maps WHERE guild_id = {ctx.guild.id}'):
-                return await ctx.send(embed=discord.Embed(title="Maps", description=str(row[1]).replace(",", "\n"), color=65535))
+                return await ctx.channel.send(embed=discord.Embed(title="Maps", description=str(row[1]).replace(",", "\n"), color=65535))
 
     # // SET THE REGISTER ROLE COMMAND
     # /////////////////////////////////////////
@@ -109,7 +109,7 @@ class Settings(commands.Cog):
             else:
                 cur.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
                 db.commit()
-            return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=65535), delete_after=2)
+            return await ctx.channel.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=65535), delete_after=2)
 
     # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
@@ -122,7 +122,7 @@ class Settings(commands.Cog):
         team_cap_vc = await self._emojis(ctx, "team_cap_vc")
         match_logging = await self._emojis(ctx, "match_logging")
 
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=65535),
+        await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=65535),
             components=[
                 Select(
                     placeholder="View Settings",
@@ -131,6 +131,7 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'🔵', label="Remove Map", value="remove_map"),
                         SelectOption(emoji=f'🔵', label="Change Elo Per Win", value="change_win_elo"),
                         SelectOption(emoji=f'🔵', label="Change Elo Per Loss", value="change_loss_elo"),
+                        SelectOption(emoji=f'🔵', label="Create Queue Embed", value="queue_embed"),
                         SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                         SelectOption(emoji=f'🔵', label="Change Queue Channel", value="change_queue_channel"),
                         SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
@@ -274,7 +275,12 @@ class Settings(commands.Cog):
                     cur.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}"); db.commit()
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the match log channel to **{channel.mention}**", color=65535), delete_after=2)
 
-
+        # // QUEUE EMBED
+        if res.values[0] == "queue_embed":
+            await res.channel.send(embed=discord.Embed(title=f'[0/10] Queue', description='None', color=65535), 
+            components=[[
+                Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
+                Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
 
 def setup(client):
     client.add_cog(Settings(client))
