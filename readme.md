@@ -1,8 +1,7 @@
 # Discord ELO Bot JSON
 > - Bot Code:
 - MySQL Database
-- Fast
-- Clean
+- Fast and Clean
 
 > - Bot Settings:
 - Match Logging with Easy Match Report Buttons
