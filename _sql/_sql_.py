@@ -54,13 +54,23 @@ class SQL():
             return True # // Does exist
 
 
-    # // RETURNS A LIST FROM THE SELECTED TABLE
-    # ///////////////////////////////////////////
+    # // RETURNS A SINGLE LIST FROM THE SELECTED TABLE
+    # /////////////////////////////////////////////////
     def select(self, command):
         with closing(db.cursor(buffered=True)) as cur:
             if self.exists(command):
                 cur.execute(command)
                 return list(cur.fetchall()[0])
+            return None
+
+
+    # // RETURNS MULTIPLE LISTS FROM THE SELECTED TABLE
+    # ///////////////////////////////////////////////////
+    def select_all(self, command):
+        with closing(db.cursor(buffered=True)) as cur:
+            if self.exists(command):
+                cur.execute(command)
+                return list(cur.fetchall())
             return None
 
 

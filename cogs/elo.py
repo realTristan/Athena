@@ -314,7 +314,7 @@ class Elo(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):
         if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            SQL.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id};")
+            SQL.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=65535))
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=65535))
 
@@ -362,14 +362,16 @@ class Elo(commands.Cog):
     @commands.command(aliases=["lb"])
     async def leaderboard(self, ctx):
         users={}; names = ""
-        row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC;")
-        users[ctx.guild.get_member(row[1])] = row[3]
+        rows = SQL.select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
+        for row in rows:
+            users[ctx.guild.get_member(list(row)[1])] = list(row)[3]
 
         for postion, user in enumerate(users):
             names += f'**{postion+1}:** {user.mention} [**{users[user]}**]\n'
             if postion+1 > 19:
                 break
         await ctx.channel.send(embed=discord.Embed(title=f"Leaderboard", description=names, color=65535))
+        
 
 
     # // BUTTON CLICK LISTENER
