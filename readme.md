@@ -1,6 +1,4 @@
 # Discord ELO Bot JSON
-> This bot has all the commands from the ELO Discord Bot
-
 > - Settings:
 - Match Logging and Match Report Buttons
 - Queue Embed with Join and Leave Buttons
