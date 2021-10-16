@@ -1,5 +1,10 @@
 # Discord ELO Bot JSON
-> - Settings:
+> - Bot Code:
+- MySQL Database
+- Fast
+- Clean
+
+> - Bot Settings:
 - Match Logging with Easy Match Report Buttons
 - Queue Embed with Join and Leave Buttons
 - Enable/Disable Team Captain Voice Channels
@@ -8,7 +13,7 @@
 - Set Queue/Register Channels
 
 
-> - Commands:
+> - Bot Commands:
 - Type =settings to view the settings panel and setup the bot
 
 - Type =help to show a list of commands
