@@ -42,7 +42,8 @@ class Elo(commands.Cog):
                 
             try: 
                 await user.edit(nick=f"{row[2]} [{row[3]}]")
-            except Exception: pass
+            except Exception as e:
+                print(e)
 
             return await self._del_vcs(ctx, user)
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
@@ -59,7 +60,8 @@ class Elo(commands.Cog):
                 
             try: 
                 await user.edit(nick=f"{row[2]} [{row[3]}]")
-            except Exception: pass
+            except Exception as e:
+                print(e)
 
             return await self._del_vcs(ctx, user)
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
@@ -196,7 +198,8 @@ class Elo(commands.Cog):
             
             try:
                 await user.edit(nick=f"{row[2]} [{row[3]}]")
-            except Exception: pass
+            except Exception as e:
+                print(e)
             
             return await self._stats(ctx, user)
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
@@ -274,7 +277,8 @@ class Elo(commands.Cog):
             row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
             try:
                 await ctx.author.edit(nick=f"{row[2]} [{row[3]}]")
-            except Exception: pass
+            except Exception as e:
+                print(e)
             return await ctx.channel.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=65535))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=65535))
 
@@ -288,7 +292,8 @@ class Elo(commands.Cog):
             row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             try:
                 await user.edit(nick=f"{row[2]} [{row[3]}]")
-            except Exception: pass
+            except Exception as e:
+                print(e)
             return await ctx.channel.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=65535))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=65535))
     
@@ -303,7 +308,8 @@ class Elo(commands.Cog):
                 try:
                     await ctx.author.add_roles(ctx.guild.get_role(row[1]))
                     await ctx.author.edit(nick=f"{name} [0]")
-                except Exception: pass
+                except Exception as e:
+                    print(e)
                 return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=65535))
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=65535))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=65535))
