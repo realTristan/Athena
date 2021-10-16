@@ -188,7 +188,7 @@ class Queue(commands.Cog):
                                 if len(self.data[ctx.guild.id]["queue"]) == 10:
                                     await self._start(ctx)
                                     return await self._embeds(ctx)
-                                return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535), delete_after=3)
+                                return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
                             return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
                         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
                     return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} join the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
@@ -205,7 +205,7 @@ class Queue(commands.Cog):
                 if self.data[ctx.guild.id]["state"] == "queue":
                     if user in self.data[ctx.guild.id]["queue"]:
                         self.data[ctx.guild.id]["queue"].remove(user)
-                        return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has left the queue", color=65535), delete_after=3)
+                        return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has left the queue", color=65535))
                     return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=65535))
                 return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} leave the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
