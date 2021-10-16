@@ -41,7 +41,7 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 
             try: 
-                await user.edit(nick=f"{row[2]} [{row[3]}]")
+                await user.edit(nick=f"{row[2]} [{row[3]+settings[7]}]")
             except Exception as e:
                 print(e)
 
@@ -59,7 +59,7 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 
             try: 
-                await user.edit(nick=f"{row[2]} [{row[3]}]")
+                await user.edit(nick=f"{row[2]} [{row[3]-settings[8]}]")
             except Exception as e:
                 print(e)
 
@@ -197,7 +197,7 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             
             try:
-                await user.edit(nick=f"{row[2]} [{row[3]}]")
+                await user.edit(nick=f"{row[2]} [{amount}]")
             except Exception as e:
                 print(e)
             
