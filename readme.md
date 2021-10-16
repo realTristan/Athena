@@ -1,6 +1,16 @@
 # Discord ELO Bot JSON
 > This bot has all the commands from the ELO Discord Bot
 
+> - Settings:
+- Match Logging and Match Report Buttons
+- Queue Embed with Join and Leave Buttons
+- Enable/Disable Team Captain Voice Channels
+- Enable/Disable Map Picking Phase
+- Enable/Disable Team Picking Phase
+- Set Queue/Register Channels
+
+
+> - Commands:
 - Type =settings to view the settings panel and setup the bot
 
 - Type =help to show a list of commands
