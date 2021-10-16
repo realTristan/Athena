@@ -1,6 +1,6 @@
 # Discord ELO Bot JSON
 > - Settings:
-- Match Logging and Match Report Buttons
+- Match Logging with Easy Match Report Buttons
 - Queue Embed with Join and Leave Buttons
 - Enable/Disable Team Captain Voice Channels
 - Enable/Disable Map Picking Phase
