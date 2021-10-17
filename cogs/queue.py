@@ -74,6 +74,8 @@ class Queue(commands.Cog):
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
             count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+            if count is None:
+                count=0
 
             embed=discord.Embed(title=f"Match #{len(count)+1}", description=f"**Map:** {self.data[ctx.guild.id]['map']}", color=65535)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
@@ -125,6 +127,8 @@ class Queue(commands.Cog):
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id]['blue_team'])
 
         count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+        if count is None:
+            count=0
         SQL.execute(f"""INSERT INTO matches (guild_id, match_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {len(count)+1}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
 
     # // WHEN QUEUE REACHES 10 PEOPLE FUNCTION
@@ -139,7 +143,7 @@ class Queue(commands.Cog):
             self.data[ctx.guild.id]["orange_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["orange_cap"])
             self.data[ctx.guild.id]["pick_logic"] = [
                 self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["blue_cap"],
-                self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"]]
+                self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["blue_cap"]]
         else: 
             # // PICK PHASE DISABLED
             # // CREATING TEAM CAPTAINS
@@ -235,6 +239,10 @@ class Queue(commands.Cog):
                         self.data[ctx.guild.id]["orange_team"].append(user)
                         self.data[ctx.guild.id]["queue"].remove(user)
                     await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=65535))
+
+                    if len(self.data[ctx.guild.id]["queue"]) == 1:
+                        self.data[ctx.guild.id]["orange_team"].append(user)
+                        self.data[ctx.guild.id]["queue"].remove(user)
                     
                     if len(self.data[ctx.guild.id]["queue"]) == 0:
                         row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
