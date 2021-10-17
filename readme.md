@@ -17,6 +17,8 @@
 
 - Type =help to show a list of commands
 
+- Type =rollback (user id) to undo all matches containing this user (cheaters)
+
 - Type =j to join the current queue
 
 - Type =l to leave the current queue
