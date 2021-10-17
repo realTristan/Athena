@@ -25,9 +25,6 @@ class Elo(commands.Cog):
         await category.delete()
 
 
-
-
-
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
     async def _clean(self, user):
