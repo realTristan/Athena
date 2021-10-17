@@ -278,7 +278,7 @@ class Elo(commands.Cog):
             # // REPLACE USER FROM ORANGE TEAM
             elif str(user1.id) in orange_team:
                 orange_team.remove(str(user1.id))
-                orange_team.append(str(user1.id))
+                orange_team.append(str(user2.id))
                 SQL.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
             # // REPLACE USER FROM BLUE TEAM
