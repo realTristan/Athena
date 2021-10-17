@@ -75,7 +75,7 @@ class Queue(commands.Cog):
         if self.data[ctx.guild.id]["state"] == "final":
             count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             if count is None:
-                count=0
+                count=[]
 
             embed=discord.Embed(title=f"Match #{len(count)+1}", description=f"**Map:** {self.data[ctx.guild.id]['map']}", color=65535)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
@@ -114,11 +114,13 @@ class Queue(commands.Cog):
             await blue_vc.set_permissions(ctx.guild.default_role, connect=False)
             for user in self.data[ctx.guild.id]["blue_team"]:
                 await blue_vc.set_permissions(user, connect=True)
+            await blue_vc.set_permissions(self.data[ctx.guild.id]["blue_cap"], connect=True)
 
             orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {self.data[ctx.guild.id]['orange_cap'].name}", category=category)
             await orange_vc.set_permissions(ctx.guild.default_role, connect=False)
             for user in self.data[ctx.guild.id]["orange_team"]:
                 await orange_vc.set_permissions(user, connect=True)
+            await orange_vc.set_permissions(self.data[ctx.guild.id]["orange_cap"], connect=True)
 
     # // MATCH LOGGING FUNCTION
     # /////////////////////////////////////////
@@ -128,7 +130,7 @@ class Queue(commands.Cog):
 
         count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         if count is None:
-            count=0
+            count=[]
         SQL.execute(f"""INSERT INTO matches (guild_id, match_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {len(count)+1}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
 
     # // WHEN QUEUE REACHES 10 PEOPLE FUNCTION
@@ -159,13 +161,13 @@ class Queue(commands.Cog):
                 _user = random.choice(self.data[ctx.guild.id]["queue"])
                 self.data[ctx.guild.id]['blue_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
             
-            # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
-            if row[2] == "true":
-                self.data[ctx.guild.id]["state"] = "maps"
-            else:
-                _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
-                self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
-                self.data[ctx.guild.id]["state"] = "final"
+        # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
+        if row[2] == "true":
+            self.data[ctx.guild.id]["state"] = "maps"
+        else:
+            _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+            self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
+            self.data[ctx.guild.id]["state"] = "final"
 
     # // CHECK IF THE USER IS BANNED FUNCTION
     # /////////////////////////////////////////
@@ -241,8 +243,8 @@ class Queue(commands.Cog):
                     await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=65535))
 
                     if len(self.data[ctx.guild.id]["queue"]) == 1:
-                        self.data[ctx.guild.id]["orange_team"].append(user)
-                        self.data[ctx.guild.id]["queue"].remove(user)
+                        self.data[ctx.guild.id]["orange_team"].append(self.data[ctx.guild.id]["queue"][0])
+                        self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["queue"][0])
                     
                     if len(self.data[ctx.guild.id]["queue"]) == 0:
                         row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
