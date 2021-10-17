@@ -197,13 +197,13 @@ class Queue(commands.Cog):
                 if await self._ban_check(ctx, user):
                     if row[5] == 0 or ctx.message.channel.id == row[5]:
                         if self.data[ctx.guild.id]["state"] == "queue":
-                            #if not user in self.data[ctx.guild.id]["queue"]:
+                            if not user in self.data[ctx.guild.id]["queue"]:
                                 self.data[ctx.guild.id]["queue"].append(user)
                                 if len(self.data[ctx.guild.id]["queue"]) == 10:
                                     await self._start(ctx)
                                     return await self._embeds(ctx)
                                 return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
-                            #return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
+                            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
                         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
                     return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=65535))
                 return False
