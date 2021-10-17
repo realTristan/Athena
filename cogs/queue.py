@@ -86,7 +86,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
 
             await self._match(ctx)
-            await self._team_vc(ctx)
+            await self._team_channels(ctx, len(count)+1)
             await self._reset(ctx)
 
             row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
@@ -103,24 +103,29 @@ class Queue(commands.Cog):
 
     # // CREATE TEAM VOICE CHANNELS FUNCTION
     # /////////////////////////////////////////
-    async def _team_vc(self, ctx):
+    async def _team_channels(self, ctx, match_id):
         row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         if row[3] == "true":
-            category = get(ctx.guild.categories, name='ten mans')
+            # // CREATE MATCH CATEGORY
+            category = get(ctx.guild.categories, name=f'Match #{match_id}')
             if not category:
-                category = await ctx.guild.create_category('ten mans')
+                category = await ctx.guild.create_category(f'Match #{match_id}')
+                await category.set_permissions(ctx.guild.default_role, connect=False)
 
-            blue_vc = await ctx.guild.create_voice_channel(f'🔹 Team {self.data[ctx.guild.id]["blue_cap"].name}', category=category)
-            await blue_vc.set_permissions(ctx.guild.default_role, connect=False)
-            for user in self.data[ctx.guild.id]["blue_team"]:
-                await blue_vc.set_permissions(user, connect=True)
-            await blue_vc.set_permissions(self.data[ctx.guild.id]["blue_cap"], connect=True)
+                # // CREATE MATCH TEXT CHANNEL
+                await ctx.guild.create_text_channel(f"match-{match_id}", sync_permissions=True)
 
-            orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {self.data[ctx.guild.id]['orange_cap'].name}", category=category)
-            await orange_vc.set_permissions(ctx.guild.default_role, connect=False)
-            for user in self.data[ctx.guild.id]["orange_team"]:
-                await orange_vc.set_permissions(user, connect=True)
-            await orange_vc.set_permissions(self.data[ctx.guild.id]["orange_cap"], connect=True)
+                # // CREATE BLUE TEAM VOICE CHANNEL
+                blue_vc = await ctx.guild.create_voice_channel(f'🔹 Team {self.data[ctx.guild.id]["blue_cap"].name}', category=category)
+                for user in self.data[ctx.guild.id]["blue_team"]:
+                    await blue_vc.set_permissions(user, connect=True)
+                await blue_vc.set_permissions(self.data[ctx.guild.id]["blue_cap"], connect=True)
+
+                # // CREATE ORANGE TEAM VOICE CHANNEL
+                orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {self.data[ctx.guild.id]['orange_cap'].name}", category=category)
+                for user in self.data[ctx.guild.id]["orange_team"]:
+                    await orange_vc.set_permissions(user, connect=True)
+                await orange_vc.set_permissions(self.data[ctx.guild.id]["orange_cap"], connect=True)
 
     # // MATCH LOGGING FUNCTION
     # /////////////////////////////////////////
