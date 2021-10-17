@@ -12,7 +12,7 @@ class Settings(commands.Cog):
     # /////////////////////////////////////////
     async def _emojis(self, ctx, option):
         if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_cap_vcs, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categorys, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
 
         row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         # // MAP PICKING PHASE
@@ -22,7 +22,7 @@ class Settings(commands.Cog):
             return ["🔴", "Enable"]
 
         # // TEAM CAPTAIN VOICE CHANNELS
-        if option == "team_cap_vc":
+        if option == "team_category":
             if row[3] == "true":
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
@@ -92,7 +92,7 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
         if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_cap_vcs, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categorys, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
         else:
             SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
         return await ctx.channel.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=65535), delete_after=2)
@@ -105,7 +105,7 @@ class Settings(commands.Cog):
         await ctx.message.delete()
         picking_phase = await self._emojis(ctx, "picking_phase")
         map_pick_phase = await self._emojis(ctx, "map_pick_phase")
-        team_cap_vc = await self._emojis(ctx, "team_cap_vc")
+        team_category = await self._emojis(ctx, "team_category")
         match_logging = await self._emojis(ctx, "match_logging")
 
         await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=65535),
@@ -122,9 +122,9 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'🔵', label="Change Queue Channel", value="change_queue_channel"),
                         SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
                         SelectOption(emoji=f'{match_logging[0]}', label=f"{match_logging[1]} Match Logging", value="match_logging"),
+                        SelectOption(emoji=f'{team_category[0]}', label=f"{team_category[1]} Match Categories", value="team_category"),
                         SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
-                        SelectOption(emoji=f'{picking_phase[0]}', label=f"{picking_phase[1]} Team Picking Phase", value="picking_phase"),
-                        SelectOption(emoji=f'{team_cap_vc[0]}', label=f"{team_cap_vc[1]} Team Captain Voice Channels", value="team_cap_vc")
+                        SelectOption(emoji=f'{picking_phase[0]}', label=f"{picking_phase[1]} Team Picking Phase", value="picking_phase")
                     ])])
 
     # // SELECT MENU LISTENER
@@ -158,14 +158,14 @@ class Settings(commands.Cog):
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=65535), delete_after=2)
 
         # // TEAM CAPTAIN VOICE CHANNELS
-        if res.values[0] == 'team_cap_vc':
+        if res.values[0] == 'team_category':
             if res.author.guild_permissions.administrator:
                 row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[3] == "false":
-                    SQL.execute(f"UPDATE settings SET team_cap_vcs = 'true' WHERE guild_id = {res.guild.id}")
+                    SQL.execute(f"UPDATE settings SET team_categorys = 'true' WHERE guild_id = {res.guild.id}")
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Captain Voice Channels**", color=65535), delete_after=2)
 
-                SQL.execute(f"UPDATE settings SET team_cap_vcs = 'false' WHERE guild_id = {res.guild.id}")
+                SQL.execute(f"UPDATE settings SET team_categorys = 'false' WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Captain Voice Channels**", color=65535), delete_after=2)
 
         # // TEAM CAPTAINS
