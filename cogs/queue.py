@@ -73,9 +73,9 @@ class Queue(commands.Cog):
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
-            count = SQL.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+            count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
 
-            embed=discord.Embed(title=f"Match #{count}", description=f"**Map:** {self.data[ctx.guild.id]['map']}", color=65535)
+            embed=discord.Embed(title=f"Match #{len(count)+1}", description=f"**Map:** {self.data[ctx.guild.id]['map']}", color=65535)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Captain", value=self.data[ctx.guild.id]["blue_cap"].mention)
@@ -124,8 +124,8 @@ class Queue(commands.Cog):
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id]['orange_team'])
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id]['blue_team'])
 
-        count = SQL.execute(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
-        SQL.execute(f"""INSERT INTO matches (guild_id, match_count, map, orange_cap, orange_team, blue_cap, blue_team, state, winners) VALUES ({ctx.guild.id}, {count+1}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
+        count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+        SQL.execute(f"""INSERT INTO matches (guild_id, match_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {len(count)+1}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
 
     # // WHEN QUEUE REACHES 10 PEOPLE FUNCTION
     # /////////////////////////////////////////
@@ -191,7 +191,7 @@ class Queue(commands.Cog):
                                 return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
                             return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
                         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
-                    return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} join the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
+                    return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=65535))
                 return False
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=65535))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
@@ -208,7 +208,7 @@ class Queue(commands.Cog):
                         return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has left the queue", color=65535))
                     return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=65535))
                 return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} leave the queue in {ctx.guild.get_channel(row[5]).mention}", color=65535))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=65535))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=16711680))
 
     
