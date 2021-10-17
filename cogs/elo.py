@@ -393,6 +393,7 @@ class Elo(commands.Cog):
     # // ROLLBACK EVERY MATCH AN USER WAS IN
     # //////////////////////////////////////////
     @commands.command(aliases=["rb"])
+    @commands.has_permissions(manage_messages=True)
     async def rollback(self, ctx, user:str):
         rows = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         for row in rows:
