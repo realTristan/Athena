@@ -122,6 +122,7 @@ class Queue(commands.Cog):
                     await blue_vc.set_permissions(user, connect=True)
                     await text_channel.set_permissions(user, view_channel=True)
                 await blue_vc.set_permissions(self.data[ctx.guild.id]["blue_cap"], connect=True)
+                await text_channel.set_permissions(self.data[ctx.guild.id]["blue_cap"], view_channel=True)
 
                 # // CREATE ORANGE TEAM VOICE CHANNEL
                 orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {self.data[ctx.guild.id]['orange_cap'].name}", category=category)
@@ -129,6 +130,7 @@ class Queue(commands.Cog):
                     await orange_vc.set_permissions(user, connect=True)
                     await text_channel.set_permissions(user, view_channel=True)
                 await orange_vc.set_permissions(self.data[ctx.guild.id]["orange_cap"], connect=True)
+                await text_channel.set_permissions(self.data[ctx.guild.id]["orange_cap"], view_channel=True)
 
     # // MATCH LOGGING FUNCTION
     # /////////////////////////////////////////
