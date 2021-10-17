@@ -53,8 +53,8 @@ class Elo(commands.Cog):
                 print(e)
             try:
                 return await self._delete_channels(ctx, user, list(args)[0])
-            except Exception:
-                return
+            except Exception as e:
+                print(e); return
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
     # // GIVE AN USER A LOSS FUNCTION
@@ -73,8 +73,8 @@ class Elo(commands.Cog):
                 print(e)
             try:
                 return await self._delete_channels(ctx, user, list(args)[0])
-            except Exception:
-                return
+            except Exception as e:
+                print(e); return
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
 
@@ -291,6 +291,27 @@ class Elo(commands.Cog):
             return await ctx.channel.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=65535))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=65535))
 
+    # SHOW THE PAST 10 MATCHES PLAYED
+    # /////////////////////////////////
+    @commands.command()
+    async def recent(self, ctx, *amount):
+        row = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+
+        if not amount:
+            amount = len(row)
+            if len(row) > 11:
+                amount = 11
+        else:
+            amount = list(amount)[0]
+
+        embed=discord.Embed(title=f"Recent Matches ┃ {ctx.guild.name}", color=65535)
+        for i in range(int(amount)):
+            try:
+                embed.add_field(name=f"Match #{row[-i-1][1]}", value=f"`{str(row[-i-1][7]).upper()}`")
+            except Exception as e:
+                print(e)
+        return await ctx.send(embed=embed)
+    
     # // CHANGE YOUR USERNAME COMMAND
     # /////////////////////////////////////////
     @commands.command()

@@ -25,6 +25,7 @@ class Help(commands.Cog):
     player_embed.add_field(name=' ‎\nLeaderboard', value='Show the ten man leaderboard\n(Usage: =lb)')
     player_embed.add_field(name='‏‏‎ ‎\nShow Last Match', value='Shows the last match played\n(Usage: =lm)')
     player_embed.add_field(name=' ‎\nMatch Show', value='Shows a match\n(Usage: =match show [match id]')
+    player_embed.add_field(name=' ‎\nRecent Matches', value='Shows recent matches\n(Usage: =recent [amount]')
 
     # // ADDING FIELDS TO MODERATOR EMBED
     moderator_embed.add_field(name=' ‎\nBan [Mod+]', value='Bans a player from the queue\n(Usage: =ban [@user] [length] [reason]')
@@ -42,6 +43,7 @@ class Help(commands.Cog):
     moderator_embed.add_field(name=' ‎\nMatch Report [Mod+]', value='Reports a match\n(Usage: =match report [match id] [orange/blue])')
     moderator_embed.add_field(name=' ‎\nMatch Cancel [Mod+]', value='Cancels a match\n(Usage: =match cancel [match id])')
     moderator_embed.add_field(name=' ‎\nMatch Undo [Mod+]', value='Undos a match\n(Usage: =match undo [match id])')
+    moderator_embed.add_field(name=' ‎\nMatch Rollback [Mod+]', value='Rollbacks every match with the user in it\n(Usage: =rb [user id])')
 
     # // ADDING FIELDS TO ADMINISTRATOR EMBED
     administrator_embed.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
