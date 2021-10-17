@@ -259,9 +259,12 @@ class Queue(commands.Cog):
                     if len(self.data[ctx.guild.id]["queue"]) == 0:
                         row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
 
-                        self.data[ctx.guild.id]["state"] = "final"
                         if row[2] == "true":
                             self.data[ctx.guild.id]["state"] = "maps"
+                        else:
+                            _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+                            self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
+                            self.data[ctx.guild.id]["state"] = "final"
                             
                     return await self._embeds(ctx)
                 return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=65535))
