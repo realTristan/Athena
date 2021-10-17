@@ -113,18 +113,21 @@ class Queue(commands.Cog):
                 await category.set_permissions(ctx.guild.default_role, connect=False)
 
                 # // CREATE MATCH TEXT CHANNEL
-                await ctx.guild.create_text_channel(f"match-{match_id}", sync_permissions=True)
+                text_channel = await ctx.guild.create_text_channel(f"match-{match_id}", category=category)
+                await text_channel.set_permissions(ctx.guild.default_role, view_channel=False)
 
                 # // CREATE BLUE TEAM VOICE CHANNEL
                 blue_vc = await ctx.guild.create_voice_channel(f'🔹 Team {self.data[ctx.guild.id]["blue_cap"].name}', category=category)
                 for user in self.data[ctx.guild.id]["blue_team"]:
                     await blue_vc.set_permissions(user, connect=True)
+                    await text_channel.set_permissions(user, view_channel=True)
                 await blue_vc.set_permissions(self.data[ctx.guild.id]["blue_cap"], connect=True)
 
                 # // CREATE ORANGE TEAM VOICE CHANNEL
                 orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {self.data[ctx.guild.id]['orange_cap'].name}", category=category)
                 for user in self.data[ctx.guild.id]["orange_team"]:
                     await orange_vc.set_permissions(user, connect=True)
+                    await text_channel.set_permissions(user, view_channel=True)
                 await orange_vc.set_permissions(self.data[ctx.guild.id]["orange_cap"], connect=True)
 
     # // MATCH LOGGING FUNCTION
@@ -166,13 +169,13 @@ class Queue(commands.Cog):
                 _user = random.choice(self.data[ctx.guild.id]["queue"])
                 self.data[ctx.guild.id]['blue_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
             
-        # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
-        if row[2] == "true":
-            self.data[ctx.guild.id]["state"] = "maps"
-        else:
-            _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
-            self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
-            self.data[ctx.guild.id]["state"] = "final"
+            # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
+            if row[2] == "true":
+                self.data[ctx.guild.id]["state"] = "maps"
+            else:
+                _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+                self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
+                self.data[ctx.guild.id]["state"] = "final"
 
     # // CHECK IF THE USER IS BANNED FUNCTION
     # /////////////////////////////////////////
@@ -194,13 +197,13 @@ class Queue(commands.Cog):
                 if await self._ban_check(ctx, user):
                     if row[5] == 0 or ctx.message.channel.id == row[5]:
                         if self.data[ctx.guild.id]["state"] == "queue":
-                            if not user in self.data[ctx.guild.id]["queue"]:
+                            #if not user in self.data[ctx.guild.id]["queue"]:
                                 self.data[ctx.guild.id]["queue"].append(user)
                                 if len(self.data[ctx.guild.id]["queue"]) == 10:
                                     await self._start(ctx)
                                     return await self._embeds(ctx)
                                 return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=65535))
-                            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
+                            #return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=65535))
                         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=65535))
                     return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=65535))
                 return False
