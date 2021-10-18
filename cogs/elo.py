@@ -436,6 +436,11 @@ class Elo(commands.Cog):
                 if user in orange_team or user in blue_team:
                     if user in orange_team:
                         if row[8] == "orange":
+                            '''
+                            REMOVE ORANGE WIN AND BLUE LOSS IF ORANGE TEAM WON WITH CHEATER ON THEIR TEAM
+                            IF THE CHEATER IS NOT ON THE ORANGE TEAM AND THE ORANGE TEAM WON
+                            THEN THE MATCH STILL COUNTS (RAINBOW SIX SIEGE ROLLBACK SYSTEM)
+                            '''
                             await self._undo_orange_win(ctx, blue_team, orange_team, row[1])
                     
                     if user in blue_team:
@@ -474,12 +479,12 @@ class Elo(commands.Cog):
 
                     # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                     for user in blue_team:
-                        member=res.guild.get_member(await self._clean(user))
+                        member = res.guild.get_member(await self._clean(user))
                         await self._win(res, member, match_id)
 
                     # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
                     for user in orange_team:
-                        member=res.guild.get_member(await self._clean(user))
+                        member = res.guild.get_member(await self._clean(user))
                         await self._loss(res, member, match_id)
 
                 if res.component.id == 'orange_report':
@@ -488,11 +493,11 @@ class Elo(commands.Cog):
                     SQL.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                     for user in blue_team:
-                        member=res.guild.get_member(await self._clean(user))
+                        member = res.guild.get_member(await self._clean(user))
                         await self._loss(res, member, match_id)
 
                     for user in orange_team:
-                        member=res.guild.get_member(await self._clean(user))
+                        member = res.guild.get_member(await self._clean(user))
                         await self._win(res, member, match_id)
 
                 await res.message.delete()
