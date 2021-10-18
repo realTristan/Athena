@@ -427,6 +427,12 @@ class Elo(commands.Cog):
     @commands.command(aliases=["rb"])
     @commands.has_permissions(manage_messages=True)
     async def rollback(self, ctx, user:str):
+        '''
+        REMOVE THE WIN IF CHEATER IS ON THE WINNING TEAM THEN REMOVE LOSS FOR OPPOSITE TEAM
+        IF THE CHEATER IS NOT ON THE WINNING TEAM, THEN THE MATCH STILL COUNTS 
+        (RAINBOW SIX SIEGE ROLLBACK SYSTEM)
+        '''
+
         rows = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         for row in rows:
             if "ongoing" not in row[7] and "rollbacked" not in row[7]:
@@ -436,11 +442,6 @@ class Elo(commands.Cog):
                 if user in orange_team or user in blue_team:
                     if user in orange_team:
                         if row[8] == "orange":
-                            '''
-                            REMOVE ORANGE WIN AND BLUE LOSS IF ORANGE TEAM WON WITH CHEATER ON THEIR TEAM
-                            IF THE CHEATER IS NOT ON THE ORANGE TEAM AND THE ORANGE TEAM WON
-                            THEN THE MATCH STILL COUNTS (RAINBOW SIX SIEGE ROLLBACK SYSTEM)
-                            '''
                             await self._undo_orange_win(ctx, blue_team, orange_team, row[1])
                     
                     if user in blue_team:
