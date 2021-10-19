@@ -15,7 +15,7 @@ async def on_command_error(ctx, error):
         return
     if isinstance(error, commands.MissingPermissions):
         return
-    await ctx.send(embed=discord.Embed(title="Internal Error", description=error, color=9961472))
+    raise error
     
 @client.event
 async def on_member_remove(member):
