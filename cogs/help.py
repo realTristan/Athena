@@ -8,9 +8,9 @@ class Help(commands.Cog):
         self.client = client
 
     # // CREATING EMBED OBJECTS
-    player_embed=discord.Embed(title='Player Commands', color=65535, timestamp=datetime.utcnow())
-    moderator_embed=discord.Embed(title='Moderator Commands', color=65535, timestamp=datetime.utcnow())
-    administrator_embed=discord.Embed(title='Administrator Commands', color=65535, timestamp=datetime.utcnow())
+    player_embed=discord.Embed(title='Player Commands', color=33023, timestamp=datetime.utcnow())
+    moderator_embed=discord.Embed(title='Moderator Commands', color=33023, timestamp=datetime.utcnow())
+    administrator_embed=discord.Embed(title='Administrator Commands', color=33023, timestamp=datetime.utcnow())
 
     # // ADDING FIELDS TO PLAYERS EMBED
     player_embed.add_field(name='‏‏‎ ‎\nJoin', value='Join the current queue\n(Usage: =j)')
@@ -59,7 +59,7 @@ class Help(commands.Cog):
     @commands.command()
     async def help(self, ctx):
         await ctx.message.delete()
-        await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=65535),
+        await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=33023),
             components=[
                 Select(
                     placeholder="View Commands",
