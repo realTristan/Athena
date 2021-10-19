@@ -342,7 +342,7 @@ class Elo(commands.Cog):
                 except Exception as e:
                     print(e)
                 return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=33023))
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} register in {ctx.guild.get_channel(row[6]).mention}", color=33023))
+            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[6]).mention}", color=33023))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=9961472))
     
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND

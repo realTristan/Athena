@@ -19,8 +19,8 @@ class Queue(commands.Cog):
     # // CHECK IF GUILD IS IN "self.data" FUNCTION
     # /////////////////////////////////////////
     async def _data_check(self, ctx):
-        if SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_cap_vcs, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+        if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
 
         if ctx.guild.id not in self.data:
             await self._reset(ctx)
@@ -196,8 +196,8 @@ class Queue(commands.Cog):
     async def _join(self, ctx, user):
         if await self._data_check(ctx):
             if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-                row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                 if await self._ban_check(ctx, user):
+                    row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                     if row[5] == 0 or ctx.message.channel.id == row[5]:
                         if self.data[ctx.guild.id]["state"] == "queue":
                             if not user in self.data[ctx.guild.id]["queue"]:
