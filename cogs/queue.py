@@ -34,7 +34,7 @@ class Queue(commands.Cog):
             current_queue = "None"
             if len(self.data[ctx.guild.id]["queue"]) != 0:
                 current_queue = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["queue"])
-            return await ctx.channel.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=33023))
+            return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=33023))
 
         # // TEAM PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "pick":
@@ -54,8 +54,8 @@ class Queue(commands.Cog):
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value=blue_team)
             embed.add_field(name="Available Players", value="\n".join(str(e.mention) for e in self.data[ctx.guild.id]["queue"]))
-            await ctx.channel.send(embed=embed)
-            return await ctx.channel.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
+            await ctx.send(embed=embed)
+            return await ctx.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
 
         # // MAP PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "maps":
@@ -68,8 +68,8 @@ class Queue(commands.Cog):
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
             embed.add_field(name="Available Maps", value=str(row[1]).replace(",", "\n"))
-            await ctx.channel.send(embed=embed)
-            return await ctx.channel.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
+            await ctx.send(embed=embed)
+            return await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
@@ -99,7 +99,7 @@ class Queue(commands.Cog):
                         Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
                         Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
                     ]])
-            return await ctx.channel.send(embed=embed)
+            return await ctx.send(embed=embed)
 
     # // CREATE TEAM VOICE CHANNELS FUNCTION
     # /////////////////////////////////////////
@@ -186,7 +186,7 @@ class Queue(commands.Cog):
         if SQL.exists(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
             row = SQL.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             if row[2] - time.time() > 0:
-                await ctx.channel.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=9961472))
+                await ctx.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=9961472))
                 return False
             SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         return True
@@ -205,13 +205,13 @@ class Queue(commands.Cog):
                                 if len(self.data[ctx.guild.id]["queue"]) == 10:
                                     await self._start(ctx)
                                     return await self._embeds(ctx)
-                                return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
-                            return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=33023))
-                        return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=33023))
-                    return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
+                                return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=33023))
+                        return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=33023))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
                 return False
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=33023))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=33023))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
 
     # // WHEN AN USER LEAVES THE QUEUE FUNCTION
     # /////////////////////////////////////////
@@ -222,11 +222,11 @@ class Queue(commands.Cog):
                 if self.data[ctx.guild.id]["state"] == "queue":
                     if user in self.data[ctx.guild.id]["queue"]:
                         self.data[ctx.guild.id]["queue"].remove(user)
-                        return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has left the queue", color=33023))
-                    return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=33023))
-                return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=33023))
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
+                        return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has left the queue", color=33023))
+                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=33023))
+                return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=33023))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
 
     
     # // FORCE START THE QUEUE COMMAND
@@ -251,7 +251,7 @@ class Queue(commands.Cog):
                     else:
                         self.data[ctx.guild.id]["orange_team"].append(user)
                         self.data[ctx.guild.id]["queue"].remove(user)
-                    await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
+                    await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
 
                     if len(self.data[ctx.guild.id]["queue"]) == 1:
                         self.data[ctx.guild.id]["orange_team"].append(self.data[ctx.guild.id]["queue"][0])
@@ -268,9 +268,9 @@ class Queue(commands.Cog):
                             self.data[ctx.guild.id]["state"] = "final"
                             
                     return await self._embeds(ctx)
-                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=33023))
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=33023))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=33023))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=33023))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
     
     # // PICK MAP TO PLAY (BLUE CAPTAIN) COMMAND
     # ///////////////////////////////////////////
@@ -284,10 +284,10 @@ class Queue(commands.Cog):
                         self.data[ctx.guild.id]["map"] = map
                         self.data[ctx.guild.id]["state"] = "final"
                         return await self._embeds(ctx)
-                    return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=33023))
-                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=33023))
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=33023))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=33023))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=33023))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=33023))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
     
     # // JOIN THE QUEUE COMMAND
     # /////////////////////////////////////////
@@ -319,7 +319,7 @@ class Queue(commands.Cog):
     async def queue(self, ctx):
         if await self._data_check(ctx):
             return await self._embeds(ctx)
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
     
     # // CLEAR THE CURRENT QUEUE COMMAND
     # /////////////////////////////////////////
@@ -328,8 +328,8 @@ class Queue(commands.Cog):
     async def clear(self, ctx):
         if await self._data_check(ctx):
             await self._reset(ctx)
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=33023))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=33023))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=9961472))
 
 
     # // BUTTON CLICK LISTENER

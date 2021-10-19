@@ -58,8 +58,7 @@ class Help(commands.Cog):
     # //////////////////////////////////////
     @commands.command()
     async def help(self, ctx):
-        await ctx.message.delete()
-        await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=33023),
+        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=33023),
             components=[
                 Select(
                     placeholder="View Commands",
