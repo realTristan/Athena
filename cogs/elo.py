@@ -27,18 +27,10 @@ class Elo(commands.Cog):
         except Exception as e:
             print(e)
 
-
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
     async def _clean(self, user):
         return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
-
-    # // CREATE SETTINGS TABLE FOR THE GUILD
-    # ///////////////////////////////////////////
-    async def _settings(self, ctx):
-        if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
-        return True
 
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
@@ -317,7 +309,7 @@ class Elo(commands.Cog):
             await self._user_edit(ctx, ctx.author, nick=f"{row[2]} [{row[3]}]")
 
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=33023))
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=9961472))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=33023))
 
     # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
     # ////////////////////////////////////////////
