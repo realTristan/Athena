@@ -346,7 +346,7 @@ class Elo(commands.Cog):
                     print(e)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=33023))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[6]).mention}", color=33023))
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=9961472))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=33023))
     
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////
