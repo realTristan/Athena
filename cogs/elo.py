@@ -27,6 +27,18 @@ class Elo(commands.Cog):
         except Exception as e:
             print(e)
 
+    # // EDIT AN USERS NAME OR ROLE FUNCTION
+    # ////////////////////////////////////////
+    async def _user_edit(self, ctx, user, nick=None, role=None):
+        try:
+            if nick is not None:
+                await user.edit(nick=nick)
+
+            if role is not None:
+                await ctx.author.add_roles(role)
+        except Exception as e:
+            print(e)
+
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
     async def _clean(self, user):
@@ -198,17 +210,8 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=33023))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=9961472))
 
-
-    async def _user_edit(self, ctx, user, nick=None, role=None):
-        try:
-            if nick is not None:
-                await user.edit(nick=nick)
-
-            if role is not None:
-                await ctx.author.add_roles(role)
-        except Exception as e:
-            print(e)
-
+    # // SET PLAYERS STATS COMMAND
+    # /////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def set(self, ctx, action, user:discord.Member, amount:int):
@@ -223,8 +226,11 @@ class Elo(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=33023))
 
         # // SET A PLAYERS WINS
-        if action in ["wins","win"]:
-            pass
+        if action in ["wins", "win"]:
+            if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                SQL.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                return await self._stats(ctx, user)
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=33023))
 
         # // SET A PLAYERS LOSSES
         if action in ["losses", "lose", "loss"]:
@@ -232,18 +238,6 @@ class Elo(commands.Cog):
                 SQL.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 return await self._stats(ctx, user)
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=33023))
-
-
-    # // SET AN USERS WINS COMMAND
-    # /////////////////////////////////////////
-    @commands.command(aliases=["setwin"])
-    @commands.has_permissions(administrator=True)
-    async def setwins(self, ctx, user:discord.Member, amount:int):
-        if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            SQL.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            return await self._stats(ctx, user)
-        return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=33023))
-
 
     # // SHOW THE LAST MATCH PLAYED COMMAND
     # /////////////////////////////////////////

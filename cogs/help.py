@@ -48,9 +48,9 @@ class Help(commands.Cog):
     # // ADDING FIELDS TO ADMINISTRATOR EMBED
     administrator_embed.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
     administrator_embed.add_field(name=' ‎\nReset Stats [Admin+]', value='Reset an users stats\n(Usage: =match cancel [match id])')
-    administrator_embed.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =setelo [@user] [amount])')
-    administrator_embed.add_field(name=' ‎\nSet Wins [Admin+]', value='Sets an users wins\n(Usage: =setwins [@user] [amount])')
-    administrator_embed.add_field(name=' ‎\nSet Losses [Admin+]', value='Sets an users losses\n(Usage: =setloss [@user] [amount])')
+    administrator_embed.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =set elo [@user] [amount])')
+    administrator_embed.add_field(name=' ‎\nSet Wins [Admin+]', value='Sets an users wins\n(Usage: =set wins [@user] [amount])')
+    administrator_embed.add_field(name=' ‎\nSet Losses [Admin+]', value='Sets an users losses\n(Usage: =set loss [@user] [amount])')
     administrator_embed.add_field(name=' ‎\nSettings Menu [Admin+]', value='Open Settings Menu\n(Usage: =settings)')
 
 
