@@ -19,7 +19,7 @@ class Settings(commands.Cog):
             return ["🔴", "Enable"]
 
         # // MATCH CATEGORIES
-        if option == "team_category":
+        if option == "match_category":
             if row[3] == "true":
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
@@ -104,7 +104,7 @@ class Settings(commands.Cog):
             
         team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
         map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
-        team_category = await self._opt_status(ctx, "team_category")
+        match_category = await self._opt_status(ctx, "match_category")
         match_logging = await self._opt_status(ctx, "match_logging")
 
         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=33023),
@@ -121,7 +121,7 @@ class Settings(commands.Cog):
                         SelectOption(emoji=f'🔵', label="Change Queue Channel", value="change_queue_channel"),
                         SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
                         SelectOption(emoji=f'{match_logging[0]}', label=f"{match_logging[1]} Match Logging", value="match_logging"),
-                        SelectOption(emoji=f'{team_category[0]}', label=f"{team_category[1]} Match Categories", value="team_category"),
+                        SelectOption(emoji=f'{match_category[0]}', label=f"{match_category[1]} Match Categories", value="match_category"),
                         SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
                         SelectOption(emoji=f'{team_pick_phase[0]}', label=f"{team_pick_phase[1]} Team Picking Phase", value="team_pick_phase")
                     ])])
@@ -157,7 +157,7 @@ class Settings(commands.Cog):
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=33023))
 
         # // MATCH CATEGORIES
-        if res.values[0] == 'team_category':
+        if res.values[0] == 'match_category':
             if res.author.guild_permissions.administrator:
                 row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[3] == "false":
