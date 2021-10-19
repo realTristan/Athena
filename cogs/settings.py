@@ -10,7 +10,7 @@ class Settings(commands.Cog):
 
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    async def _emojis(self, ctx, option):
+    async def _opt_status(self, ctx, option):
         if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
             SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categorys, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
 
@@ -103,10 +103,10 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
         await ctx.message.delete()
-        picking_phase = await self._emojis(ctx, "picking_phase")
-        map_pick_phase = await self._emojis(ctx, "map_pick_phase")
-        team_category = await self._emojis(ctx, "team_category")
-        match_logging = await self._emojis(ctx, "match_logging")
+        picking_phase = await self._opt_status(ctx, "picking_phase")
+        map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
+        team_category = await self._opt_status(ctx, "team_category")
+        match_logging = await self._opt_status(ctx, "match_logging")
 
         await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=65535),
             components=[

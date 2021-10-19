@@ -30,13 +30,6 @@ class Elo(commands.Cog):
     async def _clean(self, user):
         return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
 
-    # // CHECK IF USER IS REGISTERED FUNCTION
-    # /////////////////////////////////////////
-    async def _check_user(self, ctx, user):
-        if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            return True # // User is registered
-        return False # // User is not registered
-
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
     async def _win(self, ctx, user, *args):
@@ -235,7 +228,6 @@ class Elo(commands.Cog):
     async def setwins(self, ctx, user:discord.Member, amount:int):
         if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
             SQL.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            
             return await self._stats(ctx, user)
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
@@ -246,7 +238,6 @@ class Elo(commands.Cog):
     async def setlosses(self, ctx, user:discord.Member, amount:int):
         if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
             SQL.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-
             return await self._stats(ctx, user)
         return await ctx.channel.send(embed=discord.Embed(description=f"{user.mention} was not found", color=65535))
 
@@ -294,16 +285,12 @@ class Elo(commands.Cog):
     # SHOW THE PAST 10 MATCHES PLAYED
     # /////////////////////////////////
     @commands.command()
-    async def recent(self, ctx, *amount):
+    async def recent(self, ctx, *args):
         row = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
-
-        if not amount:
-            amount = len(row)
-            if len(row) > 11:
-                amount = 11
-        else:
-            amount = list(amount)[0]
-
+        amount = len(row)
+        if args:
+            amount = list(args)[0]
+        
         embed=discord.Embed(title=f"Recent Matches ┃ {ctx.guild.name}", color=65535)
         for i in range(int(amount)):
             try:
@@ -432,7 +419,6 @@ class Elo(commands.Cog):
         IF THE CHEATER IS NOT ON THE WINNING TEAM, THEN THE MATCH STILL COUNTS 
         (RAINBOW SIX SIEGE ROLLBACK SYSTEM)
         '''
-
         rows = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         for row in rows:
             if "ongoing" not in row[7] and "rollbacked" not in row[7]:
@@ -470,11 +456,9 @@ class Elo(commands.Cog):
                 orange_team.append(await self._clean(res.message.embeds[0].fields[0].value))
 
                 if res.component.id == "match_cancel":
-                    # // CHANGING MATCH STATUS
                     SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                 if res.component.id == 'blue_report':
-                    # // CHANGING MATCH STATUS AND ADDING WINNER
                     SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
                     SQL.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
@@ -489,7 +473,6 @@ class Elo(commands.Cog):
                         await self._loss(res, member, match_id)
 
                 if res.component.id == 'orange_report':
-                    # // CHANGING MATCH STATUS AND ADDING WINNER
                     SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
                     SQL.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
