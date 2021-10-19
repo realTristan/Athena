@@ -18,13 +18,13 @@ class Settings(commands.Cog):
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
 
-        # // TEAM CAPTAIN VOICE CHANNELS
+        # // MATCH CATEGORIES
         if option == "team_category":
             if row[3] == "true":
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
 
-        # // TEAM CAPTAINS
+        # // TEAM PICKING PHASE
         if option == "team_pick_phase":
             if row[4] == "true":
                 return ["🟢", "Disable"]
@@ -156,16 +156,16 @@ class Settings(commands.Cog):
                 SQL.execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=33023))
 
-        # // TEAM CAPTAIN VOICE CHANNELS
+        # // MATCH CATEGORIES
         if res.values[0] == 'team_category':
             if res.author.guild_permissions.administrator:
                 row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[3] == "false":
                     SQL.execute(f"UPDATE settings SET team_categories = 'true' WHERE guild_id = {res.guild.id}")
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Captain Voice Channels**", color=33023))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Categories**", color=33023))
 
                 SQL.execute(f"UPDATE settings SET team_categories = 'false' WHERE guild_id = {res.guild.id}")
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Captain Voice Channels**", color=33023))
+                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Categories**", color=33023))
 
         # // TEAM PICKING PHASE
         if res.values[0] == 'team_pick_phase':
