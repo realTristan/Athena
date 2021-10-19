@@ -42,7 +42,7 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET elo = {row[3]+settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             SQL.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             
-            await self._user_edit(ctx, user, nick=f"{row[2]} [{row[3]+settings[7]}]")
+            return await self._user_edit(ctx, user, nick=f"{row[2]} [{row[3]+settings[7]}]")
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=9961472))
 
     # // GIVE AN USER A LOSS FUNCTION
@@ -55,7 +55,7 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET elo = {row[3]-settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             SQL.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
-            await self._user_edit(ctx, ctx, row, user, nick=f"{row[2]} [{row[3]-settings[8]}]")
+            return await self._user_edit(ctx, ctx, row, user, nick=f"{row[2]} [{row[3]-settings[8]}]")
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=9961472))
 
 
