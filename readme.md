@@ -17,6 +17,9 @@
 - Type =help to show a list of commands
 - Type =rollback (user id) to undo all matches containing this user (cheaters)
 - Type =recent to view recent matches
+- Type =set elo (@user) (amount) to set an users elo
+- Type =set wins (@user) (amount) to set an users wins
+- Type =set losses (@user) (amount) to set an users losses
 - Type =j to join the current queue
 - Type =l to leave the current queue
 - Type =clear to clear the current queue
