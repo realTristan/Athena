@@ -99,6 +99,9 @@ class Settings(commands.Cog):
     @commands.command(aliases=["sets"])
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
+        if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+            
         team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
         map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
         team_category = await self._opt_status(ctx, "team_category")
