@@ -89,7 +89,7 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
         if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
         else:
             SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
         return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=33023))
@@ -100,7 +100,7 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
         if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
             
         team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
         map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
@@ -161,10 +161,10 @@ class Settings(commands.Cog):
             if res.author.guild_permissions.administrator:
                 row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[3] == "false":
-                    SQL.execute(f"UPDATE settings SET team_categories = 'true' WHERE guild_id = {res.guild.id}")
+                    SQL.execute(f"UPDATE settings SET match_categories = 'true' WHERE guild_id = {res.guild.id}")
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Categories**", color=33023))
 
-                SQL.execute(f"UPDATE settings SET team_categories = 'false' WHERE guild_id = {res.guild.id}")
+                SQL.execute(f"UPDATE settings SET match_categories = 'false' WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Categories**", color=33023))
 
         # // TEAM PICKING PHASE
