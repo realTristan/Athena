@@ -151,7 +151,7 @@ class Settings(commands.Cog):
 
                     channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                     SQL.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled match logging at **{channel.mention}**", color=33023))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=33023))
 
                 SQL.execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=33023))

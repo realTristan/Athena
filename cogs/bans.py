@@ -38,7 +38,7 @@ class Bans(commands.Cog):
     async def unban(self, ctx, user:discord.Member):
         if SQL.exists(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
             SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=65280))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=33023))
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not banned", color=33023))
 
 
