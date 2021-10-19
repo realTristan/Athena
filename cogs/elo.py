@@ -34,7 +34,7 @@ class Elo(commands.Cog):
 
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
-    async def _win(self, ctx, user, *args):
+    async def _win(self, ctx, user):
         if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
             settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -43,12 +43,11 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             
             await self._user_edit(ctx, user, nick=f"{row[2]} [{row[3]+settings[7]}]")
-            return await self._delete_channels(ctx, user, list(args)[0])
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=9961472))
 
     # // GIVE AN USER A LOSS FUNCTION
     # /////////////////////////////////////////
-    async def _loss(self, ctx, user, *args):
+    async def _loss(self, ctx, user):
         if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
             settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -57,7 +56,6 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
             await self._user_edit(ctx, ctx, row, user, nick=f"{row[2]} [{row[3]-settings[8]}]")
-            return await self._delete_channels(ctx, user, list(args)[0])
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=9961472))
 
 
@@ -134,23 +132,29 @@ class Elo(commands.Cog):
                     SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     SQL.execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
-                    if "blue" in list(args)[0]:
-                        for user in str(row[4]).split(","):
-                            await self._loss(ctx, ctx.guild.get_member(int(user)), match_id)
-                        await self._loss(ctx, ctx.guild.get_member(int(row[3])), match_id)
+                    orange_team = str(row[4]).split(",")
+                    orange_team.append(int(row[3]))
 
-                        for user in str(row[6]).split(","):
-                            await self._win(ctx, ctx.guild.get_member(int(user)), match_id)
-                        await self._win(ctx, ctx.guild.get_member(int(row[5])), match_id)
+                    blue_team = str(row[6]).split(",")
+                    blue_team.append(int(row[5]))
+
+                    if "blue" in list(args)[0]:
+                        for user in orange_team:
+                            await self._loss(ctx, ctx.guild.get_member(int(user)))
+                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
+
+                        for user in blue_team:
+                            await self._win(ctx, ctx.guild.get_member(int(user)))
+                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
 
                     if "orange" in list(args)[0]:
-                        for user in str(row[4]).split(","):
-                            await self._win(ctx, ctx.guild.get_member(int(user)), match_id)
-                        await self._win(ctx, ctx.guild.get_member(int(row[3])), match_id)
+                        for user in orange_team:
+                            await self._win(ctx, ctx.guild.get_member(int(user)))
+                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
 
-                        for user in str(row[6]).split(","):
-                            await self._loss(ctx, ctx.guild.get_member(int(user)), match_id)
-                        await self._loss(ctx, ctx.guild.get_member(int(row[5])), match_id)
+                        for user in blue_team:
+                            await self._loss(ctx, ctx.guild.get_member(int(user)))
+                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
 
                     return await self._match(ctx, match_id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=33023))
@@ -461,12 +465,14 @@ class Elo(commands.Cog):
                     # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                     for user in blue_team:
                         member = res.guild.get_member(await self._clean(user))
-                        await self._win(res.channel, member, match_id)
+                        await self._win(res.channel, res.guild.get_member(member))
+                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
 
                     # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
                     for user in orange_team:
                         member = res.guild.get_member(await self._clean(user))
-                        await self._loss(res.channel, member, match_id)
+                        await self._loss(res.channel, res.guild.get_member(member), match_id)
+                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
 
                 if res.component.id == 'orange_report':
                     SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
@@ -474,11 +480,13 @@ class Elo(commands.Cog):
 
                     for user in blue_team:
                         member = res.guild.get_member(await self._clean(user))
-                        await self._loss(res.channel, member, match_id)
+                        await self._loss(res.channel, res.guild.get_member(member), match_id)
+                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
 
                     for user in orange_team:
                         member = res.guild.get_member(await self._clean(user))
-                        await self._win(res.channel, member, match_id)
+                        await self._win(res.channel, res.guild.get_member(member), match_id)
+                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
 
                 await res.message.delete()
                 return await self._match(res.channel, match_id)
