@@ -67,7 +67,7 @@ class Elo(commands.Cog):
             SQL.execute(f"UPDATE users SET elo = {row[3]-settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             SQL.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
-            return await self._user_edit(ctx, ctx, row, user, nick=f"{row[2]} [{row[3]-settings[8]}]")
+            return await self._user_edit(ctx, user, nick=f"{row[2]} [{row[3]-settings[8]}]")
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=9961472))
 
 
@@ -334,7 +334,8 @@ class Elo(commands.Cog):
                 SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
                 
                 await self._user_edit(ctx, ctx.author, nick=f"{name} [0]")
-                await self._user_edit(ctx, ctx, row, ctx.author, role=ctx.guild.get_role(row[1]))
+                if row[1] != 0:
+                    await self._user_edit(ctx, ctx.author, role=ctx.guild.get_role(row[1]))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=33023))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[6]).mention}", color=33023))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=33023))
