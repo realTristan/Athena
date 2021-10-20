@@ -343,12 +343,13 @@ class Queue(commands.Cog):
     @commands.Cog.listener()
     async def on_button_click(self, res):
         if res.component.id == "join_queue" or res.component.id == "leave_queue":
-            players = "\n".join(str(enum.mention) for enum in self.data[res.guild.id]["queue"])
-            await res.message.edit(embed=discord.Embed(title=f'[{len(self.data[res.guild.id]["queue"])}/10] Queue', description=players, color=33023))
+            if await self._data_check(res):
+                players = "\n".join(str(enum.mention) for enum in self.data[res.guild.id]["queue"])
+                await res.message.edit(embed=discord.Embed(title=f'[{len(self.data[res.guild.id]["queue"])}/10] Queue', description=players, color=33023))
 
-            if res.component.id == "join_queue":
-                return await self._join(res, res.author)
-            return await self._leave(res, res.author)
+                if res.component.id == "join_queue":
+                    return await self._join(res, res.author)
+                return await self._leave(res, res.author)
 
 
 def setup(client):
