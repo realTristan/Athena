@@ -1,4 +1,4 @@
-# Discord ELO Bot JSON
+# Discord ELO Bot
 > - Bot Code:
 - MySQL Database
 - Fast and Clean
