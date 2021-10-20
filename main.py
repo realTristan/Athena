@@ -15,7 +15,7 @@ async def on_command_error(ctx, error):
         return
     if isinstance(error, commands.MissingPermissions):
         return
-    await ctx.send(embed=discord.Embed(title=f"Internal Error", url="https://discord.gg/unY2umc5EK", description=f"{error}", color=15158588))
+    await ctx.send(embed=discord.Embed(title=f"Internal Error", url="https://discord.gg/ZpP5eNWKwr", description=f"{error}", color=15158588))
     raise error
     
 @client.event
