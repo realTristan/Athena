@@ -61,6 +61,7 @@ class SQL():
             if self.exists(command):
                 cur.execute(command)
                 return list(cur.fetchall()[0])
+            return None
 
 
     # // RETURNS MULTIPLE LISTS FROM THE SELECTED TABLE
@@ -70,6 +71,7 @@ class SQL():
             if self.exists(command):
                 cur.execute(command)
                 return list(cur.fetchall())
+            return None
 
 
     # // EXECUTE A SEPERATE COMMAND

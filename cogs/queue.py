@@ -192,13 +192,13 @@ class Queue(commands.Cog):
     # // CHECK IF THE USER IS BANNED FUNCTION
     # /////////////////////////////////////////
     async def _ban_check(self, ctx, user):
-        if SQL.exists(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            row = SQL.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            if row[2] - time.time() > 0:
-                await ctx.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
-                return False
-            SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        return True
+        row = SQL.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        if row is not None:
+            if row[2] - time.time() < 0:
+                SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                return True
+            await ctx.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
+        return False
     
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
     # /////////////////////////////////////////
@@ -262,11 +262,9 @@ class Queue(commands.Cog):
                     await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
 
                     if len(self.data[ctx.guild.id]["queue"]) == 1:
+                        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                         self.data[ctx.guild.id]["orange_team"].append(self.data[ctx.guild.id]["queue"][0])
                         self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["queue"][0])
-                    
-                    if len(self.data[ctx.guild.id]["queue"]) == 0:
-                        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
 
                         if row[2] == "true":
                             self.data[ctx.guild.id]["state"] = "maps"
@@ -344,15 +342,13 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     @commands.Cog.listener()
     async def on_button_click(self, res):
-        if res.component.id == "join_queue":
-            await self._join(res, res.author)
+        if res.component.id == "join_queue" or res.component.id == "leave_queue":
             players = "\n".join(str(enum.mention) for enum in self.data[res.guild.id]["queue"])
-            return await res.message.edit(embed=discord.Embed(title=f'[{len(self.data[res.guild.id]["queue"])}/10] Queue', description=f'{players}', color=33023))
+            await res.message.edit(embed=discord.Embed(title=f'[{len(self.data[res.guild.id]["queue"])}/10] Queue', description=players, color=33023))
 
-        if res.component.id == "leave_queue":
-            await self._leave(res, res.author)
-            players = "\n".join(str(enum.mention) for enum in self.data[res.guild.id]["queue"])
-            return await res.message.edit(embed=discord.Embed(title=f'[{len(self.data[res.guild.id]["queue"])}/10] Queue', description=f'{players}', color=33023))
+            if res.component.id == "join_queue":
+                return await self._join(res, res.author)
+            return await self._leave(res, res.author)
 
 
 def setup(client):

@@ -23,11 +23,11 @@ class Bans(commands.Cog):
         if "d" in length_str:
             length = int(length_str.strip("d")) * 86400
         
-        if SQL.exists(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+        rows = SQL.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        if rows is not None:
             SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
         SQL.execute(f"INSERT INTO bans (guild_id, user_id, length, reason, banned_by) VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{' '.join(str(e) for e in args)}', '{ctx.author.mention}')")
-        rows = SQL.select(f"SELECT * FROM bans WHERE user_id = {user.id} AND guild_id = {ctx.guild.id}")
         return await ctx.send(embed=discord.Embed(title=f"{user.name} banned", description=f"**Length:** {datetime.timedelta(seconds=int(rows[2] - time.time()))}\n**Reason:** {rows[3]}\n**Banned by:** {rows[4]}", color=15158588))
 
 
