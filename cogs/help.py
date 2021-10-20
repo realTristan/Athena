@@ -74,12 +74,15 @@ class Help(commands.Cog):
     @commands.Cog.listener()
     async def on_select_option(self, res):
         if res.values[0] == "player":
+            await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
             return await res.author.send(embed=self.player_embed)
         
         if res.values[0] == "mod":
+            await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
             return await res.author.send(embed=self.moderator_embed)
         
         if res.values[0] == "admin":
+            await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
             return await res.author.send(embed=self.administrator_embed)
 
 

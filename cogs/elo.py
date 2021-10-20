@@ -9,21 +9,27 @@ class Elo(commands.Cog):
 
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
-    async def _delete_channels(self, ctx, user, match_id):
+    async def _delete_channels(self, ctx, match_id):
+        row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+        orange_cap = ctx.guild.get_member(int(row[3]))
+        blue_cap = ctx.guild.get_member(int(row[5]))
+
         try:
-            _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {user.name}")
+            _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {blue_cap.name}")
             if _blue_vc:
                 await _blue_vc.delete()
 
-            _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {user.name}")
+            _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {orange_cap.name}")
             if _orange_vc:
                 await _orange_vc.delete()
 
-            text_channel = discord.utils.get(ctx.guild.channels, name=f"match-{match_id}")
-            await text_channel.delete()
+            _text_channel = discord.utils.get(ctx.guild.channels, name=f"match-{match_id}")
+            if _text_channel:
+                await _text_channel.delete()
 
-            category = discord.utils.get(ctx.guild.categories, name=f"Match #{match_id}")
-            await category.delete()
+            _category = discord.utils.get(ctx.guild.categories, name=f"Match #{match_id}")
+            if _category:
+                await _category.delete()
         except Exception as e:
             print(e)
 
@@ -153,22 +159,19 @@ class Elo(commands.Cog):
                     if "blue" in list(args)[0]:
                         for user in orange_team:
                             await self._loss(ctx, ctx.guild.get_member(int(user)))
-                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
 
                         for user in blue_team:
                             await self._win(ctx, ctx.guild.get_member(int(user)))
-                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
-
+                            
                     if "orange" in list(args)[0]:
                         for user in orange_team:
                             await self._win(ctx, ctx.guild.get_member(int(user)))
-                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
 
                         for user in blue_team:
                             await self._loss(ctx, ctx.guild.get_member(int(user)))
-                            await self._delete_channels(ctx, ctx.guild.get_member(int(user)), match_id)
+                    await self._match(ctx, match_id)
 
-                    return await self._match(ctx, match_id)
+                    return await self._delete_channels(ctx, match_id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
@@ -178,8 +181,9 @@ class Elo(commands.Cog):
                 row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 if "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
                     SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    await self._match(ctx, match_id)
 
-                    return await self._match(ctx, match_id)
+                    return await self._delete_channels(ctx, match_id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
@@ -441,50 +445,58 @@ class Elo(commands.Cog):
             if res.author.guild_permissions.manage_messages:
                 # // GETTING THE MATCH ID
                 match_id = int(str(res.message.embeds[0].title).replace("Match #", ""))
+                
+                # // GETTING THE MATCH ROWS FROM DATABASE
+                row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                if "ongoing" in row[7]:
+                    # // DELETE THE PREVIOUS EMBED
+                    await res.message.delete()
 
-                # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
-                blue_team=res.message.embeds[0].fields[5].value.split("\n")
-                blue_team.append(await self._clean(res.message.embeds[0].fields[2].value))
+                    # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
+                    blue_team=res.message.embeds[0].fields[5].value.split("\n")
+                    blue_team.append(await self._clean(res.message.embeds[0].fields[2].value))
 
-                # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
-                orange_team=res.message.embeds[0].fields[3].value.split("\n")
-                orange_team.append(await self._clean(res.message.embeds[0].fields[0].value))
+                    # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
+                    orange_team=res.message.embeds[0].fields[3].value.split("\n")
+                    orange_team.append(await self._clean(res.message.embeds[0].fields[0].value))
 
-                if res.component.id == "match_cancel":
-                    SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                    if res.component.id == "match_cancel":
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} has cancelled **Match #{match_id}**", color=3066992))
+                        SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
-                if res.component.id == 'blue_report':
-                    SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                    SQL.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                    if res.component.id == 'blue_report':
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
 
-                    # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
-                    for user in blue_team:
-                        member = res.guild.get_member(await self._clean(user))
-                        await self._win(res.channel, res.guild.get_member(member))
-                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
+                        SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        SQL.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
-                    # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
-                    for user in orange_team:
-                        member = res.guild.get_member(await self._clean(user))
-                        await self._loss(res.channel, res.guild.get_member(member), match_id)
-                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
+                        # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
+                        for user in blue_team:
+                            member = res.guild.get_member(await self._clean(user))
+                            await self._win(res.channel, member)
 
-                if res.component.id == 'orange_report':
-                    SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                    SQL.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
+                        for user in orange_team:
+                            member = res.guild.get_member(await self._clean(user))
+                            await self._loss(res.channel, member)
 
-                    for user in blue_team:
-                        member = res.guild.get_member(await self._clean(user))
-                        await self._loss(res.channel, res.guild.get_member(member), match_id)
-                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
+                    if res.component.id == 'orange_report':
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
 
-                    for user in orange_team:
-                        member = res.guild.get_member(await self._clean(user))
-                        await self._win(res.channel, res.guild.get_member(member), match_id)
-                        await self._delete_channels(res.channel, res.guild.get_member(member), match_id)
+                        SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        SQL.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
-                await res.message.delete()
-                return await self._match(res.channel, match_id)
+                        for user in blue_team:
+                            member = res.guild.get_member(await self._clean(user))
+                            await self._loss(res.channel, member)
+
+                        for user in orange_team:
+                            member = res.guild.get_member(await self._clean(user))
+                            await self._win(res.channel, member)
+                else:
+                    await res.send(embed=discord.Embed(description=f"{res.author.mention} this match has already been reported", color=15158588))
+                await self._match(res.channel, match_id)
+                return await self._delete_channels(res.channel, match_id)
             return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
 def setup(client):

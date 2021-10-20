@@ -33,7 +33,7 @@ class SQL():
 
             # // MATCHES TABLE
             #if not self.exists("SELECT *  FROM information_schema WHERE TABLE_NAME = matches"):
-                #cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id int, map VARCHAR(50), orange_cap VARCHAR(50), orange_team VARCHAR(100), blue_cap VARCHAR(50), blue_team VARCHAR(100), status VARCHAR(50), winners VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
+                #cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id int, map VARCHAR(50), orange_cap VARCHAR(50), orange_team VARCHAR(200), blue_cap VARCHAR(50), blue_team VARCHAR(200), status VARCHAR(50), winners VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
 
             # // MAPS TABLES
             #if not self.exists("SELECT *  FROM information_schema WHERE TABLE_NAME = maps"):

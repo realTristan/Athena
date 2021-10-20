@@ -136,9 +136,11 @@ class Settings(commands.Cog):
                 row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[2] == "false":
                     SQL.execute(f"UPDATE settings SET map_pick_phase = 'true' WHERE guild_id = {res.guild.id}")
+                    await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Map Picking Phase**", color=3066992))
 
                 SQL.execute(f"UPDATE settings SET map_pick_phase = 'false' WHERE guild_id = {res.guild.id}")
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Map Picking Phase**", color=3066992))
 
         # // MATCH LOGGING
@@ -154,6 +156,7 @@ class Settings(commands.Cog):
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
 
                 SQL.execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=3066992))
 
         # // MATCH CATEGORIES
@@ -162,9 +165,11 @@ class Settings(commands.Cog):
                 row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[3] == "false":
                     SQL.execute(f"UPDATE settings SET match_categories = 'true' WHERE guild_id = {res.guild.id}")
+                    await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Categories**", color=3066992))
 
                 SQL.execute(f"UPDATE settings SET match_categories = 'false' WHERE guild_id = {res.guild.id}")
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Categories**", color=3066992))
 
         # // TEAM PICKING PHASE
@@ -173,9 +178,11 @@ class Settings(commands.Cog):
                 row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[4] == "false":
                     SQL.execute(f"UPDATE settings SET team_pick_phase = 'true' WHERE guild_id = {res.guild.id}")
+                    await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Picking Phase**", color=3066992))
 
                 SQL.execute(f"UPDATE settings SET team_pick_phase = 'false' WHERE guild_id = {res.guild.id}")
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Picking Phase**", color=3066992))
 
         # // CHANGE THE REGISTER ROLE
@@ -189,6 +196,7 @@ class Settings(commands.Cog):
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=3066992))
                 
                 SQL.execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {res.guild.id}")
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to **None**", color=3066992))
 
         # // ADD MAP
@@ -254,6 +262,7 @@ class Settings(commands.Cog):
         # // QUEUE EMBED
         if res.values[0] == "queue_embed":
             if res.author.guild_permissions.administrator:
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
                 return await res.channel.send(embed=discord.Embed(title=f'[0/10] Queue', description='None', color=33023), 
                 components=[[
                     Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),

@@ -34,7 +34,7 @@ class Queue(commands.Cog):
             current_queue = "None"
             if len(self.data[ctx.guild.id]["queue"]) != 0:
                 current_queue = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["queue"])
-            return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=33023))
+            await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=33023))
 
         # // TEAM PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "pick":
@@ -55,7 +55,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value=blue_team)
             embed.add_field(name="Available Players", value="\n".join(str(e.mention) for e in self.data[ctx.guild.id]["queue"]))
             await ctx.send(embed=embed)
-            return await ctx.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
+            await ctx.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
 
         # // MAP PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "maps":
@@ -69,7 +69,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
             embed.add_field(name="Available Maps", value=str(row[1]).replace(",", "\n"))
             await ctx.send(embed=embed)
-            return await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
+            await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
@@ -84,11 +84,12 @@ class Queue(commands.Cog):
             embed.add_field(name="Orange Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["orange_team"]))
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
+            await ctx.send(embed=embed)
 
+            # // LOGGING THE MATCH TO THE DATABASE
             await self._match(ctx)
-            await self._team_channels(ctx, len(count)+1)
-            await self._reset(ctx)
 
+            # // SEND THE MATCH LOGGING EMBED TO THE CHANNEL
             row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if row[9] != 0:
                 channel = ctx.guild.get_channel(int(row[9]))
@@ -99,7 +100,10 @@ class Queue(commands.Cog):
                         Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
                         Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
                     ]])
-            return await ctx.send(embed=embed)
+
+            # // CREATING TEAM CHANNELS TAKES LONGER (MAKING IT LAST)
+            await self._team_channels(ctx, len(count)+1)
+            await self._reset(ctx)
 
     # // CREATE TEAM VOICE CHANNELS FUNCTION
     # /////////////////////////////////////////
@@ -179,6 +183,7 @@ class Queue(commands.Cog):
                 _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
                 self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
                 self.data[ctx.guild.id]["state"] = "final"
+        return await self._embeds(ctx)
 
     # // CHECK IF THE USER IS BANNED FUNCTION
     # /////////////////////////////////////////
@@ -203,8 +208,7 @@ class Queue(commands.Cog):
                             if not user in self.data[ctx.guild.id]["queue"]:
                                 self.data[ctx.guild.id]["queue"].append(user)
                                 if len(self.data[ctx.guild.id]["queue"]) == 10:
-                                    await self._start(ctx)
-                                    return await self._embeds(ctx)
+                                    return await self._start(ctx)
                                 return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
