@@ -214,7 +214,7 @@ class Elo(commands.Cog):
     # /////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def set(self, ctx, action, user:discord.Member, amount:int):
+    async def set(self, ctx, action:str, user:discord.Member, amount:int):
         # // SET A PLAYERS ELO
         if action in ["elo"]:
             if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
