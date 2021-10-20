@@ -238,8 +238,8 @@ class Queue(commands.Cog):
     @commands.command(aliases=["fs"])
     @commands.has_permissions(manage_messages=True)
     async def forcestart(self, ctx):
-        await self._start(ctx)
-        return await self._embeds(ctx)
+        if await self._data_check(ctx):
+            return await self._start(ctx)
 
     # // PICK TEAMMATES (TEAM CAPTAIN) COMMAND
     # /////////////////////////////////////////
