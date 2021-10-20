@@ -10,28 +10,13 @@ class Elo(commands.Cog):
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
     async def _delete_channels(self, ctx, match_id):
-        row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-        orange_cap = ctx.guild.get_member(int(row[3]))
-        blue_cap = ctx.guild.get_member(int(row[5]))
+        _category = discord.utils.get(ctx.guild.categories, name=f"Match #{match_id}")
+        
+        if _category:
+            for channel in _category.channels:
+                await channel.delete()
+            await _category.delete()
 
-        try:
-            _blue_vc = discord.utils.get(ctx.guild.channels, name=f"🔹 Team {blue_cap.name}")
-            if _blue_vc:
-                await _blue_vc.delete()
-
-            _orange_vc = discord.utils.get(ctx.guild.channels, name=f"🔸 Team {orange_cap.name}")
-            if _orange_vc:
-                await _orange_vc.delete()
-
-            _text_channel = discord.utils.get(ctx.guild.channels, name=f"match-{match_id}")
-            if _text_channel:
-                await _text_channel.delete()
-
-            _category = discord.utils.get(ctx.guild.categories, name=f"Match #{match_id}")
-            if _category:
-                await _category.delete()
-        except Exception as e:
-            print(e)
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
@@ -79,10 +64,10 @@ class Elo(commands.Cog):
 
     # // LOG A MATCH TO THE DATABASE FUNCTION
     # /////////////////////////////////////////
-    async def _match(self, ctx, match_id):
+    async def _match_show(self, ctx, match_id):
         row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
-        embed=discord.Embed(title=f"Match #{match_id} | {row[7].upper()}", description=f"**Map:** {row[2]}", color=33023)
+        embed=discord.Embed(title=f"Match #{match_id} ┃ {row[7].upper()}", description=f"**Map:** {row[2]}\n**Winners:** {row[8][0].upper()+row[8][1:]}", color=33023)
         embed.add_field(name="Orange Captain", value=f"<@{row[3]}>")
         embed.add_field(name="\u200b", value="\u200b")
         embed.add_field(name="Blue Captain", value=f"<@{row[5]}>")
@@ -103,10 +88,9 @@ class Elo(commands.Cog):
 
     # // UNDO A WIN FOR THE BLUE TEAM
     # ////////////////////////////////////
-    async def _undo_blue_win(self, ctx, blue_team, orange_team, match_id):
+    async def _undo_blue_win(self, ctx, blue_team, orange_team):
         settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-        SQL.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-
+        
         # // REMOVE WIN FROM BLUE TEAM
         for user in blue_team:
             _row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
@@ -121,9 +105,8 @@ class Elo(commands.Cog):
 
     # // UNDO A WIN FOR THE ORANGE TEAM
     # ////////////////////////////////////
-    async def _undo_orange_win(self, ctx, blue_team, orange_team, match_id):
+    async def _undo_orange_win(self, ctx, blue_team, orange_team):
         settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-        SQL.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
         # // REMOVE LOSS FROM BLUE TEAM
         for user in blue_team:
@@ -169,7 +152,7 @@ class Elo(commands.Cog):
 
                         for user in blue_team:
                             await self._loss(ctx, ctx.guild.get_member(int(user)))
-                    await self._match(ctx, match_id)
+                    await self._match_show(ctx, match_id)
 
                     return await self._delete_channels(ctx, match_id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
@@ -181,7 +164,8 @@ class Elo(commands.Cog):
                 row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 if "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
                     SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    await self._match(ctx, match_id)
+                    SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    await self._match_show(ctx, match_id)
 
                     return await self._delete_channels(ctx, match_id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
@@ -189,13 +173,17 @@ class Elo(commands.Cog):
 
         # // SHOWING A LOGGED MATCH
         if action == "show":
-            return await self._match(ctx, match_id)
+            return await self._match_show(ctx, match_id)
 
         # // UNDOING A REPORTED MATCH
         if action == "undo":
             if ctx.author.guild_permissions.manage_messages:
                 row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 if "reported" in row[7] or "cancelled" in row[7]:
+                    # // UPDATING THE DATABASE
+                    SQL.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
+                    SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+
                     # // ADD THE CAPTAINS TO EACH TEAM
                     blue_team = str(row[6]).split(",")
                     blue_team.append(row[5])
@@ -204,13 +192,14 @@ class Elo(commands.Cog):
 
                     # // REMOVE WIN FROM BLUE TEAM
                     if str(row[8]) == "blue":
-                        await self._undo_blue_win(ctx, blue_team, orange_team, match_id)
+                        await self._undo_blue_win(ctx, blue_team, orange_team)
                     
                     # // REMOVE LOSS FROM BLUE TEAM
                     elif str(row[8]) == "orange":
-                        await self._undo_orange_win(ctx, blue_team, orange_team, match_id)
+                        await self._undo_orange_win(ctx, blue_team, orange_team)
+                    
 
-                    return await self._match(ctx, match_id)
+                    return await self._match_show(ctx, match_id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
@@ -248,7 +237,7 @@ class Elo(commands.Cog):
     @commands.command(aliases=["lm"])
     async def lastmatch(self, ctx):
         count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
-        return await self._match(ctx, len(count))
+        return await self._match_show(ctx, len(count))
 
     # // REPLACE / SUB TWO PLAYERS COMMAND
     # /////////////////////////////////////////
@@ -421,17 +410,19 @@ class Elo(commands.Cog):
         rows = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         for row in rows:
             if "ongoing" not in row[7] and "rollbacked" not in row[7]:
+                SQL.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
+
                 blue_team = str(row[6]).split(","); blue_team.append(row[5])
                 orange_team =str(row[4]).split(","); orange_team.append(row[3])
 
                 if user in orange_team or user in blue_team:
                     if user in orange_team:
                         if row[8] == "orange":
-                            await self._undo_orange_win(ctx, blue_team, orange_team, row[1])
+                            await self._undo_orange_win(ctx, blue_team, orange_team)
                     
                     if user in blue_team:
                         if row[8] == "blue":
-                            await self._undo_blue_win(ctx, blue_team, orange_team, row[1])
+                            await self._undo_blue_win(ctx, blue_team, orange_team)
                     
                     SQL.execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
                     await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Match **#{row[1]}** has been rollbacked", color=3066992))
@@ -449,9 +440,6 @@ class Elo(commands.Cog):
                 # // GETTING THE MATCH ROWS FROM DATABASE
                 row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
                 if "ongoing" in row[7]:
-                    # // DELETE THE PREVIOUS EMBED
-                    await res.message.delete()
-
                     # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
                     blue_team=res.message.embeds[0].fields[5].value.split("\n")
                     blue_team.append(await self._clean(res.message.embeds[0].fields[2].value))
@@ -463,6 +451,7 @@ class Elo(commands.Cog):
                     if res.component.id == "match_cancel":
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} has cancelled **Match #{match_id}**", color=3066992))
                         SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                     if res.component.id == 'blue_report':
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
@@ -495,7 +484,9 @@ class Elo(commands.Cog):
                             await self._win(res.channel, member)
                 else:
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} this match has already been reported", color=15158588))
-                await self._match(res.channel, match_id)
+
+                await res.message.delete()
+                await self._match_show(res.channel, match_id)
                 return await self._delete_channels(res.channel, match_id)
             return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 

@@ -15,7 +15,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     async def _reset(self, ctx):
         self.data[ctx.guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
-        
+
     # // CHECK IF GUILD IS IN "self.data" FUNCTION
     # /////////////////////////////////////////
     async def _data_check(self, ctx):
@@ -25,6 +25,54 @@ class Queue(commands.Cog):
         if ctx.guild.id not in self.data:
             await self._reset(ctx)
         return True
+    
+    # // SEND MATCH LOGS TO THE GIVEN CHANNEL
+    # //////////////////////////////////////////
+    async def _match_log(self, ctx, embed):
+        # // SEND THE MATCH LOGGING EMBED TO THE CHANNEL
+        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        if row[9] != 0:
+            channel = ctx.guild.get_channel(int(row[9]))
+            await channel.send(
+                embed=embed,
+                components=[[
+                    Button(style=ButtonStyle.blue, label="Blue", custom_id='blue_report'),
+                    Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
+                    Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
+                ]])
+
+    # // CREATE MATCH CATEGORY FUNCTION
+    # /////////////////////////////////////////
+    async def _match_category(self, ctx, match_id):
+        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        if row[3] == "true":
+            if not get(ctx.guild.categories, name=f'Match #{match_id}'):
+                # // CREATING CATEGORY AND SETTING PERMISSIONS
+                category = await ctx.guild.create_category(f'Match #{match_id}')
+                await category.set_permissions(ctx.guild.default_role, connect=False, send_messages=False)
+
+                # // CREATING CHANNELS INSIDE CATEGORY
+                await ctx.guild.create_text_channel(f"match-{match_id}", category=category)
+                await ctx.guild.create_voice_channel(f'🔹 Team ' + self.data[ctx.guild.id]["blue_cap"].name, category=category)
+                await ctx.guild.create_voice_channel(f"🔸 Team " + self.data[ctx.guild.id]['orange_cap'].name, category=category)
+
+                # // CREATING TEAMS
+                blue_team = self.data[ctx.guild.id]["blue_team"]
+                blue_team.append(self.data[ctx.guild.id]["blue_cap"])
+
+                orange_team = self.data[ctx.guild.id]["orange_team"]
+                orange_team.append(self.data[ctx.guild.id]["orange_cap"])
+                
+                # // RESET DATA PARAMS
+                await self._reset(ctx)
+
+                # // CHANGE PERMISSIONS FOR MATCH PLAYERS
+                for user in list(dict.fromkeys(orange_team)):
+                    await category.set_permissions(user, connect=True, send_messages=True)
+
+                for user in list(dict.fromkeys(blue_team)):
+                    await category.set_permissions(user, connect=True, send_messages=True)
+        
 
     # // EMBED GENERATOR FUNCTION
     # /////////////////////////////////////////
@@ -34,7 +82,7 @@ class Queue(commands.Cog):
             current_queue = "None"
             if len(self.data[ctx.guild.id]["queue"]) != 0:
                 current_queue = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["queue"])
-            await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=33023))
+            return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=33023))
 
         # // TEAM PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "pick":
@@ -55,7 +103,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value=blue_team)
             embed.add_field(name="Available Players", value="\n".join(str(e.mention) for e in self.data[ctx.guild.id]["queue"]))
             await ctx.send(embed=embed)
-            await ctx.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
+            return await ctx.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
 
         # // MAP PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "maps":
@@ -69,7 +117,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
             embed.add_field(name="Available Maps", value=str(row[1]).replace(",", "\n"))
             await ctx.send(embed=embed)
-            await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
+            return await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
@@ -86,56 +134,10 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id]["blue_team"]))
             await ctx.send(embed=embed)
 
-            # // LOGGING THE MATCH TO THE DATABASE
             await self._match(ctx)
+            await self._match_log(ctx, embed)
+            await self._match_category(ctx, len(count)+1)
 
-            # // SEND THE MATCH LOGGING EMBED TO THE CHANNEL
-            row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-            if row[9] != 0:
-                channel = ctx.guild.get_channel(int(row[9]))
-                await channel.send(
-                    embed=embed,
-                    components=[[
-                        Button(style=ButtonStyle.blue, label="Blue", custom_id='blue_report'),
-                        Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
-                        Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
-                    ]])
-
-            # // CREATING TEAM CHANNELS TAKES LONGER (MAKING IT LAST)
-            await self._team_channels(ctx, len(count)+1)
-            await self._reset(ctx)
-
-    # // CREATE TEAM VOICE CHANNELS FUNCTION
-    # /////////////////////////////////////////
-    async def _team_channels(self, ctx, match_id):
-        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-        if row[3] == "true":
-            if not get(ctx.guild.categories, name=f'Match #{match_id}'):
-                # // CREATING CHANNELS, CATEGORIES AND TEAM VARIABLES
-                category = await ctx.guild.create_category(f'Match #{match_id}')
-                text_channel = await ctx.guild.create_text_channel(f"match-{match_id}", category=category)
-                blue_vc = await ctx.guild.create_voice_channel(f'🔹 Team {self.data[ctx.guild.id]["blue_cap"].name}', category=category)
-                orange_vc = await ctx.guild.create_voice_channel(f"🔸 Team {self.data[ctx.guild.id]['orange_cap'].name}", category=category)
-
-                blue_team = self.data[ctx.guild.id]["blue_team"]
-                blue_team.append(self.data[ctx.guild.id]["blue_cap"])
-
-                orange_team = self.data[ctx.guild.id]["orange_team"]
-                orange_team.append(self.data[ctx.guild.id]["orange_cap"])
-
-                # // SETTING CHANNEL PERMISSIONS
-                await category.set_permissions(ctx.guild.default_role, connect=False)
-                await text_channel.set_permissions(ctx.guild.default_role, view_channel=False)
-
-                # // CHANGE PERMISSIONS FOR BLUE TEAM
-                for user in blue_team:
-                    await blue_vc.set_permissions(user, connect=True)
-                    await text_channel.set_permissions(user, view_channel=True)
-
-                # // CHANGE PERMISSIONS FOR ORANGE TEAM
-                for user in orange_team:
-                    await orange_vc.set_permissions(user, connect=True)
-                    await text_channel.set_permissions(user, view_channel=True)
 
     # // MATCH LOGGING FUNCTION
     # /////////////////////////////////////////
@@ -152,37 +154,38 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     async def _start(self, ctx):
         row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        # // CREATING TEAM CAPTAINS
+        self.data[ctx.guild.id]["blue_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["blue_cap"])
+        self.data[ctx.guild.id]["orange_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["orange_cap"])
+
         if row[4] == "true":
             # // PICK PHASE ENABLED
-            # // CREATING TEAM CAPTAINS AND LOGIC
+            # // CREATING LOGIC AND CHANGING STATE
             self.data[ctx.guild.id]["state"] = "pick"
-            self.data[ctx.guild.id]["blue_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["blue_cap"])
-            self.data[ctx.guild.id]["orange_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["orange_cap"])
             self.data[ctx.guild.id]["pick_logic"] = [
                 self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["blue_cap"],
                 self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["blue_cap"]]
-        else: 
-            # // PICK PHASE DISABLED
-            # // CREATING TEAM CAPTAINS
-            self.data[ctx.guild.id]["blue_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["blue_cap"])
-            self.data[ctx.guild.id]["orange_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["orange_cap"])
-
-            # // CREATING THE RANDOM TEAMS
-            for _ in range(round(len(self.data[ctx.guild.id]["queue"]) / 2)):
-                _user = random.choice(self.data[ctx.guild.id]["queue"])
-                self.data[ctx.guild.id]['orange_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
-            
-            for _ in range(round(len(self.data[ctx.guild.id]["queue"]))):
-                _user = random.choice(self.data[ctx.guild.id]["queue"])
-                self.data[ctx.guild.id]['blue_team'].append(_user); self.data[ctx.guild.id]["queue"].remove(_user)
-            
-            # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
-            if row[2] == "true":
-                self.data[ctx.guild.id]["state"] = "maps"
-            else:
-                _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
-                self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
-                self.data[ctx.guild.id]["state"] = "final"
+            return await self._embeds(ctx)
+        
+        # // PICK PHASE DISABLED
+        # // CREATING THE RANDOM TEAMS
+        for _ in range(round(len(self.data[ctx.guild.id]["queue"]) / 2)):
+            _user = random.choice(self.data[ctx.guild.id]["queue"])
+            self.data[ctx.guild.id]['orange_team'].append(_user)
+            self.data[ctx.guild.id]["queue"].remove(_user)
+        
+        for _ in range(round(len(self.data[ctx.guild.id]["queue"]))):
+            _user = random.choice(self.data[ctx.guild.id]["queue"])
+            self.data[ctx.guild.id]['blue_team'].append(_user)
+            self.data[ctx.guild.id]["queue"].remove(_user)
+        
+        # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
+        if row[2] == "true":
+            self.data[ctx.guild.id]["state"] = "maps"
+        else:
+            _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+            self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
+            self.data[ctx.guild.id]["state"] = "final"
         return await self._embeds(ctx)
 
     # // CHECK IF THE USER IS BANNED FUNCTION
@@ -200,21 +203,21 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     async def _join(self, ctx, user):
         if await self._data_check(ctx):
-            if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-                if await self._ban_check(ctx, user):
-                    row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-                    if row[5] == 0 or ctx.message.channel.id == row[5]:
-                        if self.data[ctx.guild.id]["state"] == "queue":
-                            if not user in self.data[ctx.guild.id]["queue"]:
+            if self.data[ctx.guild.id]["state"] == "queue":
+                if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                    if await self._ban_check(ctx, user):
+                        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+                        if row[5] == 0 or ctx.message.channel.id == row[5]:
+                            #if not user in self.data[ctx.guild.id]["queue"]:
                                 self.data[ctx.guild.id]["queue"].append(user)
                                 if len(self.data[ctx.guild.id]["queue"]) == 10:
                                     return await self._start(ctx)
                                 return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
-                        return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
-                return False
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=15158588))
+                            #return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
+                    return False
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=15158588))
 
     # // WHEN AN USER LEAVES THE QUEUE FUNCTION
