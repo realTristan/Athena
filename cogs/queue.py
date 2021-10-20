@@ -137,6 +137,7 @@ class Queue(commands.Cog):
             await self._match(ctx)
             await self._match_log(ctx, embed)
             await self._match_category(ctx, len(count)+1)
+            await self._reset(ctx)
 
 
     # // MATCH LOGGING FUNCTION
