@@ -398,7 +398,7 @@ class Elo(commands.Cog):
         '''
         rows = await SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         for row in rows:
-            if "ongoing" not in row[7] and "rollbacked" not in row[7]:
+            if "ongoing" not in row[7] and "rollbacked" not in row[7] and "cancelled" not in row[7]:
                 blue_team = str(row[6]).split(","); blue_team.append(row[5])
                 orange_team =str(row[4]).split(","); orange_team.append(row[3])
 
