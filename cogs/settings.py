@@ -11,7 +11,7 @@ class Settings(commands.Cog):
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
     async def _opt_status(self, ctx, option):
-        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         # // MAP PICKING PHASE
         if option == "map_pick_phase":
             if row[2] == "true":
@@ -40,23 +40,23 @@ class Settings(commands.Cog):
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
     async def _add_map(self, ctx, map):
-        if not SQL.exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO maps (guild_id, map_list) VALUES ({ctx.guild.id}, '{map}')")
+        if not await SQL.exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}"):
+            await SQL.execute(f"INSERT INTO maps (guild_id, map_list) VALUES ({ctx.guild.id}, '{map}')")
         else:
-            row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+            row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
             if map not in str(row[1]).split(","):
-                SQL.execute(f"UPDATE maps SET map_list = '{str(row[1])},{map}' WHERE guild_id = {ctx.guild.id}")
+                await SQL.execute(f"UPDATE maps SET map_list = '{str(row[1])},{map}' WHERE guild_id = {ctx.guild.id}")
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=3066992))
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
     async def _del_map(self, ctx, map):
-        if SQL.exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}"):
-            row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+        if await SQL.exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}"):
+            row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
             if map in str(row[1]).split(","):
                 map_list = str(row[1]).split(',')
                 map_list.remove(map)
-                SQL.execute(f"UPDATE maps SET map_list = '{','.join(str(e) for e in map_list)}' WHERE guild_id = {ctx.guild.id}")
+                await SQL.execute(f"UPDATE maps SET map_list = '{','.join(str(e) for e in map_list)}' WHERE guild_id = {ctx.guild.id}")
                 return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=3066992))
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} the map pool is empty", color=15158588))
@@ -80,7 +80,7 @@ class Settings(commands.Cog):
     # /////////////////////////////////////////
     @commands.command()
     async def maps(self, ctx):
-        row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+        row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
         return await ctx.send(embed=discord.Embed(title=f"Maps ┃ {ctx.guild.name}", description=str(row[1]).replace(",", "\n"), color=33023))
 
     # // SET THE REGISTER ROLE COMMAND
@@ -88,10 +88,10 @@ class Settings(commands.Cog):
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
-        if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+        if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+            await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
         else:
-            SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
+            await SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
         return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
 
     # // SHOW SETTINGS MENU COMMAND
@@ -99,8 +99,8 @@ class Settings(commands.Cog):
     @commands.command(aliases=["sets"])
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
-        if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+        if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+            await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
             
         team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
         map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
@@ -133,55 +133,55 @@ class Settings(commands.Cog):
         # // MAP PICKING PHASE
         if res.values[0] == 'map_pick_phase':
             if res.author.guild_permissions.administrator:
-                row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
+                row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[2] == "false":
-                    SQL.execute(f"UPDATE settings SET map_pick_phase = 'true' WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET map_pick_phase = 'true' WHERE guild_id = {res.guild.id}")
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Map Picking Phase**", color=3066992))
 
-                SQL.execute(f"UPDATE settings SET map_pick_phase = 'false' WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET map_pick_phase = 'false' WHERE guild_id = {res.guild.id}")
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Map Picking Phase**", color=3066992))
 
         # // MATCH LOGGING
         if res.values[0] == "match_logging":
             if res.author.guild_permissions.administrator:
-                row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
+                row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[9] == 0:
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=33023))
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
                     channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                    SQL.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
 
-                SQL.execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=3066992))
 
         # // MATCH CATEGORIES
         if res.values[0] == 'match_category':
             if res.author.guild_permissions.administrator:
-                row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
+                row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[3] == "false":
-                    SQL.execute(f"UPDATE settings SET match_categories = 'true' WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET match_categories = 'true' WHERE guild_id = {res.guild.id}")
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Categories**", color=3066992))
 
-                SQL.execute(f"UPDATE settings SET match_categories = 'false' WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET match_categories = 'false' WHERE guild_id = {res.guild.id}")
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Categories**", color=3066992))
 
         # // TEAM PICKING PHASE
         if res.values[0] == 'team_pick_phase':
             if res.author.guild_permissions.administrator:
-                row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
+                row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                 if row[4] == "false":
-                    SQL.execute(f"UPDATE settings SET team_pick_phase = 'true' WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET team_pick_phase = 'true' WHERE guild_id = {res.guild.id}")
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Picking Phase**", color=3066992))
 
-                SQL.execute(f"UPDATE settings SET team_pick_phase = 'false' WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET team_pick_phase = 'false' WHERE guild_id = {res.guild.id}")
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Picking Phase**", color=3066992))
 
@@ -192,10 +192,10 @@ class Settings(commands.Cog):
                 c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                 if "<@" in str(c.content):
                     role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
-                    SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=3066992))
                 
-                SQL.execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {res.guild.id}")
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to **None**", color=3066992))
 
@@ -220,11 +220,11 @@ class Settings(commands.Cog):
                 c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                 
                 if "<#" not in str(c.content):
-                    SQL.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}")
                     return await res.channelsend(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to **None**", color=3066992))
 
                 channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                SQL.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel.mention}", color=3066992))
 
         # // CHANGE THE REGISTER CHANNEL
@@ -234,11 +234,11 @@ class Settings(commands.Cog):
                 c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
                 if "<#" not in str(c.content):
-                    SQL.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}")
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to **None**", color=3066992))
 
                 channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                SQL.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel.mention}", color=3066992))
         
         # // CHANGE THE ELO PER WIN
@@ -247,7 +247,7 @@ class Settings(commands.Cog):
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to gain", color=33023))
                 c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
-                SQL.execute(f"UPDATE settings SET win_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET win_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the win elo to **{c.content}**", color=3066992))
             
         # // CHANGE THE ELO PER LOSS
@@ -256,7 +256,7 @@ class Settings(commands.Cog):
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to lose", color=33023))
                 c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
-                SQL.execute(f"UPDATE settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
+                await SQL.execute(f"UPDATE settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the loss elo to **{c.content}**", color=3066992))
 
         # // QUEUE EMBED

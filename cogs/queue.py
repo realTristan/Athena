@@ -19,8 +19,8 @@ class Queue(commands.Cog):
     # // CHECK IF GUILD IS IN "self.data" FUNCTION
     # /////////////////////////////////////////
     async def _data_check(self, ctx):
-        if not SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+        if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+            await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
 
         if ctx.guild.id not in self.data:
             await self._reset(ctx)
@@ -30,7 +30,7 @@ class Queue(commands.Cog):
     # //////////////////////////////////////////
     async def _match_log(self, ctx, embed):
         # // SEND THE MATCH LOGGING EMBED TO THE CHANNEL
-        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         if row[9] != 0:
             channel = ctx.guild.get_channel(int(row[9]))
             await channel.send(
@@ -44,7 +44,7 @@ class Queue(commands.Cog):
     # // CREATE MATCH CATEGORY FUNCTION
     # /////////////////////////////////////////
     async def _match_category(self, ctx, match_id):
-        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         if row[3] == "true":
             if not get(ctx.guild.categories, name=f'Match #{match_id}'):
                 # // CREATING CATEGORY AND SETTING PERMISSIONS
@@ -107,7 +107,7 @@ class Queue(commands.Cog):
 
         # // MAP PICKING PHASE EMBED
         if self.data[ctx.guild.id]["state"] == "maps":
-            row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+            row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
             embed=discord.Embed(title="Map Picking Phase", color=33023)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
             embed.add_field(name="\u200b", value="\u200b")
@@ -121,7 +121,7 @@ class Queue(commands.Cog):
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id]["state"] == "final":
-            count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+            count = await SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             if count is None:
                 count=[]
 
@@ -146,15 +146,15 @@ class Queue(commands.Cog):
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id]['orange_team'])
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id]['blue_team'])
 
-        count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+        count = await SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         if count is None:
             count=[]
-        SQL.execute(f"""INSERT INTO matches (guild_id, match_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {len(count)+1}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
+        await SQL.execute(f"""INSERT INTO matches (guild_id, match_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {len(count)+1}, '{self.data[ctx.guild.id]['map']}', '{self.data[ctx.guild.id]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')""")
 
     # // WHEN QUEUE REACHES 10 PEOPLE FUNCTION
     # /////////////////////////////////////////
     async def _start(self, ctx):
-        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         # // CREATING TEAM CAPTAINS
         self.data[ctx.guild.id]["blue_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["blue_cap"])
         self.data[ctx.guild.id]["orange_cap"] = random.choice(self.data[ctx.guild.id]["queue"]); self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["orange_cap"])
@@ -184,7 +184,7 @@ class Queue(commands.Cog):
         if row[2] == "true":
             self.data[ctx.guild.id]["state"] = "maps"
         else:
-            _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+            _row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
             self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
             self.data[ctx.guild.id]["state"] = "final"
         return await self._embeds(ctx)
@@ -192,10 +192,10 @@ class Queue(commands.Cog):
     # // CHECK IF THE USER IS BANNED FUNCTION
     # /////////////////////////////////////////
     async def _ban_check(self, ctx, user):
-        row = SQL.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SQL.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             if row[2] - time.time() < 0:
-                SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                await SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 return False
             await ctx.channel.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
         return True
@@ -205,9 +205,9 @@ class Queue(commands.Cog):
     async def _join(self, ctx, user):
         if await self._data_check(ctx):
             if self.data[ctx.guild.id]["state"] == "queue":
-                if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                     if await self._ban_check(ctx, user):
-                        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+                        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                         if row[5] == 0 or ctx.message.channel.id == row[5]:
                             if not user in self.data[ctx.guild.id]["queue"]:
                                 self.data[ctx.guild.id]["queue"].append(user)
@@ -225,7 +225,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     async def _leave(self, ctx, user):
         if await self._data_check(ctx):
-            row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+            row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if row[5] == 0 or ctx.message.channel.id == row[5]:
                 if self.data[ctx.guild.id]["state"] == "queue":
                     if user in self.data[ctx.guild.id]["queue"]:
@@ -262,14 +262,14 @@ class Queue(commands.Cog):
                     await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
 
                     if len(self.data[ctx.guild.id]["queue"]) == 1:
-                        row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+                        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                         self.data[ctx.guild.id]["orange_team"].append(self.data[ctx.guild.id]["queue"][0])
                         self.data[ctx.guild.id]["queue"].remove(self.data[ctx.guild.id]["queue"][0])
 
                         if row[2] == "true":
                             self.data[ctx.guild.id]["state"] = "maps"
                         else:
-                            _row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+                            _row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
                             self.data[ctx.guild.id]["map"] = random.choice(str(_row[1]).split(","))
                             self.data[ctx.guild.id]["state"] = "final"
                             
@@ -285,7 +285,7 @@ class Queue(commands.Cog):
         if await self._data_check(ctx):
             if self.data[ctx.guild.id]["state"] == "maps":
                 if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
-                    row = SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+                    row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
                     if map in str(row[1]).split(","):
                         self.data[ctx.guild.id]["map"] = map
                         self.data[ctx.guild.id]["state"] = "final"

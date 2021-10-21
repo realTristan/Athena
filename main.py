@@ -20,8 +20,8 @@ async def on_command_error(ctx, error):
     
 @client.event
 async def on_member_remove(member):
-    if SQL.exists(f"SELECT * FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}"):
-        SQL.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}")
+    if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}"):
+        await SQL.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}")
 
 
 @client.event

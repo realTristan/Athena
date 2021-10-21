@@ -37,10 +37,10 @@ class Elo(commands.Cog):
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
     async def _win(self, ctx, user, settings=None):
-        row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
-            SQL.execute(f"UPDATE users SET elo = {row[3]+settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            SQL.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SQL.execute(f"UPDATE users SET elo = {row[3]+settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SQL.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             
             return await self._user_edit(ctx, user, nick=f"{row[2]} [{row[3]+settings[7]}]")
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=15158588))
@@ -48,10 +48,10 @@ class Elo(commands.Cog):
     # // GIVE AN USER A LOSS FUNCTION
     # /////////////////////////////////////////
     async def _loss(self, ctx, user, settings=None):
-        row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
-            SQL.execute(f"UPDATE users SET elo = {row[3]-settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            SQL.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SQL.execute(f"UPDATE users SET elo = {row[3]-settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SQL.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
             return await self._user_edit(ctx, user, nick=f"{row[2]} [{row[3]-settings[8]}]")
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=15158588))
@@ -60,7 +60,7 @@ class Elo(commands.Cog):
     # // LOG A MATCH TO THE DATABASE FUNCTION
     # /////////////////////////////////////////
     async def _match_show(self, ctx, match_id):
-        row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+        row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
         embed=discord.Embed(title=f"Match #{match_id} ┃ {row[7].upper()}", description=f"**Map:** {row[2]}\n**Winners:** {row[8][0].upper()+row[8][1:]}", color=33023)
         embed.add_field(name="Orange Captain", value=f"<@{row[3]}>")
@@ -74,7 +74,7 @@ class Elo(commands.Cog):
     # // SHOW THE USERS STATS FUNCTION
     # /////////////////////////////////////////
     async def _stats(self, ctx, user):
-        row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=33023)
             embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=user.avatar_url)
@@ -84,36 +84,36 @@ class Elo(commands.Cog):
     # // UNDO A WIN FOR THE BLUE TEAM
     # ////////////////////////////////////
     async def _undo_blue_win(self, ctx, blue_team, orange_team):
-        settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         
         # // REMOVE WIN FROM BLUE TEAM
         for user in blue_team:
-            _row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET elo = {_row[3]-settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            _row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET elo = {_row[3]-settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
         
         # // REMOVE LOSS FROM ORANGE TEAM
         for user in orange_team:
-            _row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET elo = {_row[3]+settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            _row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET elo = {_row[3]+settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
 
     # // UNDO A WIN FOR THE ORANGE TEAM
     # ////////////////////////////////////
     async def _undo_orange_win(self, ctx, blue_team, orange_team):
-        settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
 
         # // REMOVE LOSS FROM BLUE TEAM
         for user in blue_team:
-            _row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET elo = {_row[3]+settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            _row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET elo = {_row[3]+settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
         
         # // REMOVE WIN FROM ORANGE TEAM
         for user in orange_team:
-            _row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET elo = {_row[3]-settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
-            SQL.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            _row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET elo = {_row[3]-settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await SQL.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
 
 
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
@@ -123,11 +123,11 @@ class Elo(commands.Cog):
         # // REPORTING AN ONGOING MATCH
         if action == "report":
             if ctx.author.guild_permissions.manage_messages:
-                row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+                row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                 if "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
-                    SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    SQL.execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    await SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    await SQL.execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                     orange_team = str(row[4]).split(",")
                     orange_team.append(int(row[3]))
@@ -157,10 +157,10 @@ class Elo(commands.Cog):
         # // CANCELLING AN ONGOING MATCH
         if action == "cancel":
             if ctx.author.guild_permissions.manage_messages:
-                row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 if "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
-                    SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    await SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    await SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     await self._match_show(ctx, match_id)
 
                     return await self._delete_channels(ctx, match_id)
@@ -174,11 +174,11 @@ class Elo(commands.Cog):
         # // UNDOING A REPORTED MATCH
         if action == "undo":
             if ctx.author.guild_permissions.manage_messages:
-                row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 if "reported" in row[7] or "cancelled" in row[7]:
                     # // UPDATING THE DATABASE
-                    SQL.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
-                    SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    await SQL.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
+                    await SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                     # // ADD THE CAPTAINS TO EACH TEAM
                     blue_team = str(row[6]).split(",")
@@ -204,20 +204,20 @@ class Elo(commands.Cog):
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def set(self, ctx, action:str, user:discord.Member, amount:int):
-        row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             # // SET A PLAYERS ELO
             if action in ["elo"]:
-                SQL.execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                await SQL.execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 await self._user_edit(ctx, user, nick=f"{row[2]} [{amount}]")
                 
             # // SET A PLAYERS WINS
             if action in ["wins", "win"]:
-                SQL.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                await SQL.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
             # // SET A PLAYERS LOSSES
             if action in ["losses", "lose", "loss"]:
-                SQL.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                await SQL.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
             return await self._stats(ctx, user)
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=15158588))
@@ -226,7 +226,7 @@ class Elo(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(aliases=["lm"])
     async def lastmatch(self, ctx):
-        count = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+        count = await SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         return await self._match_show(ctx, len(count))
 
     # // REPLACE / SUB TWO PLAYERS COMMAND
@@ -234,30 +234,30 @@ class Elo(commands.Cog):
     @commands.command(aliases=["sub", "swap"])
     @commands.has_permissions(manage_messages=True)
     async def replace(self, ctx, match_id:int, user1:discord.Member, user2:discord.Member):
-        row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+        row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
         if "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
             blue_team = str(row[6]).split(",")
             orange_team = str(row[4]).split(",")
 
             # // REPLACE USER FROM ORANGE CAPTAIN
             if str(user1.id) in str(row[3]):
-                SQL.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                await SQL.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
             # // REPLACE USER FROM BLUE CAPTAIN
             elif str(user1.id) in str(row[5]):
-                SQL.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                await SQL.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
             
             # // REPLACE USER FROM ORANGE TEAM
             elif str(user1.id) in orange_team:
                 orange_team.remove(str(user1.id))
                 orange_team.append(str(user2.id))
-                SQL.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                await SQL.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
             # // REPLACE USER FROM BLUE TEAM
             elif str(user1.id) in blue_team:
                 blue_team.remove(str(user1.id))
                 blue_team.append(str(user2.id))
-                SQL.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                await SQL.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
             else:
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
             return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
@@ -267,7 +267,7 @@ class Elo(commands.Cog):
     # /////////////////////////////////
     @commands.command()
     async def recent(self, ctx, *args):
-        row = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+        row = await SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         amount = len(row)
         if args:
             amount = list(args)[0]
@@ -284,9 +284,9 @@ class Elo(commands.Cog):
     # /////////////////////////////////////////
     @commands.command()
     async def rename(self, ctx, name:str):
-        if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-            SQL.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
-            row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
+        if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+            await SQL.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
+            row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
             await self._user_edit(ctx, ctx.author, nick=f"{row[2]} [{row[3]}]")
 
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=3066992))
@@ -297,9 +297,9 @@ class Elo(commands.Cog):
     @commands.command(aliases=["fr"])
     @commands.has_permissions(manage_messages=True)
     async def forcerename(self, ctx, user:discord.Member, name:str):
-        row = SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
-            SQL.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SQL.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             await self._user_edit(ctx, ctx.author, nick=f"{row[2]} [{row[3]}]")
 
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
@@ -309,10 +309,10 @@ class Elo(commands.Cog):
     # ///////////////////////////////////////////
     @commands.command(aliases=["reg"])
     async def register(self, ctx, name:str):
-        if not SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-            row = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+            row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if row[6] == 0 or row[6] == ctx.message.channel.id:
-                SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
+                await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
                 
                 await self._user_edit(ctx, ctx.author, nick=f"{name} [0]")
                 if row[1] != 0:
@@ -326,8 +326,8 @@ class Elo(commands.Cog):
     @commands.command(aliases=["unreg"])
     @commands.has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):
-        if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            SQL.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+            await SQL.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
 
@@ -336,7 +336,7 @@ class Elo(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
-        settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         for user in users:
             await self._win(ctx, user, settings)
             await self._stats(ctx, user)
@@ -364,10 +364,10 @@ class Elo(commands.Cog):
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def reset(self, ctx, user:discord.Member):
-        if SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            SQL.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            SQL.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            SQL.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+            await SQL.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SQL.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SQL.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
         return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=15158588))
     
@@ -376,7 +376,7 @@ class Elo(commands.Cog):
     @commands.command(aliases=["lb"])
     async def leaderboard(self, ctx):
         users={}; names = ""
-        rows = SQL.select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
+        rows = await SQL.select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
         for row in rows:
             users[ctx.guild.get_member(list(row)[1])] = list(row)[3]
 
@@ -396,7 +396,7 @@ class Elo(commands.Cog):
         IF THE CHEATER IS NOT ON THE WINNING TEAM, THEN THE MATCH STILL COUNTS 
         (RAINBOW SIX SIEGE ROLLBACK SYSTEM)
         '''
-        rows = SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+        rows = await SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
         for row in rows:
             if "ongoing" not in row[7] and "rollbacked" not in row[7]:
                 blue_team = str(row[6]).split(","); blue_team.append(row[5])
@@ -411,7 +411,7 @@ class Elo(commands.Cog):
                         if user in blue_team:
                             await self._undo_blue_win(ctx, blue_team, orange_team)
                         
-                    SQL.execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
+                    await SQL.execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
                     await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Match **#{row[1]}** has been rollbacked", color=3066992))
                 
 
@@ -425,8 +425,8 @@ class Elo(commands.Cog):
                 match_id = int(str(res.message.embeds[0].title).replace("Match #", ""))
                 
                 # // GETTING THE ROWS FROM DATABASE
-                row = SQL.select(f"SELECT * FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                settings = SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
+                row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
 
                 if "ongoing" in row[7]:
                     # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
@@ -439,14 +439,14 @@ class Elo(commands.Cog):
 
                     if res.component.id == "match_cancel":
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} has cancelled **Match #{match_id}**", color=3066992))
-                        SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                        SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        await SQL.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        await SQL.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                     if res.component.id == 'blue_report':
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
 
-                        SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                        SQL.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        await SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        await SQL.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                         # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                         for user in blue_team:
@@ -461,8 +461,8 @@ class Elo(commands.Cog):
                     if res.component.id == 'orange_report':
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
 
-                        SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                        SQL.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        await SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                        await SQL.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                         for user in blue_team:
                             member = res.guild.get_member(await self._clean(user))

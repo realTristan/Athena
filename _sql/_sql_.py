@@ -1,20 +1,14 @@
 # // MYSQL DATABASE CONNECTOR
 import mysql.connector
+import MySQLdb
 
 # // AUTO CLOSE CURSOR OR CONNECTION
 from contextlib import closing
 
-# // CONNECTING TO DATABASE
-db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    passwd="root",
-    database="main"
-)
-
 class SQL():
     def __init__(self):
-        with closing(db.cursor(buffered=True)) as cur:
+        self.db = self._connect()
+        with closing(self.db.cursor(buffered=True)) as cur:
             pass
             #cur.execute(f"DROP TABLE bans")
             #cur.execute(f"DROP TABLE maps")
@@ -43,40 +37,63 @@ class SQL():
             #if not self.exists("SELECT *  FROM information_schema WHERE TABLE_NAME = bans"):
                 #cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
 
+    # // CONNECTING TO DATABASE
+    # /////////////////////////////
+    def _connect(self):
+        self.db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="root",
+            database="main"
+        )
+        return self.db
 
     # // CHECK IF A VALUE IN A TABLE EXISTS
     # ////////////////////////////////////////
-    def exists(self, command):
-        with closing(db.cursor(buffered=True)) as cur:
-            cur.execute(command)
-            if cur.fetchone() is None:
-                return False # // Doesn't exist
-            return True # // Does exist
+    async def exists(self, command):
+        try:
+            with closing(self.db.cursor(buffered=True)) as cur:
+                cur.execute(command)
+                if cur.fetchone() is None:
+                    return False # // Doesn't exist
+                return True # // Does exist
+        except MySQLdb.OperationalError:
+            self.db = self._connect()
+
 
 
     # // RETURNS A SINGLE LIST FROM THE SELECTED TABLE
     # /////////////////////////////////////////////////
-    def select(self, command):
-        with closing(db.cursor(buffered=True)) as cur:
-            if self.exists(command):
-                cur.execute(command)
-                return list(cur.fetchall()[0])
-            return None
+    async def select(self, command):
+        try:
+            with closing(self.db.cursor(buffered=True)) as cur:
+                if self.exists(command):
+                    cur.execute(command)
+                    return list(cur.fetchall()[0])
+                return None
+        except MySQLdb.OperationalError:
+            self.db = self._connect()
 
 
     # // RETURNS MULTIPLE LISTS FROM THE SELECTED TABLE
     # ///////////////////////////////////////////////////
-    def select_all(self, command):
-        with closing(db.cursor(buffered=True)) as cur:
-            if self.exists(command):
-                cur.execute(command)
-                return list(cur.fetchall())
-            return None
+    async def select_all(self, command):
+        try:
+            with closing(self.db.cursor(buffered=True)) as cur:
+                if self.exists(command):
+                    cur.execute(command)
+                    return list(cur.fetchall())
+                return None
+        except MySQLdb.OperationalError:
+            self.db = self._connect()
 
 
     # // EXECUTE A SEPERATE COMMAND
     # /////////////////////////////////////
-    def execute(self, command):
-        with closing(db.cursor(buffered=True)) as cur:
-            cur.execute(command)
-            db.commit()
+    async def execute(self, command):
+        try:
+            with closing(self.db.cursor(buffered=True)) as cur:
+                cur.execute(command)
+                self.db.commit()
+        except MySQLdb.OperationalError:
+            self.db = self._connect()
