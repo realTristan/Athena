@@ -42,7 +42,7 @@ class Elo(commands.Cog):
 
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
-    async def _win(self, ctx, user, settings=None):
+    async def _win(self, ctx, user, settings):
         row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             await SQL.execute(f"UPDATE users SET elo = {row[3]+settings[7]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -53,7 +53,7 @@ class Elo(commands.Cog):
 
     # // GIVE AN USER A LOSS FUNCTION
     # /////////////////////////////////////////
-    async def _loss(self, ctx, user, settings=None):
+    async def _loss(self, ctx, user, settings):
         row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             await SQL.execute(f"UPDATE users SET elo = {row[3]-settings[8]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -143,17 +143,17 @@ class Elo(commands.Cog):
 
                     if "blue" in list(args)[0]:
                         for user in orange_team:
-                            await self._loss(ctx, ctx.guild.get_member(int(user)), settings=settings)
+                            await self._loss(ctx, ctx.guild.get_member(int(user)), settings)
 
                         for user in blue_team:
-                            await self._win(ctx, ctx.guild.get_member(int(user)), settings=settings)
+                            await self._win(ctx, ctx.guild.get_member(int(user)), settings)
                             
                     if "orange" in list(args)[0]:
                         for user in orange_team:
-                            await self._win(ctx, ctx.guild.get_member(int(user)), settings=settings)
+                            await self._win(ctx, ctx.guild.get_member(int(user)), settings)
 
                         for user in blue_team:
-                            await self._loss(ctx, ctx.guild.get_member(int(user)), settings=settings)
+                            await self._loss(ctx, ctx.guild.get_member(int(user)), settings)
                     await self._match_show(ctx, match_id)
 
                     return await self._delete_channels(ctx, match_id)
@@ -343,7 +343,7 @@ class Elo(commands.Cog):
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
         settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         for user in users:
-            await self._win(ctx, user, settings=settings)
+            await self._win(ctx, user, settings)
             await self._stats(ctx, user)
 
     # // GIVES AN USER A LOSS COMMAND
@@ -351,9 +351,9 @@ class Elo(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
-        settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
+        settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         for user in users:
-            await self._loss(ctx, user, settings=settings)
+            await self._loss(ctx, user, settings)
             await self._stats(ctx, user)
 
     # // SHOW YOUR OR ANOTHER PLAYER'S STATS COMMAND
@@ -463,12 +463,12 @@ class Elo(commands.Cog):
                         # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                         for user in blue_team:
                             member = res.guild.get_member(await self._clean(user))
-                            await self._win(res.channel, member, settings=settings)
+                            await self._win(res.channel, member, settings)
 
                         # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
                         for user in orange_team:
                             member = res.guild.get_member(await self._clean(user))
-                            await self._loss(res.channel, member, settings=settings)
+                            await self._loss(res.channel, member, settings)
 
                     if res.component.id == 'orange_report':
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
@@ -478,11 +478,11 @@ class Elo(commands.Cog):
 
                         for user in blue_team:
                             member = res.guild.get_member(await self._clean(user))
-                            await self._loss(res.channel, member, settings=settings)
+                            await self._loss(res.channel, member, settings)
 
                         for user in orange_team:
                             member = res.guild.get_member(await self._clean(user))
-                            await self._win(res.channel, member, settings=settings)
+                            await self._win(res.channel, member, settings)
                 else:
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} this match has already been reported", color=15158588))
 
