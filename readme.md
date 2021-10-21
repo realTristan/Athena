@@ -22,6 +22,8 @@
 - Type =set losses (@user) (amount) to set an users losses
 - Type =j to join the current queue
 - Type =l to leave the current queue
+- Type =reset @user to reset players stats
+- Type =reset all to reset everyones stats
 - Type =clear to clear the current queue
 - Type =q to check the current queue
 - Type =p to pick your teammates (team captains only)
