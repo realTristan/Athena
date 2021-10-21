@@ -1,6 +1,6 @@
 # // MYSQL DATABASE CONNECTOR
 import mysql.connector
-import MySQLdb
+import pymysql
 
 # // AUTO CLOSE CURSOR OR CONNECTION
 from contextlib import closing
@@ -57,7 +57,7 @@ class SQL():
                 if cur.fetchone() is None:
                     return False # // Doesn't exist
                 return True # // Does exist
-        except MySQLdb.OperationalError:
+        except pymysql.OperationalError:
             self.db = self._connect()
 
 
@@ -71,7 +71,7 @@ class SQL():
                     cur.execute(command)
                     return list(cur.fetchall()[0])
                 return None
-        except MySQLdb.OperationalError:
+        except pymysql.OperationalError:
             self.db = self._connect()
 
 
@@ -84,7 +84,7 @@ class SQL():
                     cur.execute(command)
                     return list(cur.fetchall())
                 return None
-        except MySQLdb.OperationalError:
+        except pymysql.OperationalError:
             self.db = self._connect()
 
 
@@ -95,5 +95,5 @@ class SQL():
             with closing(self.db.cursor(buffered=True)) as cur:
                 cur.execute(command)
                 self.db.commit()
-        except MySQLdb.OperationalError:
+        except pymysql.OperationalError:
             self.db = self._connect()
