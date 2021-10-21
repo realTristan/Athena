@@ -16,6 +16,12 @@ class Elo(commands.Cog):
                 await channel.delete()
             return await _category.delete()
 
+    # RESET AN USERS STATS
+    # ///////////////////////////////////////
+    async def _reset_stats(self, ctx, user):
+        await SQL.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        await SQL.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        await SQL.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
@@ -357,14 +363,6 @@ class Elo(commands.Cog):
         if len(list(args)) > 0 and "@" in str(list(args)[0]):
             user = ctx.guild.get_member(await self._clean(list(args)[0]))
         return await self._stats(ctx, user)
-
-    # RESET AN USERS STATS
-    # ///////////////////////////////////////
-    async def _reset_stats(self, ctx, user):
-        await SQL.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        await SQL.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        await SQL.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-
 
     # // RESET AN USERS STATS COMMAND
     # /////////////////////////////////////////
