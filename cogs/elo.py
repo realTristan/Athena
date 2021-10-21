@@ -313,7 +313,6 @@ class Elo(commands.Cog):
             row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if row[6] == 0 or row[6] == ctx.message.channel.id:
                 await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
-                
                 await self._user_edit(ctx, ctx.author, nick=f"{name} [0]")
                 if row[1] != 0:
                     await self._user_edit(ctx, ctx.author, role=ctx.guild.get_role(row[1]))
