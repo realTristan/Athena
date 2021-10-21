@@ -354,21 +354,35 @@ class Elo(commands.Cog):
     @commands.command()
     async def stats(self, ctx, *args):
         user = ctx.author
-        if len(list(args)) > 0 and "<@" in str(list(args)[0]):
+        if len(list(args)) > 0 and "@" in str(list(args)[0]):
             user = ctx.guild.get_member(await self._clean(list(args)[0]))
         return await self._stats(ctx, user)
+
+    # RESET AN USERS STATS
+    # ///////////////////////////////////////
+    async def _reset_stats(self, ctx, user):
+        await SQL.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        await SQL.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        await SQL.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+
 
     # // RESET AN USERS STATS COMMAND
     # /////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def reset(self, ctx, user:discord.Member):
-        if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            await SQL.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            await SQL.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            await SQL.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
-        return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=15158588))
+    async def reset(self, ctx, args):
+        if args == "all":
+            for user in ctx.guild.members:
+                if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                    await self._reset_stats(ctx, user)
+            return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset all players stats", color=3066992))
+        if "@" in args:
+            user = ctx.guild.get_member(await self._clean(args))
+            if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                await self._reset_stats(ctx, user)
+                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
+            return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=15158588))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect usage, ex: =reset all / @user", color=15158588))
     
     # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
     # /////////////////////////////////////////

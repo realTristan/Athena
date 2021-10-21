@@ -190,7 +190,7 @@ class Settings(commands.Cog):
             if res.author.guild_permissions.administrator:
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
                 c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
-                if "<@" in str(c.content):
+                if "@" in str(c.content):
                     role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
                     await SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=3066992))

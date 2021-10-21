@@ -67,7 +67,7 @@ class SQL():
     async def select(self, command):
         try:
             with closing(self.db.cursor(buffered=True)) as cur:
-                if self.exists(command):
+                if await self.exists(command):
                     cur.execute(command)
                     return list(cur.fetchall()[0])
                 return None
@@ -80,7 +80,7 @@ class SQL():
     async def select_all(self, command):
         try:
             with closing(self.db.cursor(buffered=True)) as cur:
-                if self.exists(command):
+                if await self.exists(command):
                     cur.execute(command)
                     return list(cur.fetchall())
                 return None
