@@ -34,6 +34,7 @@ class Help(commands.Cog):
     moderator_embed.add_field(name=' ‎\nLose [Mod+]', value='Give a loss to the mentioned users\n(Usage: =lose [@users])')
     moderator_embed.add_field(name=' ‎\nAdd Map [Mod+]', value='Adds a map to the map pool\n(Usage: =addmap [name])')
     moderator_embed.add_field(name=' ‎\nRemove Map [Mod+]', value='Removes a map from the map pool\n(Usage: =delmap [name])')
+    moderator_embed.add_field(name=' ‎\nRegister [Mod+]', value='Register an user\n(Usage: =reg [@user] [name])')
     moderator_embed.add_field(name=' ‎\nUnRegister [Mod+]', value='Unregister an user\n(Usage: =unreg [@user])')
     moderator_embed.add_field(name=' ‎\nClear Queue [Mod+]', value='Clears the current queue\n(Usage: =clear)')
     moderator_embed.add_field(name=' ‎\nForce Rename [Mod+]', value='Renames the user\n(Usage: =fr [@user] [new name])')
@@ -47,6 +48,7 @@ class Help(commands.Cog):
 
     # // ADDING FIELDS TO ADMINISTRATOR EMBED
     administrator_embed.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
+    administrator_embed.add_field(name=' ‎\nUnRegister All [Admin+]', value='UnRegister every player\n(Usage: =unreg all)')
     administrator_embed.add_field(name=' ‎\nReset Stats [Admin+]', value='Reset an users stats\n(Usage: =reset [@user])')
     administrator_embed.add_field(name=' ‎\nReset All Stats [Admin+]', value='Reset all players stats\n(Usage: =reset all)')
     administrator_embed.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =set elo [@user] [amount])')
