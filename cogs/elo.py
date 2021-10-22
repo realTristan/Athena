@@ -340,7 +340,7 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             
             elif params == "all":
-                if ctx.author.guild_permissions.administrator:
+                if ctx.author.id == 395645581067943936:
                     for user in ctx.guild.members:
                         if not not user.bot:
                             if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
