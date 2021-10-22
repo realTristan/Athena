@@ -311,30 +311,67 @@ class Elo(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
     
+
+
+
+
+    async def _register_user(self, ctx, user, name):
+        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
+        await self._user_edit(ctx, ctx.author, nick=f"{name} [0]")
+        if row[1] != 0:
+            await self._user_edit(ctx, ctx.author, role=ctx.guild.get_role(row[1]))
+                
+
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
     @commands.command(aliases=["reg"])
-    async def register(self, ctx, name:str):
-        if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-            row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-            if row[6] == 0 or row[6] == ctx.message.channel.id:
-                await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {ctx.author.id}, '{name}', 0, 0, 0)")
-                await self._user_edit(ctx, ctx.author, nick=f"{name} [0]")
-                if row[1] != 0:
-                    await self._user_edit(ctx, ctx.author, role=ctx.guild.get_role(row[1]))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered as **{name}**", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[6]).mention}", color=33023))
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
+    async def register(self, ctx, params:str, *args):
+        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        if row[6] == 0 or row[6] == ctx.message.channel.id:
+            if "@" in params:
+                if ctx.author.guild_permissions.manage_messages:
+                    user = ctx.guild.get_member(await self._clean(params))
+                    name = list(args)[0]
+                    if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                        await self._register_user(ctx, user, name)
+                        return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            
+            elif params == "all":
+                if ctx.author.guild_permissions.administrator:
+                    for user in ctx.guild.members:
+                        if not not user.bot:
+                            if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                                await self._register_user(ctx, user, user.name)
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered every member", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            else:
+                if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                    await self._register_user(ctx, ctx.author, params)
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{params}**", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[6]).mention}", color=33023))
     
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////
     @commands.command(aliases=["unreg"])
     @commands.has_permissions(administrator=True)
-    async def unregister(self, ctx, user:discord.Member):
-        if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-            await SQL.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
-        return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+    async def unregister(self, ctx, params:str):
+        if params == "all":
+            if ctx.author.guild_permissions.administrator:
+                for user in ctx.guild.members:
+                    if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                        await SQL.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unregistered every member", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        else:
+            user = ctx.guild.get_member(await self._clean(params))
+            if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                await SQL.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
 
     # // GIVES AN USER A WIN COMMAND
     # /////////////////////////////////////////
