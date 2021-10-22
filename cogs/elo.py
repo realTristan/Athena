@@ -239,7 +239,7 @@ class Elo(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(aliases=["sub", "swap"])
     @commands.has_permissions(manage_messages=True)
-    async def replace(self, ctx, match_id:int, user1:discord.Member, user2:discord.Member):
+    async def replace(self, ctx, user1:discord.Member, user2:discord.Member, match_id:int):
         row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
         if "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
             blue_team = str(row[6]).split(",")
