@@ -27,7 +27,6 @@ class Elo(commands.Cog):
     # ///////////////////////////////////////////////
     async def _register_user(self, ctx, user, name, row):
         await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
-        await self._user_edit(ctx, ctx.author, nick=f"{name} [0]")
         if row[1] != 0:
             await self._user_edit(ctx, ctx.author, role=ctx.guild.get_role(row[1]))
 
@@ -331,6 +330,7 @@ class Elo(commands.Cog):
                     name = list(args)[0]
                     if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                         await self._register_user(ctx, user, name, row)
+                        await self._user_edit(ctx, user, nick=f"{name} [0]")
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
@@ -346,6 +346,7 @@ class Elo(commands.Cog):
             else:
                 if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                     await self._register_user(ctx, ctx.author, params, row)
+                    await self._user_edit(ctx, ctx.author, nick=f"{params} [0]")
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{params}**", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[6]).mention}", color=33023))
@@ -405,10 +406,10 @@ class Elo(commands.Cog):
     async def reset(self, ctx, args):
         if args == "all":
             for user in ctx.guild.members:
-                row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                if row is not None:
-                    await self._reset_stats(ctx, user)
-                    await self._user_edit(ctx, user, nick=f"{row[2]} [0]")
+                if not user.bot:
+                    row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                    if row is not None:
+                        await self._reset_stats(ctx, user)
             return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset all players stats", color=3066992))
         if "@" in args:
             user = ctx.guild.get_member(await self._clean(args))
