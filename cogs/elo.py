@@ -330,14 +330,13 @@ class Elo(commands.Cog):
     async def register(self, ctx, params:str, *args):
         if not ctx.author.bot:
             settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-
-            # // GETTING THE REGISTER ROLE FROM SETTINGS
-            role = None
-            if settings[1] != 0:
-                role = ctx.guild.get_role(settings[1])
-
-            # // CHECKING IF MESSAGE IS IN REGISTER CHANNEL
             if settings[6] == 0 or settings[6] == ctx.message.channel.id:
+
+                # // GETTING THE REGISTER ROLE FROM SETTINGS
+                role = None
+                if settings[1] != 0:
+                    role = ctx.guild.get_role(settings[1])
+            
                 # // REGISTER THE MENTIONED USER
                 if "@" in params:
                     if ctx.author.guild_permissions.manage_messages:
