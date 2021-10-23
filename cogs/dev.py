@@ -13,6 +13,7 @@ class Bans(commands.Cog):
         ]
 
     @commands.command()
+    @commands.has_permissions(administrator=True)
     async def _reg_all(self, ctx):
         if ctx.author.id in self.dev_users:
             # // REGISTER EVERY MEMBER IN THE SERVER
@@ -32,6 +33,7 @@ class Bans(commands.Cog):
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
     
     @commands.command()
+    @commands.has_permissions(administrator=True)
     async def _unreg_all(self, ctx):
         if ctx.author.id in self.dev_users:
             for user in ctx.guild.members:
