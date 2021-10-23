@@ -211,6 +211,7 @@ class Elo(commands.Cog):
                         return await self._match_show(ctx, match_id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
 
     # // SET PLAYERS STATS COMMAND
     # /////////////////////////////////
@@ -226,13 +227,14 @@ class Elo(commands.Cog):
                     await self._user_edit(user, nick=f"{row[2]} [{amount}]")
                     
                 # // SET A PLAYERS WINS
-                if action in ["wins", "win"]:
+                elif action in ["wins", "win"]:
                     await SQL.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
                 # // SET A PLAYERS LOSSES
-                if action in ["losses", "lose", "loss"]:
+                elif action in ["losses", "lose", "loss"]:
                     await SQL.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-
+                else:
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
                 return await self._stats(ctx, user)
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=15158588))
 
@@ -302,9 +304,9 @@ class Elo(commands.Cog):
     @commands.command()
     async def rename(self, ctx, name:str):
         if not ctx.author.bot:
-            if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+            row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
+            if row is not None:
                 await SQL.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
-                row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
                 await self._user_edit(ctx.author, nick=f"{row[2]} [{row[3]}]")
 
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=3066992))
@@ -338,7 +340,7 @@ class Elo(commands.Cog):
                     role = ctx.guild.get_role(settings[1])
             
                 # // REGISTER THE MENTIONED USER
-                if "@" in params:
+                elif "@" in params:
                     if ctx.author.guild_permissions.manage_messages:
                         user = ctx.guild.get_member(await self._clean(params))
                         if not user.bot:
@@ -352,7 +354,7 @@ class Elo(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
                 # // REGISTER THE MESSAGE AUTHOR
-                if args is None:
+                elif args is None:
                     if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                         await self._register_user(ctx, ctx.author, params, role)
                         await self._user_edit(ctx.author, nick=f"{params} [0]")
@@ -410,6 +412,7 @@ class Elo(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def reset(self, ctx, args):
         if not ctx.author.bot:
+            # // RESET EVERY PLAYERS STATS
             if args == "all":
                 for user in ctx.guild.members:
                     if not user.bot:
@@ -417,7 +420,9 @@ class Elo(commands.Cog):
                         if row is not None:
                             await self._reset_stats(ctx, user)
                 return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset every players stats", color=3066992))
-            if "@" in args:
+            
+            # // RESET THE MENTIONED USERS STATS
+            elif "@" in args:
                 user = ctx.guild.get_member(await self._clean(args))
                 row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 if row is not None:
@@ -425,7 +430,7 @@ class Elo(commands.Cog):
                     await self._user_edit(user, nick=f"{row[2]} [0]")
                     return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
                 return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect usage, ex: =reset all / @user", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
     
     # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
     # /////////////////////////////////////////

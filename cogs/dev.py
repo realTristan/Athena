@@ -24,7 +24,6 @@ class Bans(commands.Cog):
             if settings[1] != 0:
                 role = ctx.guild.get_role(settings[1])
 
-            
             for user in ctx.guild.members:
                 if not user.bot:
                     if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
