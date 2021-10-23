@@ -3,13 +3,22 @@ from _sql import *
 import discord
 SQL = SQL()
 
-class Bans(commands.Cog):
+class Dev(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.dev_users = [
             395645581067943936
         ]
 
+    # // REGISTER USER INTO THE DATABASE FUNCTION
+    # ///////////////////////////////////////////////
+    async def _register_user(self, ctx, user, name, role):
+        await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
+        if role not in user.roles:
+            await self._user_edit(user, role=role)
+
+    # // REGISTER EVERY SERVER MEMBER COMMAND
+    # //////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def _reg_all(self, ctx):
@@ -29,6 +38,8 @@ class Bans(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered every member", color=3066992))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
     
+    # // UNREGISTER EVERY SERVER MEMBER COMMAND
+    # //////////////////////////////////////////
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def _unreg_all(self, ctx):
@@ -40,4 +51,4 @@ class Bans(commands.Cog):
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
 def setup(client):
-    client.add_cog(Bans(client))
+    client.add_cog(Dev(client))
