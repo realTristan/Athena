@@ -61,32 +61,34 @@ class Help(commands.Cog):
     # //////////////////////////////////////
     @commands.command()
     async def help(self, ctx):
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=33023),
-            components=[
-                Select(
-                    placeholder="View Commands",
-                    options=[
-                        SelectOption(emoji='🔵', label="Player Commands", value="player"),
-                        SelectOption(emoji='🔵', label="Moderator Commands", value="mod"),
-                        SelectOption(emoji='🔵', label="Administrator Commands", value="admin")
-                    ])])
+        if not ctx.author.bot:
+            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=33023),
+                components=[
+                    Select(
+                        placeholder="View Commands",
+                        options=[
+                            SelectOption(emoji='🔵', label="Player Commands", value="player"),
+                            SelectOption(emoji='🔵', label="Moderator Commands", value="mod"),
+                            SelectOption(emoji='🔵', label="Administrator Commands", value="admin")
+                        ])])
 
 
     # // SELECT MENU LISTENER
     # //////////////////////////////////////
     @commands.Cog.listener()
     async def on_select_option(self, res):
-        if res.values[0] == "player":
-            await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
-            return await res.author.send(embed=self.player_embed)
-        
-        if res.values[0] == "mod":
-            await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
-            return await res.author.send(embed=self.moderator_embed)
-        
-        if res.values[0] == "admin":
-            await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
-            return await res.author.send(embed=self.administrator_embed)
+        if not res.author.bot:
+            if res.values[0] == "player":
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
+                return await res.author.send(embed=self.player_embed)
+            
+            if res.values[0] == "mod":
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
+                return await res.author.send(embed=self.moderator_embed)
+            
+            if res.values[0] == "admin":
+                await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
+                return await res.author.send(embed=self.administrator_embed)
 
 
 
