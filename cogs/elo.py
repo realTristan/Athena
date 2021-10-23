@@ -356,7 +356,7 @@ class Elo(commands.Cog):
 
                 # // REGISTER EVERY MEMBER IN THE SERVER
                 elif params == "all":
-                    if ctx.author.id == 395645581067943936:
+                    if ctx.author.id in [395645581067943936]:
                         for user in ctx.guild.members:
                             if not user.bot:
                                 if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
