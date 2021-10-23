@@ -28,7 +28,7 @@ class Elo(commands.Cog):
     async def _register_user(self, ctx, user, name, row):
         await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
         if row[1] != 0:
-            await self._user_edit(ctx, ctx.author, role=ctx.guild.get_role(row[1]))
+            await self._user_edit(ctx, user, role=ctx.guild.get_role(row[1]))
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
