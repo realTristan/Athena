@@ -1,9 +1,7 @@
 from discord.ext import commands
-import datetime as datetime
-import discord, time
 from _sql import *
+import discord
 SQL = SQL()
-
 
 class Bans(commands.Cog):
     def __init__(self, client):
