@@ -205,9 +205,8 @@ class Elo(commands.Cog):
                             await self._undo_blue_win(ctx, blue_team, orange_team)
                         
                         # // REMOVE LOSS FROM BLUE TEAM
-                        elif str(row[8]) == "orange":
+                        if str(row[8]) == "orange":
                             await self._undo_orange_win(ctx, blue_team, orange_team)
-                        
 
                         return await self._match_show(ctx, match_id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
@@ -261,17 +260,17 @@ class Elo(commands.Cog):
                     await SQL.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                 # // REPLACE USER FROM BLUE CAPTAIN
-                elif str(user1.id) in str(row[5]):
+                if str(user1.id) in str(row[5]):
                     await SQL.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 
                 # // REPLACE USER FROM ORANGE TEAM
-                elif str(user1.id) in orange_team:
+                if str(user1.id) in orange_team:
                     orange_team.remove(str(user1.id))
                     orange_team.append(str(user2.id))
                     await SQL.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                 # // REPLACE USER FROM BLUE TEAM
-                elif str(user1.id) in blue_team:
+                if str(user1.id) in blue_team:
                     blue_team.remove(str(user1.id))
                     blue_team.append(str(user2.id))
                     await SQL.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
@@ -355,7 +354,7 @@ class Elo(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
                 # // REGISTER EVERY MEMBER IN THE SERVER
-                elif params == "all":
+                if params == "all":
                     if ctx.author.id in [395645581067943936]:
                         for user in ctx.guild.members:
                             if not user.bot:
@@ -365,7 +364,7 @@ class Elo(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
                 # // REGISTER THE MESSAGE AUTHOR
-                elif args is None:
+                if args is None:
                     if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                         await self._register_user(ctx, ctx.author, params, role)
                         await self._user_edit(ctx.author, nick=f"{params} [0]")
@@ -379,7 +378,7 @@ class Elo(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def unregister(self, ctx, params:str):
         if not ctx.author.bot:
-            # // UNREGISTER EVERY PLAYER
+            # // UNREGISTER EVERY MEMBER IN THE SERVER
             if params == "all":
                 if ctx.author.guild_permissions.administrator:
                     for user in ctx.guild.members:
@@ -389,7 +388,7 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             
             # // UNREGISTER AN USER
-            elif "@" in params:
+            if "@" in params:
                 user = ctx.guild.get_member(await self._clean(params))
                 if not user.bot:
                     if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
