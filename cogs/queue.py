@@ -85,7 +85,7 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id]['queue'])}/10] Queue", description=current_queue, color=33023))
 
         # // TEAM PICKING PHASE EMBED
-        elif self.data[ctx.guild.id]["state"] == "pick":
+        if self.data[ctx.guild.id]["state"] == "pick":
             orange_team="None"
             blue_team="None"
             if len(self.data[ctx.guild.id]["orange_team"]) != 0:
@@ -106,7 +106,7 @@ class Queue(commands.Cog):
             return await ctx.send(f"**{self.data[ctx.guild.id]['pick_logic'][0].mention} it is your turn to pick**")
 
         # // MAP PICKING PHASE EMBED
-        elif self.data[ctx.guild.id]["state"] == "maps":
+        if self.data[ctx.guild.id]["state"] == "maps":
             row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
             embed=discord.Embed(title="Map Picking Phase", color=33023)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id]["orange_cap"].mention)
@@ -120,7 +120,7 @@ class Queue(commands.Cog):
             return await ctx.send(f"**{self.data[ctx.guild.id]['blue_cap'].mention} select a map to play**")
 
         # // FINAL MATCH UP EMBED
-        elif self.data[ctx.guild.id]["state"] == "final":
+        if self.data[ctx.guild.id]["state"] == "final":
             count = await SQL.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             if count is None:
                 count=[]

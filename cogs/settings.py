@@ -19,19 +19,19 @@ class Settings(commands.Cog):
             return ["🔴", "Enable"]
 
         # // MATCH CATEGORIES
-        elif option == "match_category":
+        if option == "match_category":
             if row[3] == "true":
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
 
         # // TEAM PICKING PHASE
-        elif option == "team_pick_phase":
+        if option == "team_pick_phase":
             if row[4] == "true":
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
 
         # // MATCH LOGGING
-        elif option == "match_logging":
+        if option == "match_logging":
             if row[9] != 0:
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
