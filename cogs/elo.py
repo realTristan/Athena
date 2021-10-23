@@ -260,17 +260,17 @@ class Elo(commands.Cog):
                     await SQL.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                 # // REPLACE USER FROM BLUE CAPTAIN
-                if str(user1.id) in str(row[5]):
+                elif str(user1.id) in str(row[5]):
                     await SQL.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 
                 # // REPLACE USER FROM ORANGE TEAM
-                if str(user1.id) in orange_team:
+                elif str(user1.id) in orange_team:
                     orange_team.remove(str(user1.id))
                     orange_team.append(str(user2.id))
                     await SQL.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                 # // REPLACE USER FROM BLUE TEAM
-                if str(user1.id) in blue_team:
+                elif str(user1.id) in blue_team:
                     blue_team.remove(str(user1.id))
                     blue_team.append(str(user2.id))
                     await SQL.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
