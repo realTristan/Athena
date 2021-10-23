@@ -416,7 +416,7 @@ class Elo(commands.Cog):
                         row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                         if row is not None:
                             await self._reset_stats(ctx, user)
-                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset all players stats", color=3066992))
+                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset every players stats", color=3066992))
             if "@" in args:
                 user = ctx.guild.get_member(await self._clean(args))
                 row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
