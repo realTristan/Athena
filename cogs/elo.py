@@ -25,10 +25,10 @@ class Elo(commands.Cog):
 
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////
-    async def _register_user(self, ctx, user, name, row):
+    async def _register_user(self, ctx, user, name, role):
         await SQL.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
-        if row[1] != 0:
-            await self._user_edit(ctx, user, role=ctx.guild.get_role(row[1]))
+        if not role in ctx.author.roles:
+            await self._user_edit(ctx, user, role=role)
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
@@ -323,13 +323,17 @@ class Elo(commands.Cog):
     @commands.command(aliases=["reg"])
     async def register(self, ctx, params:str, *args):
         row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+        role = None
+        if row[1] != 0:
+            role = ctx.guild.get_role(row[1])
+            
         if row[6] == 0 or row[6] == ctx.message.channel.id:
             if "@" in params:
                 if ctx.author.guild_permissions.manage_messages:
                     user = ctx.guild.get_member(await self._clean(params))
                     name = list(args)[0]
                     if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                        await self._register_user(ctx, user, name, row)
+                        await self._register_user(ctx, user, name, role)
                         await self._user_edit(ctx, user, nick=f"{name} [0]")
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
@@ -340,12 +344,12 @@ class Elo(commands.Cog):
                     for user in ctx.guild.members:
                         if not not user.bot:
                             if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                                await self._register_user(ctx, user, user.name, row)
+                                await self._register_user(ctx, user, user.name, role)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered every member", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             else:
                 if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-                    await self._register_user(ctx, ctx.author, params, row)
+                    await self._register_user(ctx, ctx.author, params, role)
                     await self._user_edit(ctx, ctx.author, nick=f"{params} [0]")
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{params}**", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
