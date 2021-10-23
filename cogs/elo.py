@@ -340,7 +340,7 @@ class Elo(commands.Cog):
                     role = ctx.guild.get_role(settings[1])
             
                 # // REGISTER THE MENTIONED USER
-                elif "@" in params:
+                if "@" in params:
                     if ctx.author.guild_permissions.manage_messages:
                         user = ctx.guild.get_member(await self._clean(params))
                         if not user.bot:
@@ -354,7 +354,7 @@ class Elo(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
                 # // REGISTER THE MESSAGE AUTHOR
-                elif args is None:
+                if not args:
                     if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                         await self._register_user(ctx, ctx.author, params, role)
                         await self._user_edit(ctx.author, nick=f"{params} [0]")
@@ -402,7 +402,7 @@ class Elo(commands.Cog):
     async def stats(self, ctx, *args):
         if not ctx.author.bot:
             user = ctx.author
-            if len(list(args)) > 0 and "@" in str(list(args)[0]):
+            if "@" in list(args)[0]:
                 user = ctx.guild.get_member(await self._clean(list(args)[0]))
             return await self._stats(ctx, user)
 
