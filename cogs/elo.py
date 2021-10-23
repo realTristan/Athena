@@ -342,7 +342,7 @@ class Elo(commands.Cog):
             elif params == "all":
                 if ctx.author.id == 395645581067943936:
                     for user in ctx.guild.members:
-                        if not not user.bot:
+                        if not user.bot:
                             if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                                 await self._register_user(ctx, user, user.name, role)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has registered every member", color=3066992))
