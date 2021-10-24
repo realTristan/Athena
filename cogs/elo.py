@@ -139,7 +139,7 @@ class Elo(commands.Cog):
                 if ctx.author.guild_permissions.manage_messages:
                     row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-                    if "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
+                    if args and "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
                         await SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await SQL.execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
@@ -340,7 +340,7 @@ class Elo(commands.Cog):
                     role = ctx.guild.get_role(settings[1])
             
                 # // REGISTER THE MENTIONED USER
-                if "@" in params:
+                if args and "@" in params:
                     if ctx.author.guild_permissions.manage_messages:
                         user = ctx.guild.get_member(await self._clean(params))
                         if not user.bot:
@@ -402,7 +402,7 @@ class Elo(commands.Cog):
     async def stats(self, ctx, *args):
         if not ctx.author.bot:
             user = ctx.author
-            if "@" in list(args)[0]:
+            if args and "@" in list(args)[0]:
                 user = ctx.guild.get_member(await self._clean(list(args)[0]))
             return await self._stats(ctx, user)
 
