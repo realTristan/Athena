@@ -289,7 +289,11 @@ class Queue(commands.Cog):
                 if self.data[ctx.guild.id]["state"] == "maps":
                     if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
                         row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
-                        if map in str(row[1]).split(","):
+                        maps = str(row[1]).split(",")
+                        for m in maps:
+                            maps.append(str(m[0].lower() + m[1:]))
+                            
+                        if map in maps:
                             self.data[ctx.guild.id]["map"] = map
                             self.data[ctx.guild.id]["state"] = "final"
                             return await self._embeds(ctx)
