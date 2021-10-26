@@ -199,11 +199,11 @@ class Settings(commands.Cog):
                     if "@" in str(c.content):
                         role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
                         await SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
-                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to {role.mention}", color=3066992))
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Role** to {role.mention}", color=3066992))
                     
                     await SQL.execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {res.guild.id}")
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register role to **None**", color=3066992))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Role** to **None**", color=3066992))
 
             # // ADD MAP
             if res.values[0] == "add_map":
@@ -227,11 +227,11 @@ class Settings(commands.Cog):
                     
                     if "<#" not in str(c.content):
                         await SQL.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}")
-                        return await res.channelsend(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to **None**", color=3066992))
+                        return await res.channelsend(embed=discord.Embed(description=f"{res.author.mention} set the **Queue Channel** to **None**", color=3066992))
 
                     channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                     await SQL.execute(f"UPDATE settings SET queue_channel = {channel.id} WHERE guild_id = {res.guild.id}")
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the queue channel to {channel.mention}", color=3066992))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the **Queue Channel** to {channel.mention}", color=3066992))
 
             # // CHANGE THE REGISTER CHANNEL
             if res.values[0] == "change_reg_channel":
@@ -241,11 +241,11 @@ class Settings(commands.Cog):
 
                     if "<#" not in str(c.content):
                         await SQL.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}")
-                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to **None**", color=3066992))
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to **None**", color=3066992))
 
                     channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                     await SQL.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the register channel to {channel.mention}", color=3066992))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to {channel.mention}", color=3066992))
             
             # // CHANGE THE ELO PER WIN
             if res.values[0] == "change_win_elo":
@@ -254,7 +254,7 @@ class Settings(commands.Cog):
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
                     await SQL.execute(f"UPDATE settings SET win_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the win elo to **{c.content}**", color=3066992))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Win Elo** to **{c.content}**", color=3066992))
                 
             # // CHANGE THE ELO PER LOSS
             if res.values[0] == "change_loss_elo":
@@ -263,7 +263,7 @@ class Settings(commands.Cog):
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
 
                     await SQL.execute(f"UPDATE settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the loss elo to **{c.content}**", color=3066992))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Loss Elo** to **{c.content}**", color=3066992))
 
             # // QUEUE EMBED
             if res.values[0] == "queue_embed":
@@ -279,6 +279,6 @@ class Settings(commands.Cog):
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the maximum party size", color=33023))
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
                     await SQL.execute(f"UPDATE settings SET queue_parties = {int(c.content)} WHERE guild_id = {res.guild.id}")
-                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to {c.content}", color=3066992))
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to **{c.content}**", color=3066992))
 def setup(client):
     client.add_cog(Settings(client))
