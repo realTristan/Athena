@@ -92,11 +92,10 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
         if not ctx.author.bot:
-            if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
-            else:
+            if await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
                 await SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
-            return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has not setup the bot yet", color=15158588))
 
     # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
@@ -105,7 +104,7 @@ class Settings(commands.Cog):
     async def settings(self, ctx):
         if not ctx.author.bot:
             if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+                await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, queue_parties) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 0)")
                 
             team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
             map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
@@ -125,6 +124,7 @@ class Settings(commands.Cog):
                             SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                             SelectOption(emoji=f'🔵', label="Change Queue Channel", value="change_queue_channel"),
                             SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
+                            SelectOption(emoji=f'🔵', label="Change Queue Party Size", value="change_queue_party_size"),
                             SelectOption(emoji=f'{match_logging[0]}', label=f"{match_logging[1]} Match Logging", value="match_logging"),
                             SelectOption(emoji=f'{match_category[0]}', label=f"{match_category[1]} Match Categories", value="match_category"),
                             SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
@@ -274,5 +274,11 @@ class Settings(commands.Cog):
                         Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
                         Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
 
+            if res.values[0] == "change_queue_party_size":
+                if res.author.guild_permissions.administrator:
+                    await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the maximum party size", color=33023))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                    await SQL.execute(f"UPDATE settings SET queue_parties = {int(c.content)} WHERE guild_id = {res.guild.id}")
+                    return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to {c.content}", color=3066992))
 def setup(client):
     client.add_cog(Settings(client))

@@ -1,7 +1,7 @@
+import discord, random, time, asyncio
 from discord_components import *
 from discord.ext import commands
 from discord.utils import get
-import discord, random, time
 import datetime as datetime
 from _sql import *
 SQL = SQL()
@@ -14,13 +14,18 @@ class Queue(commands.Cog):
     # // RESET THE GUILD'S VARIABLES FUNCTION
     # /////////////////////////////////////////
     async def _reset(self, ctx):
-        self.data[ctx.guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "state": "queue"}
+        self.data[ctx.guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "parties": {}, "state": "queue"}
 
+    # // GET THE USERS ID FROM A STRING
+    # /////////////////////////////////////////
+    async def _clean(self, user):
+        return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
+        
     # // CHECK IF GUILD IS IN "self.data" FUNCTION
     # /////////////////////////////////////////
     async def _data_check(self, ctx):
         if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0)")
+            await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, queue_parties) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 0)")
 
         if ctx.guild.id not in self.data:
             await self._reset(ctx)
@@ -349,6 +354,119 @@ class Queue(commands.Cog):
                 await self._reset(ctx)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=15158588))
+
+
+    # // PARTY COMMAND
+    # ////////////////////////////
+    @commands.command(aliases=["team"])
+    async def party(self, ctx, action:str, *args):
+        if await self._data_check(ctx):
+            parties = self.data[ctx.guild.id]["parties"]
+            settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+            max_party_size = settings[10]
+            party_members = "None"
+
+            if max_party_size <= 0:
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has disabled queue parties", color=15158588))
+
+            # // INVITE USER TO YOUR PARTY
+            if action == "invite":
+                if len(parties[ctx.author.id])+2 <= max_party_size:
+                    user = ctx.guild.get_member(await self._clean(list(args)[0]))
+                    if ctx.author.id in parties:
+                        # CHECK IF USER IS IN A PARTY
+                        if user.id in parties:
+                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
+
+                        for party in parties:
+                            # CHECK IF USER IS IN A PARTY
+                            if user.id in parties[party]:
+                                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
+
+                            # CHECK IF AUTHOR IS IN A PARTY
+                            if ctx.author.id in parties[party]:
+                                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please leave your current party", color=15158588))
+
+                        # // SENDING EMBED WITH BUTTONS
+                        try:
+                            message = await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invited {user.mention} to their party", color=33023),
+                            components=[[
+                                    Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
+                                    Button(style=ButtonStyle.red, label="Decline", custom_id='decline_party')
+                                ]])
+                            res = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
+
+                            # // CHECKING WHICH BUTTON WAS CLICKED
+                            if res.component.id == "accept_party":
+                                parties[ctx.author.id].append(user.id)
+                                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])+1}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
+
+                        # // TIMEOUT ERROR
+                        except asyncio.TimeoutError:
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
+
+            # // LEAVE PARTY ACTION
+            if action == "leave":
+                # CHECK IF AUTHOR IS IN A PARTY
+                if ctx.author.id in parties:
+                    del parties[ctx.author.id]
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has disbanded their party", color=3066992))
+                
+                # // CHECK IF AUTHOR IS IN ANY OTHER PARTIES
+                for party in parties:
+                    if ctx.author.id in parties[party]:
+                        parties[party].remove(ctx.author.id)
+                        return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[party])+1}/{max_party_size}]** {ctx.author.mention} has left their party", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
+
+            # // SHOW PARTY ACTION
+            if action == "show":
+                # // SHOW AUTHOR'S PARTY
+                if not args:
+                    for party in parties:
+                        if ctx.author.id in parties[party]:
+                            party_members = "\n".join("<@" + str(e) + ">" for e in parties[party])
+                            return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description=party_members, color=33023))
+
+                    # // CHECK IF AUTHOR IS IN HIS OWN PARTY
+                    if not ctx.author.id in parties:
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
+
+                    if len(parties[ctx.author.id]) > 0:
+                        party_members = "\n".join("<@" + str(e) + ">" for e in parties[ctx.author.id])
+                    return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description=party_members, color=33023))
+                    
+                # // SHOW ANOTHER PLAYER'S PARTY
+                user = ctx.guild.get_member(await self._clean(list(args)[0]))
+                if not user.id in parties:
+                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not the leader of any party", color=15158588))
+
+                if len(parties[user.id]) > 0:
+                    party_members = "\n".join("<@" + str(e) + ">" for e in parties[user.id])
+                return await ctx.send(embed=discord.Embed(title=f"{user.name}'s party ┃ {ctx.guild.name}", description=party_members, color=33023))
+
+            # // CREATE PARTY
+            if action == "create":
+                if not ctx.author.id in parties:
+                    parties.update({ctx.author.id: []})
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has created their own party", color=3066992))
+
+                for party in parties:
+                    if ctx.author.id in parties[party]:
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already in a party", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already the leader of a party", color=15158588))
+
+            # // KICK AN USER FROM YOUR PARTY
+            if action == "kick":
+                if ctx.author.id in parties:
+                    user = ctx.guild.get_member(await self._clean(list(args)[0]))
+                    if user.id in parties[ctx.author.id]:
+                        parties[ctx.author.id].remove(user.id)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from their party", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in your party", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
 
 
     # // BUTTON CLICK LISTENER
