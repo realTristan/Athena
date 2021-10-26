@@ -158,9 +158,10 @@ class Settings(commands.Cog):
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=33023))
                             c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
 
-                            channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                            await SQL.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
-                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
+                            if "#" in c.content:
+                                channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                                await SQL.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
+                                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
 
                         await SQL.execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
