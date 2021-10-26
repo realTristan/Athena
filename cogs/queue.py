@@ -30,7 +30,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     async def _data_check(self, ctx):
         if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, queue_parties) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 0)")
+            await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, team_categories, picking_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, queue_parties) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 1)")
 
         if ctx.guild.id not in self.data:
             await self._reset(ctx)
@@ -387,9 +387,6 @@ class Queue(commands.Cog):
         if await self._data_check(ctx):
             parties = self.data[ctx.guild.id]["parties"]
             settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-
-            if settings[10] <= 0:
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has disabled queue parties", color=15158588))
 
             # // INVITE USER TO YOUR PARTY
             if action == "invite" or action == "inv":

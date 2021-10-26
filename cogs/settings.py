@@ -104,7 +104,7 @@ class Settings(commands.Cog):
     async def settings(self, ctx):
         if not ctx.author.bot:
             if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, queue_parties) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 0)")
+                await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, queue_parties) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 1)")
                 
             team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
             map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
