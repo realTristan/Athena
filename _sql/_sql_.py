@@ -22,7 +22,7 @@ class SQL():
 
             # // SETTINGS TABLE
             #if not await self.exists("SELECT *  FROM information_schema WHERE TABLE_NAME = settings"):
-                #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, map_pick_phase VARCHAR(10), match_categories VARCHAR(10), team_pick_phase VARCHAR(10), queue_channel BIGINT, reg_channel BIGINT, win_elo int, loss_elo int, match_logs BIGINT, queue_parties INT, id int PRIMARY KEY AUTO_INCREMENT)")
+                #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, map_pick_phase VARCHAR(10), match_categories VARCHAR(10), team_pick_phase VARCHAR(10), queue_channel BIGINT, reg_channel BIGINT, win_elo int, loss_elo int, match_logs BIGINT, party_size INT, id int PRIMARY KEY AUTO_INCREMENT)")
 
             # // MATCHES TABLE
             #if not await self.exists("SELECT *  FROM information_schema WHERE TABLE_NAME = matches"):

@@ -104,7 +104,7 @@ class Settings(commands.Cog):
     async def settings(self, ctx):
         if not ctx.author.bot:
             if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, queue_parties) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 1)")
+                await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, party_size) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 1)")
                 
             team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
             map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
@@ -278,7 +278,7 @@ class Settings(commands.Cog):
                 if res.author.guild_permissions.administrator:
                     await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the maximum party size", color=33023))
                     c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
-                    await SQL.execute(f"UPDATE settings SET queue_parties = {int(c.content)} WHERE guild_id = {res.guild.id}")
+                    await SQL.execute(f"UPDATE settings SET party_size = {int(c.content)} WHERE guild_id = {res.guild.id}")
                     return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to **{c.content}**", color=3066992))
 def setup(client):
     client.add_cog(Settings(client))
