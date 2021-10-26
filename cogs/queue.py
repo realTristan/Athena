@@ -399,7 +399,10 @@ class Queue(commands.Cog):
                             # // CHECKING WHICH BUTTON WAS CLICKED
                             if res.component.id == "accept_party":
                                 parties[ctx.author.id].append(user.id)
+                                await res.send(embed=discord.Embed(description=f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", color=3066992))
                                 return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])+1}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
+                            
+                            await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=3066992))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
 
                         # // TIMEOUT ERROR
@@ -437,7 +440,7 @@ class Queue(commands.Cog):
                     if len(parties[ctx.author.id]) > 0:
                         party_members = "\n".join("<@" + str(e) + ">" for e in parties[ctx.author.id])
                     return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description=party_members, color=33023))
-                    
+
                 # // SHOW ANOTHER PLAYER'S PARTY
                 user = ctx.guild.get_member(await self._clean(list(args)[0]))
                 if not user.id in parties:
