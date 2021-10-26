@@ -34,6 +34,10 @@ class Queue(commands.Cog):
     # // ADD OTHER PARTY MEMBERS TO THE QUEUE
     # ////////////////////////////////////////////
     async def _check_party(self, ctx, user):
+        for party in self.data[ctx.guild.id]["parties"]:
+            if user.id in party:
+                return False
+
         if user.id in self.data[ctx.guild.id]["parties"]:
             if len(self.data[ctx.guild.id]["parties"][user.id]) + len(self.data[ctx.guild.id]["queue"]) <= 10:
                 for player in self.data[ctx.guild.id]["parties"][user.id][1:]:
@@ -237,7 +241,8 @@ class Queue(commands.Cog):
                                     self.data[ctx.guild.id]["queue"].append(user)
                                     if len(self.data[ctx.guild.id]["queue"]) == 10:
                                         return await self._start(ctx)
-                                return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
+                                    return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
+                                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader / party too full", color=15158588))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
                     return False
