@@ -156,7 +156,7 @@ class Settings(commands.Cog):
                         row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
                         if row[9] == 0:
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=33023))
-                            c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                            c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
 
                             channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                             await SQL.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
@@ -196,7 +196,7 @@ class Settings(commands.Cog):
                 if res.values[0] == "change_reg_role":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
                         if "@" in str(c.content):
                             role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
                             await SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
@@ -210,21 +210,21 @@ class Settings(commands.Cog):
                 if res.values[0] == "add_map":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
                         await self._add_map(res, c.content)
 
                 # // REMOVE MAP
                 if res.values[0] == "remove_map":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
                         await self._del_map(res, c.content)
 
                 # // CHANGE THE QUEUE CHANNEL
                 if res.values[0] == "change_queue_channel":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
                         
                         if "<#" not in str(c.content):
                             await SQL.execute(f"UPDATE settings SET queue_channel = 0 WHERE guild_id = {res.guild.id}")
@@ -238,7 +238,7 @@ class Settings(commands.Cog):
                 if res.values[0] == "change_reg_channel":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
 
                         if "<#" not in str(c.content):
                             await SQL.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}")
@@ -252,7 +252,7 @@ class Settings(commands.Cog):
                 if res.values[0] == "change_win_elo":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to gain", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
 
                         await SQL.execute(f"UPDATE settings SET win_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Win Elo** to **{c.content}**", color=3066992))
@@ -261,7 +261,7 @@ class Settings(commands.Cog):
                 if res.values[0] == "change_loss_elo":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to lose", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author)
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
 
                         await SQL.execute(f"UPDATE settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id}")
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Loss Elo** to **{c.content}**", color=3066992))
@@ -283,6 +283,6 @@ class Settings(commands.Cog):
                         await SQL.execute(f"UPDATE settings SET party_size = {int(c.content)} WHERE guild_id = {res.guild.id}")
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to **{c.content}**", color=3066992))
             except asyncio.TimeoutError:
-                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} did not respond in time", color=15158588))
+                return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond in time", color=15158588))
 def setup(client):
     client.add_cog(Settings(client))
