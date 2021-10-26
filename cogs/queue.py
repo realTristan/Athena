@@ -35,7 +35,7 @@ class Queue(commands.Cog):
     # ////////////////////////////////////////////
     async def _check_party(self, ctx, user):
         for party in self.data[ctx.guild.id]["parties"]:
-            if user.id in self.data[ctx.guild.id]["parties"][party]:
+            if user.id in self.data[ctx.guild.id]["parties"][party] and party != user.id:
                 return False
 
         if user.id in self.data[ctx.guild.id]["parties"]:
