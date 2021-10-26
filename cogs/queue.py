@@ -371,14 +371,13 @@ class Queue(commands.Cog):
             parties = self.data[ctx.guild.id]["parties"]
             settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             max_party_size = settings[10]
-            party_members = "None"
 
             if max_party_size <= 0:
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has disabled queue parties", color=15158588))
 
             # // INVITE USER TO YOUR PARTY
             if action == "invite":
-                if len(parties[ctx.author.id])+2 <= max_party_size:
+                if len(parties[ctx.author.id])+1 <= max_party_size:
                     user = ctx.guild.get_member(await self._clean(list(args)[0]))
                     if ctx.author.id in parties:
                         # CHECK IF USER IS IN A PARTY
@@ -407,7 +406,7 @@ class Queue(commands.Cog):
                             if res.component.id == "accept_party":
                                 parties[ctx.author.id].append(user.id)
                                 await res.send(embed=discord.Embed(description=f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", color=3066992))
-                                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])+1}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
+                                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
                             
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=3066992))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
@@ -428,7 +427,7 @@ class Queue(commands.Cog):
                 for party in parties:
                     if ctx.author.id in parties[party]:
                         parties[party].remove(ctx.author.id)
-                        return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[party])+1}/{max_party_size}]** {ctx.author.mention} has left their party", color=3066992))
+                        return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left their party", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
 
             # // SHOW PARTY ACTION
@@ -463,6 +462,7 @@ class Queue(commands.Cog):
                     
                 if not ctx.author.id in parties:
                     parties.update({ctx.author.id: []})
+                    parties[ctx.author.id].append(ctx.author.id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has created their own party", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already in a party", color=15158588))
 
