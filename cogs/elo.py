@@ -354,7 +354,7 @@ class Elo(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
                 # // REGISTER THE MESSAGE AUTHOR
-                if not args:
+                else:
                     if not await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                         await self._register_user(ctx, ctx.author, params, role)
                         await self._user_edit(ctx.author, nick=f"{params} [0]")
