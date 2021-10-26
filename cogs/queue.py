@@ -102,9 +102,9 @@ class Queue(commands.Cog):
     # /////////////////////////
     async def _pick_logic(self, ctx):
         for _ in range(round(len(self.data[ctx.guild.id]["queue"]) / 2)):
-            self.data[ctx.guild.id]["pick_logic"].append(
-                self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"]
-            )
+            self.data[ctx.guild.id]["pick_logic"].append(self.data[ctx.guild.id]["blue_cap"])
+            self.data[ctx.guild.id]["pick_logic"].append(self.data[ctx.guild.id]["orange_cap"])
+
         if len(self.data[ctx.guild.id]["queue"]) > len(self.data[ctx.guild.id]["pick_logic"]):
             self.data[ctx.guild.id]["pick_logic"].append(self.data[ctx.guild.id]["orange_cap"])
 
@@ -241,14 +241,14 @@ class Queue(commands.Cog):
                     if await self._ban_check(ctx, user):
                         row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                         if row[5] == 0 or ctx.message.channel.id == row[5]:
-                            if not user in self.data[ctx.guild.id]["queue"]:
+                            #if not user in self.data[ctx.guild.id]["queue"]:
                                 if await self._check_party(ctx, user):
                                     self.data[ctx.guild.id]["queue"].append(user)
                                     if len(self.data[ctx.guild.id]["queue"]) == 10:
                                         return await self._start(ctx)
                                     return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
                                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader / party too full", color=15158588))
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
+                            #return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
                     return False
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
@@ -319,22 +319,18 @@ class Queue(commands.Cog):
     @commands.command()
     async def map(self, ctx, map:str):
         if not ctx.author.bot:
-            if await self._data_check(ctx):
-                if self.data[ctx.guild.id]["state"] == "maps":
-                    if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
-                        row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
-                        maps = str(row[1]).split(",")
-                        for m in maps:
-                            maps.append(str(m[0].lower() + m[1:]))
-                            
-                        if map in maps:
-                            self.data[ctx.guild.id]["map"] = map
-                            self.data[ctx.guild.id]["state"] = "final"
-                            return await self._embeds(ctx)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=15158588))
+            if self.data[ctx.guild.id]["state"] == "maps":
+                if ctx.author == self.data[ctx.guild.id]["blue_cap"]:
+                    row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+                    maps = str(row[1]).split(",")
+                    
+                    if map in maps or self._clean_name(map) in maps:
+                        self.data[ctx.guild.id]["map"] = self._clean_name(map)
+                        self.data[ctx.guild.id]["state"] = "final"
+                        return await self._embeds(ctx)
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
     
     # // JOIN THE QUEUE COMMAND
     # /////////////////////////////////////////
