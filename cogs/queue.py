@@ -77,7 +77,20 @@ class Queue(commands.Cog):
 
                 for user in list(dict.fromkeys(blue_team)):
                     await category.set_permissions(user, connect=True, send_messages=True)
-        
+    
+
+    # CREATE TEAM PICK LOGIC
+    # /////////////////////////
+    async def _pick_logic(self, ctx):
+        for _ in range(round(len(self.data[ctx.guild.id]["queue"]) / 2)):
+            self.data[ctx.guild.id]["pick_logic"].append(
+                self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"]
+            )
+        if len(self.data[ctx.guild.id]["queue"]) > len(self.data[ctx.guild.id]["pick_logic"]):
+            self.data[ctx.guild.id]["pick_logic"].append(self.data[ctx.guild.id]["blue_cap"])
+
+        if len(self.data[ctx.guild.id]["queue"]) < len(self.data[ctx.guild.id]["pick_logic"]):
+            self.data[ctx.guild.id]["pick_logic"].pop(len(self.data[ctx.guild.id]["pick_logic"]))
 
     # // EMBED GENERATOR FUNCTION
     # /////////////////////////////////////////
@@ -168,9 +181,7 @@ class Queue(commands.Cog):
             # // PICK PHASE ENABLED
             # // CREATING LOGIC AND CHANGING STATE
             self.data[ctx.guild.id]["state"] = "pick"
-            self.data[ctx.guild.id]["pick_logic"] = [
-                self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["blue_cap"],
-                self.data[ctx.guild.id]["blue_cap"], self.data[ctx.guild.id]["orange_cap"], self.data[ctx.guild.id]["blue_cap"]]
+            await self._pick_logic(ctx)
             return await self._embeds(ctx)
         
         # // PICK PHASE DISABLED
