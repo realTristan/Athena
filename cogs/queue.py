@@ -437,7 +437,7 @@ class Queue(commands.Cog):
                         except asyncio.TimeoutError:
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader", color=15158588))
 
             # // LEAVE PARTY ACTION
             if action == "leave":
@@ -450,7 +450,7 @@ class Queue(commands.Cog):
                 for party in parties:
                     if ctx.author.id in parties[party]:
                         parties[party].remove(ctx.author.id)
-                        return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left their party", color=3066992))
+                        return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left the party", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
 
             # // SHOW PARTY ACTION
@@ -497,7 +497,7 @@ class Queue(commands.Cog):
                         parties[ctx.author.id].remove(user.id)
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from their party", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in your party", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader", color=15158588))
 
 
     # // BUTTON CLICK LISTENER
