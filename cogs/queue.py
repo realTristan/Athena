@@ -16,6 +16,11 @@ class Queue(commands.Cog):
     async def _reset(self, ctx):
         self.data[ctx.guild.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "parties": {}, "state": "queue"}
 
+    # // CLEAN A PLAYERS NAME TO LOOK CLEANER
+    # ////////////////////////////////////////////
+    def _clean_name(self, name):
+        return str(name[0]).upper() + str(name[1:]).lower()
+
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
     async def _clean(self, user):
@@ -224,7 +229,7 @@ class Queue(commands.Cog):
             if row[2] - time.time() < 0:
                 await SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 return False
-            await ctx.channel.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
+            await ctx.channel.send(embed=discord.Embed(title=f"{self._clean_name(user.name)} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
         return True
 
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
@@ -379,7 +384,6 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=15158588))
 
-
     # // PARTY COMMAND
     # ////////////////////////////
     @commands.command(aliases=["team"])
@@ -394,9 +398,9 @@ class Queue(commands.Cog):
 
             # // INVITE USER TO YOUR PARTY
             if action == "invite" or action == "inv":
-                if len(parties[ctx.author.id])+1 <= max_party_size:
-                    user = ctx.guild.get_member(await self._clean(list(args)[0]))
-                    if ctx.author.id in parties:
+                if ctx.author.id in parties:
+                    if len(parties[ctx.author.id])+1 <= max_party_size:
+                        user = ctx.guild.get_member(await self._clean(list(args)[0]))
                         # CHECK IF USER IS IN A PARTY
                         if user.id in parties:
                             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
@@ -432,8 +436,8 @@ class Queue(commands.Cog):
                         # // TIMEOUT ERROR
                         except asyncio.TimeoutError:
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
 
             # // LEAVE PARTY ACTION
             if action == "leave":
@@ -455,13 +459,13 @@ class Queue(commands.Cog):
                 if not args:
                     for party in parties:
                         if ctx.author.id in parties[party]:
-                            return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
+                            return await ctx.send(embed=discord.Embed(title=f"[{len(parties[ctx.author.id])}/{max_party_size}] {self._clean_name(ctx.guild.get_member(party).name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
 
                     # // CHECK IF AUTHOR IS IN HIS OWN PARTY
                     if ctx.author.id in parties:
                         if len(parties[ctx.author.id]) > 0:
-                            return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[ctx.author.id]), color=33023))
-                        return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description="None", color=33023))
+                            return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(ctx.guild.get_member(party).name)}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[ctx.author.id]), color=33023))
+                        return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(ctx.guild.get_member(party).name)}'s party ┃ {ctx.guild.name}", description="None", color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
                 
                 # // SHOW ANOTHER PLAYER'S PARTY
@@ -469,8 +473,8 @@ class Queue(commands.Cog):
                     user = ctx.guild.get_member(await self._clean(list(args)[0]))
                     if user.id in parties:
                         if len(parties[user.id]) > 0:
-                            return await ctx.send(embed=discord.Embed(title=f"{user.name}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
-                        return await ctx.send(embed=discord.Embed(title=f"{user.name}'s party ┃ {ctx.guild.name}", description="None", color=33023))
+                            return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(user.name)}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
+                        return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(user.name)}'s party ┃ {ctx.guild.name}", description="None", color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not the leader of any party", color=15158588))
 
             # // CREATE PARTY
