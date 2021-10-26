@@ -436,7 +436,7 @@ class Queue(commands.Cog):
                 if not args:
                     for party in parties:
                         if ctx.author.id in parties[party]:
-                            return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description=p"\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
+                            return await ctx.send(embed=discord.Embed(title=f"{ctx.guild.get_member(party).name}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
 
                     # // CHECK IF AUTHOR IS IN HIS OWN PARTY
                     if ctx.author.id in parties:
