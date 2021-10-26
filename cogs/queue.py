@@ -241,14 +241,14 @@ class Queue(commands.Cog):
                     if await self._ban_check(ctx, user):
                         row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                         if row[5] == 0 or ctx.message.channel.id == row[5]:
-                            #if not user in self.data[ctx.guild.id]["queue"]:
+                            if not user in self.data[ctx.guild.id]["queue"]:
                                 if await self._check_party(ctx, user):
                                     self.data[ctx.guild.id]["queue"].append(user)
                                     if len(self.data[ctx.guild.id]["queue"]) == 10:
                                         return await self._start(ctx)
                                     return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
                                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader / party too full", color=15158588))
-                            #return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
                         return await ctx.send(embed=discord.Embed(description=f"{user.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
                     return False
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
