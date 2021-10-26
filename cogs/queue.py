@@ -212,26 +212,37 @@ class Queue(commands.Cog):
             await ctx.channel.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
         return True
     
+
+    async def _check_party(self, ctx, user):
+        if user.id in self.data[ctx.guild.id]["parties"]:
+            if len(self.data[ctx.guild.id]["parties"][user.id]) + len(self.data[ctx.guild.id]["queue"]) <= 10:
+                for player in self.data[ctx.guild.id]["parties"][user.id][1:]:
+                    await self._join(ctx, ctx.guild.get_member(player))
+                return True
+            return False
+        return True
+
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
     # /////////////////////////////////////////
     async def _join(self, ctx, user):
         if await self._data_check(ctx):
             if self.data[ctx.guild.id]["state"] == "queue":
-                if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                     if await self._ban_check(ctx, user):
                         row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
                         if row[5] == 0 or ctx.message.channel.id == row[5]:
                             if not user in self.data[ctx.guild.id]["queue"]:
-                                self.data[ctx.guild.id]["queue"].append(user)
-                                if len(self.data[ctx.guild.id]["queue"]) == 10:
-                                    return await self._start(ctx)
+                                if await self._check_party(ctx, user):
+                                    self.data[ctx.guild.id]["queue"].append(user)
+                                    if len(self.data[ctx.guild.id]["queue"]) == 10:
+                                        return await self._start(ctx)
                                 return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
+                        return await ctx.send(embed=discord.Embed(description=f"{user.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
                     return False
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=15158588))
+        return await ctx.send(embed=discord.Embed(description=f"{user.mention} an internal error has occured!", color=15158588))
 
     # // WHEN AN USER LEAVES THE QUEUE FUNCTION
     # /////////////////////////////////////////
@@ -245,8 +256,8 @@ class Queue(commands.Cog):
                         return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id]['queue'])}/10]** {user.mention} has left the queue", color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an internal error has occured!", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} {ctx.guild.get_channel(row[5]).mention}", color=33023))
+        return await ctx.send(embed=discord.Embed(description=f"{user.mention} an internal error has occured!", color=15158588))
 
     
     # // FORCE START THE QUEUE COMMAND
@@ -376,7 +387,7 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has disabled queue parties", color=15158588))
 
             # // INVITE USER TO YOUR PARTY
-            if action == "invite":
+            if action == "invite" or action == "inv":
                 if len(parties[ctx.author.id])+1 <= max_party_size:
                     user = ctx.guild.get_member(await self._clean(list(args)[0]))
                     if ctx.author.id in parties:
@@ -390,12 +401,13 @@ class Queue(commands.Cog):
                                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
 
                             # CHECK IF AUTHOR IS IN A PARTY
-                            if ctx.author.id in parties[party]:
+                            if ctx.author.id in parties[party] and party != ctx.author.id:
                                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please leave your current party", color=15158588))
 
                         # // SENDING EMBED WITH BUTTONS
                         try:
-                            message = await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invited {user.mention} to their party", color=33023),
+                            await ctx.send("||" + user.mention + "||")
+                            message = await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has invited you to join their party", color=33023),
                             components=[[
                                     Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
                                     Button(style=ButtonStyle.red, label="Decline", custom_id='decline_party')
@@ -415,6 +427,7 @@ class Queue(commands.Cog):
                         except asyncio.TimeoutError:
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the leader of any parties", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", color=15158588))
 
             # // LEAVE PARTY ACTION
             if action == "leave":
