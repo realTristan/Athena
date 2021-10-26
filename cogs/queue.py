@@ -30,6 +30,17 @@ class Queue(commands.Cog):
         if ctx.guild.id not in self.data:
             await self._reset(ctx)
         return True
+
+    # // ADD OTHER PARTY MEMBERS TO THE QUEUE
+    # ////////////////////////////////////////////
+    async def _check_party(self, ctx, user):
+        if user.id in self.data[ctx.guild.id]["parties"]:
+            if len(self.data[ctx.guild.id]["parties"][user.id]) + len(self.data[ctx.guild.id]["queue"]) <= 10:
+                for player in self.data[ctx.guild.id]["parties"][user.id][1:]:
+                    await self._join(ctx, ctx.guild.get_member(player))
+                return True
+            return False
+        return True
     
     # // SEND MATCH LOGS TO THE GIVEN CHANNEL
     # //////////////////////////////////////////
@@ -210,16 +221,6 @@ class Queue(commands.Cog):
                 await SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 return False
             await ctx.channel.send(embed=discord.Embed(title=f"{user.name} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
-        return True
-    
-
-    async def _check_party(self, ctx, user):
-        if user.id in self.data[ctx.guild.id]["parties"]:
-            if len(self.data[ctx.guild.id]["parties"][user.id]) + len(self.data[ctx.guild.id]["queue"]) <= 10:
-                for player in self.data[ctx.guild.id]["parties"][user.id][1:]:
-                    await self._join(ctx, ctx.guild.get_member(player))
-                return True
-            return False
         return True
 
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
