@@ -1,10 +1,21 @@
 # // MYSQL DATABASE CONNECTOR
 import mysql.connector
 
+def _connect():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="root",
+        database="main"
+    )
+    return db
+
+db = _connect()
+cur = db.cursor()
+
 class SQL():
     def __init__(self):
-        self.db = self._connect()
-
+        pass
         #self.cur.execute(f"DROP TABLE bans")
         #self.cur.execute(f"DROP TABLE maps")
         #self.cur.execute(f"DROP TABLE matches")
@@ -28,58 +39,50 @@ class SQL():
         #self.cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
 
 
-    # // CONNECTING TO DATABASE
-    # /////////////////////////////
-    def _connect(self):
-        self.db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="root",
-            database="main"
-        )
-        self.cur = self.db.cursor()
-        return self.db
-
     # // CHECK IF A VALUE IN A TABLE EXISTS
     # ////////////////////////////////////////
     async def exists(self, command):
+        global db
         try:
-            self.cur.execute(command)
-            if self.cur.fetchone() is not None:
+            cur.execute(command)
+            if cur.fetchone() is not None:
                 return True # // Does exist
             return False # // Doesn't exist
         except mysql.connector.Error:
-            self.db.close()
-            self.db = self._connect()
+            db.close()
+            db = _connect()
 
     # // RETURNS A SINGLE LIST FROM THE SELECTED TABLE
     # /////////////////////////////////////////////////
     async def select(self, command):
+        global db
         try:
             if await self.exists(command):
-                self.cur.execute(command)
-                return list(self.cur.fetchall()[0])
+                cur.execute(command)
+                return list(cur.fetchall()[0])
             return None
         except mysql.connector.Error:
-            self.db.close()
-            self.db = self._connect()
+            db.close()
+            db = _connect()
 
     # // RETURNS MULTIPLE LISTS FROM THE SELECTED TABLE
     # ///////////////////////////////////////////////////
     async def select_all(self, command):
+        global db
         try:
-            self.cur.execute(command)
-            return list(self.cur.fetchall())
+            cur.execute(command)
+            return list(cur.fetchall())
         except mysql.connector.Error:
-            self.db.close()
-            self.db = self._connect()
+            db.close()
+            db = _connect()
 
     # // EXECUTE A SEPERATE COMMAND
     # /////////////////////////////////////
     async def execute(self, command):
+        global db
         try:
-            self.cur.execute(command)
-            self.db.commit()
+            cur.execute(command)
+            db.commit()
         except mysql.connector.Error:
-            self.db.close()
-            self.db = self._connect()
+            db.close()
+            db = _connect()

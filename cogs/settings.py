@@ -96,7 +96,7 @@ class Settings(commands.Cog):
                 await SQL.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has not setup the bot yet", color=15158588))
-
+    
     # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
     @commands.command(aliases=["sets"])
