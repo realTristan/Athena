@@ -448,7 +448,7 @@ class Queue(commands.Cog):
                     user = ctx.guild.get_member(await self._clean(list(args)[0]))
                     for party in parties:
                         if user.id in parties[party]:
-                            return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(ctx.guild.get_member(party).name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
+                            return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(ctx.guild.get_member(party).name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in a party", color=15158588))
 
             # // CREATE PARTY
