@@ -446,7 +446,7 @@ class Elo(commands.Cog):
                 names += f'**{postion+1}:** {user.mention} [**{users[user]}**]\n'
                 if postion+1 > 19:
                     break
-            await ctx.send(embed=discord.Embed(title=f"Leaderboard ┃ {ctx.guild.name}", description=names, color=33023))
+            return await ctx.send(embed=discord.Embed(title=f"Leaderboard ┃ {ctx.guild.name}", description=names, color=33023))
         
     # // ROLLBACK EVERY MATCH AN USER WAS IN
     # //////////////////////////////////////////

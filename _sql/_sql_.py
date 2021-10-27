@@ -1,15 +1,9 @@
 # // MYSQL DATABASE CONNECTOR
 import mysql.connector
 
-# // AUTO CLOSE CURSOR OR CONNECTION
-from contextlib import closing
-
-# // IMPORT ASYNCIO
-import asyncio
-
 class SQL():
     def __init__(self):
-        self.db = asyncio.run(self._connect())
+        self.db = self._connect()
 
         #self.cur.execute(f"DROP TABLE bans")
         #self.cur.execute(f"DROP TABLE maps")
@@ -35,7 +29,7 @@ class SQL():
 
     # // CONNECTING TO DATABASE
     # /////////////////////////////
-    async def _connect(self):
+    def _connect(self):
         self.db = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -50,12 +44,12 @@ class SQL():
     async def exists(self, command):
         try:
             self.cur.execute(command)
-            if self.cur.fetchone() is None:
-                return False # // Doesn't exist
-            return True # // Does exist
+            if self.cur.fetchone() is not None:
+                return True # // Does exist
+            return False # // Doesn't exist
         except mysql.connector.Error:
             self.db.close()
-            self.db = await self._connect()
+            self.db = self._connect()
 
 
 
@@ -69,7 +63,7 @@ class SQL():
             return None
         except mysql.connector.Error:
             self.db.close()
-            self.db = await self._connect()
+            self.db = self._connect()
 
 
     # // RETURNS MULTIPLE LISTS FROM THE SELECTED TABLE
@@ -80,7 +74,7 @@ class SQL():
             return list(self.cur.fetchall())
         except mysql.connector.Error:
             self.db.close()
-            self.db = await self._connect()
+            self.db = self._connect()
 
 
     # // EXECUTE A SEPERATE COMMAND
@@ -91,4 +85,4 @@ class SQL():
             self.db.commit()
         except mysql.connector.Error:
             self.db.close()
-            self.db = await self._connect()
+            self.db = self._connect()
