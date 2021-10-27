@@ -403,7 +403,7 @@ class Queue(commands.Cog):
                             if user.id in parties[party]:
                                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
                         try:
-                            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the party invite has been sent to {user.mention}", color=3066992))
+                            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} a party invite has been sent to {user.mention}", color=3066992))
                             message = await user.send(embed=discord.Embed(description=f"{ctx.author.mention} has invited you to join their party", color=33023),
                             components=[[
                                     Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
@@ -463,7 +463,7 @@ class Queue(commands.Cog):
                     
                 if not ctx.author.id in parties:
                     parties[ctx.author.id] = [ctx.author.id]
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has created their own party", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has created a party", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already in a party", color=15158588))
 
             # // KICK AN USER FROM YOUR PARTY
@@ -472,7 +472,7 @@ class Queue(commands.Cog):
                     user = ctx.guild.get_member(await self._clean(list(args)[0]))
                     if user.id in parties[ctx.author.id]:
                         parties[ctx.author.id].remove(user.id)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from their party", color=3066992))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from the party", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in your party", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader", color=15158588))
 
