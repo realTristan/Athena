@@ -51,7 +51,7 @@ class SQL():
     # ////////////////////////////////////////
     async def exists(self, command):
         try:
-            with closing(self.db.cursor()) as cur:
+            with closing(self.db.cursor(buffered=True)) as cur:
                 cur.execute(command)
                 if cur.fetchone() is None:
                     return False # // Doesn't exist
@@ -66,7 +66,7 @@ class SQL():
     # /////////////////////////////////////////////////
     async def select(self, command):
         try:
-            with closing(self.db.cursor()) as cur:
+            with closing(self.db.cursor(buffered=True)) as cur:
                 if await self.exists(command):
                     cur.execute(command)
                     return list(cur.fetchall()[0])
@@ -80,11 +80,11 @@ class SQL():
     # ///////////////////////////////////////////////////
     async def select_all(self, command):
         try:
-            with closing(self.db.cursor()) as cur:
-                if await self.exists(command):
-                    cur.execute(command)
-                    return list(cur.fetchall())
-                return None
+            cur = self.db.cursor(buffered=True)
+            cur.execute(command)
+            result = list(cur.fetchall())
+            cur.close()
+            return result
         except mysql.connector.Error:
             self.db.close()
             self.db = self._connect()
@@ -94,7 +94,7 @@ class SQL():
     # /////////////////////////////////////
     async def execute(self, command):
         try:
-            with closing(self.db.cursor()) as cur:
+            with closing(self.db.cursor(buffered=True)) as cur:
                 cur.execute(command)
                 self.db.commit()
         except mysql.connector.Error:
