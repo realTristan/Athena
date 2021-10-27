@@ -462,8 +462,7 @@ class Queue(commands.Cog):
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already in a party", color=15158588))
                     
                 if not ctx.author.id in parties:
-                    parties.update({ctx.author.id: []})
-                    parties[ctx.author.id].append(ctx.author.id)
+                    parties[ctx.author.id] = [ctx.author.id]
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has created their own party", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already in a party", color=15158588))
 
