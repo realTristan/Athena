@@ -27,6 +27,7 @@ class SQL():
         # // BANS TABLE
         #self.cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
 
+
     # // CONNECTING TO DATABASE
     # /////////////////////////////
     def _connect(self):
@@ -51,8 +52,6 @@ class SQL():
             self.db.close()
             self.db = self._connect()
 
-
-
     # // RETURNS A SINGLE LIST FROM THE SELECTED TABLE
     # /////////////////////////////////////////////////
     async def select(self, command):
@@ -65,7 +64,6 @@ class SQL():
             self.db.close()
             self.db = self._connect()
 
-
     # // RETURNS MULTIPLE LISTS FROM THE SELECTED TABLE
     # ///////////////////////////////////////////////////
     async def select_all(self, command):
@@ -75,7 +73,6 @@ class SQL():
         except mysql.connector.Error:
             self.db.close()
             self.db = self._connect()
-
 
     # // EXECUTE A SEPERATE COMMAND
     # /////////////////////////////////////

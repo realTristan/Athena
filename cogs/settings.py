@@ -285,5 +285,6 @@ class Settings(commands.Cog):
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to **{c.content}**", color=3066992))
             except asyncio.TimeoutError:
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond in time", color=15158588))
+                
 def setup(client):
     client.add_cog(Settings(client))
