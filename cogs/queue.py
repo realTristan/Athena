@@ -423,12 +423,15 @@ class Queue(commands.Cog):
 
             # // LEAVE PARTY ACTION
             if action == "leave":
+                # // DISBAND PARTY
+                if ctx.author.id in parties:
+                    del parties[ctx.author.id]
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has disbanded their party", color=3066992))
+
+                # // LEAVE PARTY
                 for party in parties:
                     if ctx.author.id in parties[party]:
                         parties[party].remove(ctx.author.id)
-                        if len(parties[party]) <= 0:
-                            del parties[party]
-                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has disbanded their party", color=3066992))
                         return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left the party", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
 
