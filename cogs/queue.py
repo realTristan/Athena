@@ -394,12 +394,9 @@ class Queue(commands.Cog):
                 if ctx.author.id in parties:
                     if len(parties[ctx.author.id])+1 <= max_party_size:
                         user = ctx.guild.get_member(await self._clean(list(args)[0]))
-                        # CHECK IF USER IS IN A PARTY
-                        if user.id in parties:
-                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
 
+                        # CHECK IF USER IS IN A PARTY
                         for party in parties:
-                            # CHECK IF USER IS IN A PARTY
                             if user.id in parties[party]:
                                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
                         try:
@@ -416,7 +413,7 @@ class Queue(commands.Cog):
                                 await res.send(embed=discord.Embed(description=f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", color=3066992))
                                 return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
                             
-                            await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=3066992))
+                            await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=15158588))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
 
                         except asyncio.TimeoutError:
