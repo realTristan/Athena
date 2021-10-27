@@ -444,7 +444,7 @@ class Queue(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
                 
                 # // SHOW ANOTHER PLAYER'S PARTY
-                elif "@" in args:
+                if "@" in list(args)[0]:
                     user = ctx.guild.get_member(await self._clean(list(args)[0]))
                     for party in parties:
                         if user.id in parties[party]:
