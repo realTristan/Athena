@@ -7,7 +7,7 @@ from contextlib import closing
 class SQL():
     def __init__(self):
         self.db = self._connect()
-        with closing(self.db.cursor(buffered=True)) as cur:
+        with closing(self.db.cursor()) as cur:
             pass
             #cur.execute(f"DROP TABLE bans")
             #cur.execute(f"DROP TABLE maps")
@@ -51,7 +51,7 @@ class SQL():
     # ////////////////////////////////////////
     async def exists(self, command):
         try:
-            with closing(self.db.cursor(buffered=True)) as cur:
+            with closing(self.db.cursor()) as cur:
                 cur.execute(command)
                 if cur.fetchone() is None:
                     return False # // Doesn't exist
@@ -66,7 +66,7 @@ class SQL():
     # /////////////////////////////////////////////////
     async def select(self, command):
         try:
-            with closing(self.db.cursor(buffered=True)) as cur:
+            with closing(self.db.cursor()) as cur:
                 if await self.exists(command):
                     cur.execute(command)
                     return list(cur.fetchall()[0])
@@ -80,7 +80,7 @@ class SQL():
     # ///////////////////////////////////////////////////
     async def select_all(self, command):
         try:
-            with closing(self.db.cursor(buffered=True)) as cur:
+            with closing(self.db.cursor()) as cur:
                 if await self.exists(command):
                     cur.execute(command)
                     return list(cur.fetchall())
@@ -94,7 +94,7 @@ class SQL():
     # /////////////////////////////////////
     async def execute(self, command):
         try:
-            with closing(self.db.cursor(buffered=True)) as cur:
+            with closing(self.db.cursor()) as cur:
                 cur.execute(command)
                 self.db.commit()
         except mysql.connector.Error:

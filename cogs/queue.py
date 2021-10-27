@@ -402,22 +402,15 @@ class Queue(commands.Cog):
                             # CHECK IF USER IS IN A PARTY
                             if user.id in parties[party]:
                                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
-
-                            # CHECK IF AUTHOR IS IN A PARTY
-                            if ctx.author.id in parties[party] and party != ctx.author.id:
-                                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please leave your current party", color=15158588))
-
-                        # // SENDING EMBED WITH BUTTONS
                         try:
-                            await ctx.send("||" + user.mention + "||")
-                            message = await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has invited you to join their party", color=33023),
+                            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the party invite has been sent to {user.mention}", color=3066992))
+                            message = await user.send(embed=discord.Embed(description=f"{ctx.author.mention} has invited you to join their party", color=33023),
                             components=[[
                                     Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
                                     Button(style=ButtonStyle.red, label="Decline", custom_id='decline_party')
                                 ]])
                             res = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
 
-                            # // CHECKING WHICH BUTTON WAS CLICKED
                             if res.component.id == "accept_party":
                                 parties[ctx.author.id].append(user.id)
                                 await res.send(embed=discord.Embed(description=f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", color=3066992))
@@ -426,7 +419,6 @@ class Queue(commands.Cog):
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=3066992))
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
 
-                        # // TIMEOUT ERROR
                         except asyncio.TimeoutError:
                             return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", color=15158588))
@@ -453,22 +445,15 @@ class Queue(commands.Cog):
                     for party in parties:
                         if ctx.author.id in parties[party]:
                             return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(ctx.guild.get_member(party).name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
-
-                    # // CHECK IF AUTHOR IS IN HIS OWN PARTY
-                    if ctx.author.id in parties:
-                        if len(parties[ctx.author.id]) > 0:
-                            return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(ctx.guild.get_member(party).name)}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[ctx.author.id]), color=33023))
-                        return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(ctx.guild.get_member(party).name)}'s party ┃ {ctx.guild.name}", description="None", color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
                 
                 # // SHOW ANOTHER PLAYER'S PARTY
                 elif "@" in args:
                     user = ctx.guild.get_member(await self._clean(list(args)[0]))
-                    if user.id in parties:
-                        if len(parties[user.id]) > 0:
-                            return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(user.name)}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
-                        return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(user.name)}'s party ┃ {ctx.guild.name}", description="None", color=33023))
-                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not the leader of any party", color=15158588))
+                    for party in parties:
+                        if user.id in parties[party]:
+                            return await ctx.send(embed=discord.Embed(title=f"{self._clean_name(ctx.guild.get_member(party).name)}'s party ┃ {ctx.guild.name}", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
+                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in a party", color=15158588))
 
             # // CREATE PARTY
             if action == "create":
