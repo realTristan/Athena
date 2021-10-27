@@ -228,8 +228,9 @@ class Queue(commands.Cog):
         if row is not None:
             if row[2] - time.time() < 0:
                 await SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                return False
+                return True
             await ctx.channel.send(embed=discord.Embed(title=f"{self._clean_name(user.name)} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
+            return False
         return True
 
     # // WHEN AN USER JOINS THE QUEUE FUNCTION

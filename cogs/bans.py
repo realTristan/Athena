@@ -9,11 +9,6 @@ class Bans(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    # // CLEAN A PLAYERS NAME TO LOOK CLEANER
-    # ////////////////////////////////////////////
-    def _clean_name(self, name):
-        return str(name[0]).upper() + str(name[1:]).lower()
-
     # // ADD USER TO BAN DATABASE COMMAND
     # /////////////////////////////////////////
     @commands.command()
@@ -30,12 +25,9 @@ class Bans(commands.Cog):
                 length = int(length_str.strip("d")) * 86400
             
             rows = await SQL.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            if rows is not None:
-                await SQL.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-
-            name = self._clean_name(user.name)
-            await SQL.execute(f"INSERT INTO bans (guild_id, user_id, length, reason, banned_by) VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{' '.join(str(e) for e in args)}', '{ctx.author.mention}')")
-            return await ctx.send(embed=discord.Embed(title=f"{name} banned", description=f"**Length:** {datetime.timedelta(seconds=int(rows[2] - time.time()))}\n**Reason:** {rows[3]}\n**Banned by:** {rows[4]}", color=15158588))
+            if rows is None:
+                await SQL.execute(f"INSERT INTO bans (guild_id, user_id, length, reason, banned_by) VALUES ({ctx.guild.id}, {user.id}, {length + time.time()}, '{' '.join(str(e) for e in args)}', '{ctx.author.mention}')")
+            return await ctx.send(embed=discord.Embed(title=f"{user.name} banned", description=f"**Length:** {datetime.timedelta(seconds=int(rows[2] - time.time()))}\n**Reason:** {rows[3]}\n**Banned by:** {rows[4]}", color=15158588))
 
 
     # // REMOVE USER FROM BAN DATABASE COMMAND
