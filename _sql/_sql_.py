@@ -1,6 +1,8 @@
 # // MYSQL DATABASE CONNECTOR
 import mysql.connector
 
+# CONNECT TO THE "MySQL Database" FUNCTION
+# ////////////////////////////////////////////
 def _connect():
     db = mysql.connector.connect(
         host="localhost",
@@ -10,6 +12,8 @@ def _connect():
     )
     return db
 
+# // CREATING DATABASE VARIABLES
+# ////////////////////////////////
 db = _connect()
 cur = db.cursor()
 
