@@ -1,6 +1,9 @@
 # // MYSQL DATABASE CONNECTOR
 import mysql.connector
 
+# // IMPORT AUTO CURSOR CLOSING
+from contextlib import closing
+
 # CONNECT TO THE "MySQL Database" FUNCTION
 # ////////////////////////////////////////////
 def _connect():
@@ -15,32 +18,32 @@ def _connect():
 # // CREATING DATABASE VARIABLES
 # ////////////////////////////////
 db = _connect()
-cur = db.cursor()
 
 class SQL():
     def __init__(self):
         pass
-        #self.cur.execute(f"DROP TABLE bans")
-        #self.cur.execute(f"DROP TABLE maps")
-        #self.cur.execute(f"DROP TABLE matches")
-        #self.cur.execute(f"DROP TABLE settings")
-        #self.cur.execute(f"DROP TABLE users")
+        #cur = db.cursor(buffered=True)
+        #cur.execute(f"DROP TABLE bans")
+        #cur.execute(f"DROP TABLE maps")
+        #cur.execute(f"DROP TABLE matches")
+        #cur.execute(f"DROP TABLE settings")
+        #cur.execute(f"DROP TABLE users")
 
 
         # // USERS TABLE
-        #self.cur.execute("CREATE TABLE users (guild_id BIGINT, user_id BIGINT, user_name VARCHAR(50), elo int, wins int, loss int, id int PRIMARY KEY AUTO_INCREMENT)")
+        #cur.execute("CREATE TABLE users (guild_id BIGINT, user_id BIGINT, user_name VARCHAR(50), elo int, wins int, loss int, id int PRIMARY KEY AUTO_INCREMENT)")
 
         # // SETTINGS TABLE
-        #self.cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, map_pick_phase VARCHAR(10), match_categories VARCHAR(10), team_pick_phase VARCHAR(10), queue_channel BIGINT, reg_channel BIGINT, win_elo int, loss_elo int, match_logs BIGINT, party_size INT, id int PRIMARY KEY AUTO_INCREMENT)")
+        #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, map_pick_phase VARCHAR(10), match_categories VARCHAR(10), team_pick_phase VARCHAR(10), queue_channel BIGINT, reg_channel BIGINT, win_elo int, loss_elo int, match_logs BIGINT, party_size INT, id int PRIMARY KEY AUTO_INCREMENT)")
 
         # // MATCHES TABLE
-        #self.cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id int, map VARCHAR(50), orange_cap VARCHAR(50), orange_team VARCHAR(200), blue_cap VARCHAR(50), blue_team VARCHAR(200), status VARCHAR(50), winners VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
+        #cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id int, map VARCHAR(50), orange_cap VARCHAR(50), orange_team VARCHAR(200), blue_cap VARCHAR(50), blue_team VARCHAR(200), status VARCHAR(50), winners VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
 
         # // MAPS TABLES
-        #self.cur.execute("CREATE TABLE maps (guild_id BIGINT, map_list VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
+        #cur.execute("CREATE TABLE maps (guild_id BIGINT, map_list VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
 
         # // BANS TABLE
-        #self.cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
+        #cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50), id int PRIMARY KEY AUTO_INCREMENT)")
 
 
     # // CHECK IF A VALUE IN A TABLE EXISTS
@@ -48,10 +51,11 @@ class SQL():
     async def exists(self, command):
         global db
         try:
-            cur.execute(command)
-            if cur.fetchone() is not None:
+            with closing(db.cursor(buffered=True)) as cur:
+                cur.execute(command)
+                if cur.fetchone() is None:
+                    return False # // Doesn't exist
                 return True # // Does exist
-            return False # // Doesn't exist
         except mysql.connector.Error:
             db.close()
             db = _connect()
@@ -61,6 +65,7 @@ class SQL():
     async def select(self, command):
         global db
         try:
+            cur = db.cursor(buffered=True)
             if await self.exists(command):
                 cur.execute(command)
                 return list(cur.fetchall()[0])
@@ -74,8 +79,9 @@ class SQL():
     async def select_all(self, command):
         global db
         try:
-            cur.execute(command)
-            return list(cur.fetchall())
+            with closing(db.cursor(buffered=True)) as cur:
+                cur.execute(command)
+                return list(cur.fetchall())
         except mysql.connector.Error:
             db.close()
             db = _connect()
@@ -85,8 +91,9 @@ class SQL():
     async def execute(self, command):
         global db
         try:
-            cur.execute(command)
-            db.commit()
+            with closing(db.cursor(buffered=True)) as cur:
+                cur.execute(command)
+                db.commit()
         except mysql.connector.Error:
             db.close()
             db = _connect()

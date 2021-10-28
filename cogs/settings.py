@@ -10,8 +10,7 @@ class Settings(commands.Cog):
 
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    async def _opt_status(self, ctx, option):
-        row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+    async def _opt_status(self, option, row):
         # // MAP PICKING PHASE
         if option == "map_pick_phase":
             if row[2] == "true":
@@ -105,11 +104,12 @@ class Settings(commands.Cog):
         if not ctx.author.bot:
             if not await SQL.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
                 await SQL.execute(f"INSERT INTO settings (guild_id, reg_role, map_pick_phase, match_categories, team_pick_phase, queue_channel, reg_channel, win_elo, loss_elo, match_logs, party_size) VALUES ({ctx.guild.id}, 0, 'true', 'false', 'true', 0, 0, 5, 2, 0, 1)")
-                
-            team_pick_phase = await self._opt_status(ctx, "team_pick_phase")
-            map_pick_phase = await self._opt_status(ctx, "map_pick_phase")
-            match_category = await self._opt_status(ctx, "match_category")
-            match_logging = await self._opt_status(ctx, "match_logging")
+            row = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+
+            team_pick_phase = await self._opt_status("team_pick_phase", row)
+            map_pick_phase = await self._opt_status("map_pick_phase", row)
+            match_category = await self._opt_status("match_category", row)
+            match_logging = await self._opt_status("match_logging", row)
 
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Settings Menu**", color=33023),
                 components=[
