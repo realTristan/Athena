@@ -321,7 +321,7 @@ class Elo(commands.Cog):
             row = await SQL.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             if row is not None:
                 await SQL.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                await self._user_edit(ctx.author, nick=f"{row[2]} [{row[3]}]")
+                await self._user_edit(user, nick=f"{row[2]} [{row[3]}]")
 
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
