@@ -23,7 +23,8 @@ class Settings(commands.Cog):
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
 
-
+    # // RETURN CORRESPONDING EMOJI TO SETTING
+    # /////////////////////////////////////////
     async def _lobby_settings_status(self, option, row):
         # // MAP PICKING PHASE
         if option == "map_pick_phase":
@@ -44,9 +45,9 @@ class Settings(commands.Cog):
         if not await SQL.exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
             await SQL.execute(f"INSERT INTO maps (guild_id, lobby_id, map_list) VALUES ({ctx.guild.id}, {ctx.channel.id}, '{map}')")
         else:
-            row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id}")
+            row = await SQL.select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
             if map not in str(row[2]).split(","):
-                await SQL.execute(f"UPDATE maps SET map_list = '{str(row[1])},{map}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                await SQL.execute(f"UPDATE maps SET map_list = '{str(row[2])},{map}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=3066992))
 
     # // REMOVE MAP FROM THE DATABASE
@@ -102,7 +103,7 @@ class Settings(commands.Cog):
                 lobbies.remove(str(ctx.channel.id))
                 await SQL.execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 await SQL.execute(f"UPDATE lobbies SET lobby_list = '{','.join(str(e) for e in lobbies)}' WHERE guild_id = {ctx.guild.id}")
-                return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)-1}/3]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)}/3]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
         if action in ["settings", "sets", "options", "opts", "setting"]:
