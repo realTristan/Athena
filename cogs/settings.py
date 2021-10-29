@@ -100,6 +100,7 @@ class Settings(commands.Cog):
             lobbies = str(row[1]).split(",")
             if str(ctx.channel.id) in lobbies:
                 lobbies.remove(str(ctx.channel.id))
+                await SQL.execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 await SQL.execute(f"UPDATE lobbies SET lobby_list = '{','.join(str(e) for e in lobbies)}' WHERE guild_id = {ctx.guild.id}")
                 return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)-1}/3]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))

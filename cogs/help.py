@@ -52,6 +52,11 @@ class Help(commands.Cog):
     moderator_embed.add_field(name=' ‎\nMatch Rollback [Mod+]', value='Rollbacks every match with the user in it\n(Usage: =rb [user id])')
 
     # // ADDING FIELDS TO ADMINISTRATOR EMBED
+    administrator_embed.add_field(name=' ‎\nLobby Create [Admin+]', value='Create a new lobby\n(Usage: =lobby add)')
+    administrator_embed.add_field(name=' ‎\nLobby Remove [Admin+]', value='Remove an existing lobby\n(Usage: =lobby del)')
+    administrator_embed.add_field(name=' ‎\nLobby Settings [Admin+]', value='Change lobby settings\n(Usage: =lobby settings)')
+    administrator_embed.add_field(name=' ‎\nShow Lobbys [Admin+]', value='Show server lobby\'s\n(Usage: =lobby show)')
+
     administrator_embed.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
     administrator_embed.add_field(name=' ‎\nReset Stats [Admin+]', value='Reset an users stats\n(Usage: =reset [@user])')
     administrator_embed.add_field(name=' ‎\nReset All Stats [Admin+]', value='Reset all players stats\n(Usage: =reset all)')

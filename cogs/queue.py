@@ -197,7 +197,7 @@ class Queue(commands.Cog):
     # // WHEN QUEUE REACHES 10 PEOPLE FUNCTION
     # /////////////////////////////////////////
     async def _start(self, ctx):
-        row = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}")
+        row = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {ctx.channel.id}")
         # // CREATING TEAM CAPTAINS
         self.data[ctx.guild.id][ctx.channel.id]["blue_cap"] = random.choice(self.data[ctx.guild.id][ctx.channel.id]["queue"]); self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["blue_cap"])
         self.data[ctx.guild.id][ctx.channel.id]["orange_cap"] = random.choice(self.data[ctx.guild.id][ctx.channel.id]["queue"]); self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["orange_cap"])
@@ -303,7 +303,7 @@ class Queue(commands.Cog):
                         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
 
                         if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 1:
-                            row = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}")
+                            row = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                             self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
                             self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
 
@@ -391,7 +391,7 @@ class Queue(commands.Cog):
     async def party(self, ctx, action:str, *args):
         if await self._data_check(ctx):
             parties = self.data[ctx.guild.id][ctx.channel.id]["parties"]
-            lobby_settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}")
+            lobby_settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
             max_party_size = lobby_settings[6]
 
             # // INVITE USER TO YOUR PARTY
