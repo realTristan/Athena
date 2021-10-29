@@ -250,14 +250,15 @@ class Queue(commands.Cog):
             if self.data[ctx.guild.id][ctx.channel.id]["state"] == "queue":
                 if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                     if await self._ban_check(ctx, user):
-                        if not user in self.data[ctx.guild.id][ctx.channel.id]["queue"]:
-                            if await self._check_party(ctx, user):
-                                self.data[ctx.guild.id][ctx.channel.id]["queue"].append(user)
-                                if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 10:
-                                    return await self._start(ctx)
-                                return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][ctx.channel.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
-                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader / party too full", color=15158588))
-                        return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
+                        for lobby in self.data[ctx.guild.id]:
+                            if user in self.data[ctx.guild.id][lobby]["queue"]:
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
+                        if await self._check_party(ctx, user):
+                            self.data[ctx.guild.id][ctx.channel.id]["queue"].append(user)
+                            if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 10:
+                                return await self._start(ctx)
+                            return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][ctx.channel.id]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader / party too full", color=15158588))
                     return False
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
