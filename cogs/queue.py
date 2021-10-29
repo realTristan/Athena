@@ -39,10 +39,11 @@ class Queue(commands.Cog):
 
         # // CHECK IF CHANNEL IS A LOBBY
         row = await SQL.select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
-        if str(ctx.channel.id) in str(row[1]).split(","):
-            if not ctx.channel.id in self.data[ctx.guild.id]:
-                await self._reset(ctx)
-            return True
+        if row is not None:
+            if str(ctx.channel.id) in str(row[1]).split(","):
+                if not ctx.channel.id in self.data[ctx.guild.id]:
+                    await self._reset(ctx)
+                return True
         return False
 
     # // ADD OTHER PARTY MEMBERS TO THE QUEUE
