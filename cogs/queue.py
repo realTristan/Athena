@@ -252,7 +252,7 @@ class Queue(commands.Cog):
                     if await self._ban_check(ctx, user):
                         for lobby in self.data[ctx.guild.id]:
                             if user in self.data[ctx.guild.id][lobby]["queue"]:
-                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already in the queue", color=15158588))
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already queued in {ctx.guild.get_channel(lobby).mention}", color=15158588))
                         if await self._check_party(ctx, user):
                             self.data[ctx.guild.id][ctx.channel.id]["queue"].append(user)
                             if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 10:
