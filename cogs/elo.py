@@ -96,8 +96,8 @@ class Elo(commands.Cog):
 
     # // UNDO A WIN FOR THE BLUE TEAM
     # ////////////////////////////////////
-    async def _undo_blue_win(self, ctx, blue_team, orange_team):
-        settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+    async def _undo_blue_win(self, ctx, blue_team, orange_team, lobby_id):
+        settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby_id}")
         
         # // REMOVE WIN FROM BLUE TEAM
         for user in blue_team:
@@ -113,8 +113,8 @@ class Elo(commands.Cog):
 
     # // UNDO A WIN FOR THE ORANGE TEAM
     # ////////////////////////////////////
-    async def _undo_orange_win(self, ctx, blue_team, orange_team):
-        settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+    async def _undo_orange_win(self, ctx, blue_team, orange_team, lobby_id):
+        settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby_id}")
 
         # // REMOVE LOSS FROM BLUE TEAM
         for user in blue_team:
@@ -138,8 +138,8 @@ class Elo(commands.Cog):
             if action in ["report"]:
                 if ctx.author.guild_permissions.manage_messages:
                     row = await SQL.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    lobby_settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                    
+                    lobby_settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {row[2]}")
+
                     if args and "reported" not in row[7] and "cancelled" not in row[7] and "rollbacked" not in row[7]:
                         await SQL.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await SQL.execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
@@ -203,11 +203,11 @@ class Elo(commands.Cog):
 
                         # // REMOVE WIN FROM BLUE TEAM
                         if str(row[8]) == "blue":
-                            await self._undo_blue_win(ctx, blue_team, orange_team)
+                            await self._undo_blue_win(ctx, blue_team, orange_team, row[2])
                         
                         # // REMOVE LOSS FROM BLUE TEAM
                         if str(row[8]) == "orange":
-                            await self._undo_orange_win(ctx, blue_team, orange_team)
+                            await self._undo_orange_win(ctx, blue_team, orange_team, row[2])
 
                         return await self._match_show(ctx, match_id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
@@ -333,7 +333,7 @@ class Elo(commands.Cog):
     async def register(self, ctx, params:str, *args):
         if not ctx.author.bot:
             settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-            if settings[6] == 0 or settings[6] == ctx.channel.id:
+            if settings[3] == 0 or settings[3] == ctx.channel.id:
 
                 # // GETTING THE REGISTER ROLE FROM SETTINGS
                 role = None
@@ -361,7 +361,6 @@ class Elo(commands.Cog):
                         await self._user_edit(ctx.author, nick=f"{params} [0]")
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{params}**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(settings[6]).mention}", color=33023))
         
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
@@ -381,10 +380,13 @@ class Elo(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
-            settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-            for user in users:
-                await self._win(ctx, user, settings)
-                await self._stats(ctx, user)
+            settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+            if settings is not None:
+                for user in users:
+                    await self._win(ctx, user, settings)
+                    await self._stats(ctx, user)
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully added wins", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
     # // GIVES AN USER A LOSS COMMAND
     # /////////////////////////////////////////
@@ -392,10 +394,13 @@ class Elo(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
-            settings = await SQL.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-            for user in users:
-                await self._loss(ctx, user, settings)
-                await self._stats(ctx, user)
+            settings = await SQL.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+            if settings is not None:
+                for user in users:
+                    await self._loss(ctx, user, settings)
+                    await self._stats(ctx, user)
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully added losses", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
     # // SHOW YOUR OR ANOTHER PLAYER'S STATS COMMAND
     # ////////////////////////////////////////////////
