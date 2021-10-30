@@ -40,24 +40,24 @@ class Settings(commands.Cog):
 
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
-    async def _add_map(self, ctx, map):
-        if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
-            await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map_list) VALUES ({ctx.guild.id}, {ctx.channel.id}, '{map}')")
+    async def _add_map(self, ctx, map, lobby):
+        if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
+            await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map_list) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
         else:
-            row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+            row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
             if map not in str(row[2]).split(","):
-                await SQL_CLASS().execute(f"UPDATE maps SET map_list = '{str(row[2])},{map}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                await SQL_CLASS().execute(f"UPDATE maps SET map_list = '{str(row[2])},{map}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=3066992))
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
-    async def _del_map(self, ctx, map):
-        if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
-            row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+    async def _del_map(self, ctx, map, lobby):
+        if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
+            row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
             map_list = str(row[2]).split(',')
             if map in map_list:
                 map_list.remove(map)
-                await SQL_CLASS().execute(f"UPDATE maps SET map_list = '{','.join(str(e) for e in map_list)}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                await SQL_CLASS().execute(f"UPDATE maps SET map_list = '{','.join(str(e) for e in map_list)}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
                 return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=3066992))
             return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} the map pool is empty", color=15158588))
@@ -143,7 +143,7 @@ class Settings(commands.Cog):
         if not ctx.author.bot:
             row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
             if str(ctx.channel.id) in str(row[1]).split(","):
-                return await self._add_map(ctx, map)
+                return await self._add_map(ctx, map, ctx.channel.id)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
     # // DELETE MAP COMMAND
@@ -154,7 +154,7 @@ class Settings(commands.Cog):
         if not ctx.author.bot:
             row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
             if str(ctx.channel.id) in str(row[1]).split(","):
-                return await self._del_map(ctx, map)
+                return await self._del_map(ctx, map, ctx.channel.id)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
     # // SHOW LIST OF MAPS COMMAND
@@ -284,14 +284,14 @@ class Settings(commands.Cog):
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
-                        await self._add_map(res, c.content)
+                        await self._add_map(res, c.content, res.channel.id)
 
                 # // REMOVE MAP
                 if res.values[0] == "remove_map":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
-                        await self._del_map(res, c.content)
+                        await self._del_map(res, c.content, res.channel.id)
 
                 # // CHANGE THE REGISTER CHANNEL
                 if res.values[0] == "change_reg_channel":
