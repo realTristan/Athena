@@ -491,8 +491,8 @@ class Queue(commands.Cog):
                     else:
                         await self._leave(res, res.author)
                         
-                    players = "\n".join(str(e.mention) for e in self.data[res.guild.id]["queue"])
-                    return await res.message.edit(embed=discord.Embed(title=f'[{len(self.data[res.guild.id]["queue"])}/10] Queue', description=players, color=33023))
+                    players = "\n".join(str(e.mention) for e in self.data[res.guild.id][res.channel.id]["queue"])
+                    return await res.message.edit(embed=discord.Embed(title=f'[{len(self.data[res.guild.id][res.channel.id]["queue"])}/10] Queue', description=players, color=33023))
                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} this channel is not a lobby", color=15158588))
 
 
