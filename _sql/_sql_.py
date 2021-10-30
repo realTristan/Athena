@@ -7,22 +7,21 @@ from contextlib import closing
 # CONNECT TO THE "MySQL Database" FUNCTION
 # ////////////////////////////////////////////
 def _connect():
-    db = mysql.connector.connect(
+    return mysql.connector.connect(
         host="localhost",
+        port="3306",
         user="root",
-        passwd="root",
+        password="root",
         database="main"
     )
-    return db
 
 # // CREATING DATABASE VARIABLES
 # ////////////////////////////////
 db = _connect()
 
-class SQL():
+class SQL_CLASS():
     def __init__(self):
-        with closing(db.cursor(buffered=True)) as cur:
-            pass
+        pass
             #cur.execute(f"DROP TABLE bans")
             #cur.execute(f"DROP TABLE maps")
             #cur.execute(f"DROP TABLE matches")
@@ -58,7 +57,7 @@ class SQL():
     async def exists(self, command):
         global db
         try:
-            with closing(db.cursor(buffered=True)) as cur:
+            with closing(db.cursor()) as cur:
                 cur.execute(command)
                 if cur.fetchone() is None:
                     return False # // Doesn't exist
@@ -72,7 +71,7 @@ class SQL():
     async def select(self, command):
         global db
         try:
-            with closing(db.cursor(buffered=True)) as cur:
+            with closing(db.cursor()) as cur:
                 if await self.exists(command):
                     cur.execute(command)
                     return list(cur.fetchone())
@@ -98,9 +97,9 @@ class SQL():
     async def execute(self, command):
         global db
         try:
-            with closing(db.cursor(buffered=True)) as cur:
+            with closing(db.cursor()) as cur:
                 cur.execute(command)
-                db.commit()
+                return db.commit()
         except mysql.connector.Error:
             db.close()
             db = _connect()

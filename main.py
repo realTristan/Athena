@@ -6,8 +6,6 @@ import discord, os
 intents = discord.Intents(messages=True, guilds=True, reactions=True, members=True, presences=True)
 client = commands.Bot(command_prefix='=', intents=intents)
 client.remove_command('help')
-SQL = SQL()
-
 
 @client.event
 async def on_command_error(ctx, error):
@@ -20,8 +18,8 @@ async def on_command_error(ctx, error):
     
 @client.event
 async def on_member_remove(member):
-    if await SQL.exists(f"SELECT * FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}"):
-        await SQL.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}")
+    if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}"):
+        await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}")
 
 
 @client.event
@@ -36,4 +34,4 @@ for filename in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__
         print(f'Loaded: cog.{filename[:-3]}')
 
 
-client.run('YOUR BOT TOKEN')
+client.run('ODgzMDA2NjA5MjgwODY0MjU3.YTDp_Q.kbpZyDSZPOJ_XQEq06FW86U8yJo')
