@@ -77,7 +77,12 @@ class Settings(commands.Cog):
             lobbies = str(row[1]).split(",")
             if len(lobbies) < 4:
                 if not str(ctx.channel.id) in lobbies:
-                    await SQL_CLASS().execute(f"UPDATE lobbies SET lobby_list = '{str(row[1])},{ctx.channel.id}' WHERE guild_id = {ctx.guild.id}")
+                    if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}"):
+                        await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby_id) VALUES ({ctx.guild.id}, '{ctx.channel.id}')")
+                    
+                    if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}"):
+                        await SQL_CLASS().execute(f"UPDATE lobbies SET lobby_list = '{str(row[1])},{ctx.channel.id}' WHERE guild_id = {ctx.guild.id}")
+
                     if not await SQL_CLASS().exists(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
                         await SQL_CLASS().execute(f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 'false', 'true', 5, 2, 1)")
 
@@ -102,6 +107,7 @@ class Settings(commands.Cog):
                 lobbies.remove(str(ctx.channel.id))
                 await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 await SQL_CLASS().execute(f"UPDATE lobbies SET lobby_list = '{','.join(str(e) for e in lobbies)}' WHERE guild_id = {ctx.guild.id}")
+
                 return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)}/3]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
