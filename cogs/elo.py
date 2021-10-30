@@ -139,7 +139,7 @@ class Elo(commands.Cog):
                     row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {row[2]}")
 
-                    if args and "reported" not in row[8] and "cancelled" not in row[8] and "rollbacked" not in row[8]:
+                    if args and row[8] in ["ongoing"]:
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await SQL_CLASS().execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
@@ -172,7 +172,7 @@ class Elo(commands.Cog):
             if action in ["cancel"]:
                 if ctx.author.guild_permissions.manage_messages:
                     row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    if "reported" not in row[8] and "cancelled" not in row[8] and "rollbacked" not in row[8]:
+                    if row[8] in ["ongoing"]:
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await self._match_show(ctx, match_id)
@@ -189,7 +189,7 @@ class Elo(commands.Cog):
             if action in ["undo"]:
                 if ctx.author.guild_permissions.manage_messages:
                     row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    if "reported" in row[8] or "cancelled" in row[8]:
+                    if row[8] in ["reported", "cancelled"]:
                         # // UPDATING THE DATABASE
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
                         await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
@@ -222,7 +222,7 @@ class Elo(commands.Cog):
             row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             if row is not None:
                 # // SET A PLAYERS ELO
-                if action in ["elo"]:
+                if action in ["elo", "points"]:
                     await SQL_CLASS().execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     await self._user_edit(user, nick=f"{row[2]} [{amount}]")
                     
@@ -332,9 +332,11 @@ class Elo(commands.Cog):
     async def register(self, ctx, params:str, *args):
         if not ctx.author.bot:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-            if settings[3] == 0 or settings[3] == ctx.channel.id:
+            if settings is None:
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has not setup the bot yet", color=15158588))
 
-                # // GETTING THE REGISTER ROLE FROM SETTINGS
+            # // GETTING THE REGISTER ROLE FROM SETTINGS
+            if settings[3] in [0, ctx.channel.id]:
                 role = None
                 if settings[1] != 0:
                     role = ctx.guild.get_role(settings[1])
@@ -468,7 +470,7 @@ class Elo(commands.Cog):
                     blue_team = str(row[7]).split(","); blue_team.append(row[6])
                     orange_team =str(row[5]).split(","); orange_team.append(row[4])
 
-                    if user in blue_team or user in orange_team:
+                    if user in [blue_team, orange_team]:
                         if row[9] == "orange":
                             if user in orange_team:
                                 await self._undo_orange_win(ctx, blue_team, orange_team, row[2])
@@ -479,6 +481,7 @@ class Elo(commands.Cog):
                             
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
                         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Match **#{row[1]}** has been rollbacked", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully rollbacked all matches with the user **{user}**", color=3066992))
                 
 
     # // BUTTON CLICK LISTENER
@@ -486,7 +489,7 @@ class Elo(commands.Cog):
     @commands.Cog.listener()
     async def on_button_click(self, res):
         if not res.author.bot:
-            if res.component.id == 'blue_report' or res.component.id == 'orange_report' or res.component.id == 'match_cancel':
+            if res.component.id in ['blue_report', 'orange_report', 'match_cancel']:
                 if res.author.guild_permissions.manage_messages:
                     # // GETTING THE MATCH ID
                     match_id = int(str(res.message.embeds[0].title).replace("Match #", ""))

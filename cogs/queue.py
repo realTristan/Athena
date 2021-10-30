@@ -249,9 +249,9 @@ class Queue(commands.Cog):
             if self.data[ctx.guild.id][ctx.channel.id]["state"] == "queue":
                 if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                     if await self._ban_check(ctx, user):
-                        for lobby in self.data[ctx.guild.id]:
-                            if user in self.data[ctx.guild.id][lobby]["queue"]:
-                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already queued in {ctx.guild.get_channel(lobby).mention}", color=15158588))
+                        #or lobby in self.data[ctx.guild.id]:
+                            #if user in self.data[ctx.guild.id][lobby]["queue"]:
+                                #return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already queued in {ctx.guild.get_channel(lobby).mention}", color=15158588))
                         if await self._check_party(ctx, user):
                             self.data[ctx.guild.id][ctx.channel.id]["queue"].append(user)
                             if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 10:
@@ -484,7 +484,7 @@ class Queue(commands.Cog):
     @commands.Cog.listener()
     async def on_button_click(self, res):
         if not res.author.bot:
-            if res.component.id == "join_queue" or res.component.id == "leave_queue":
+            if res.component.id in ["join_queue", "leave_queue"]:
                 if await self._data_check(res):
                     if res.component.id == "join_queue":
                         await self._join(res, res.author)
