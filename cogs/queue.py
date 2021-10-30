@@ -186,6 +186,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Orange Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id][ctx.channel.id]["orange_team"]))
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id][ctx.channel.id]["blue_team"]))
+            embed.set_footer(text=str(ctx.channel.id))
             await ctx.send(embed=embed)
 
             await self._match(ctx)
