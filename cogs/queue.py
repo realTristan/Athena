@@ -500,7 +500,7 @@ class Queue(commands.Cog):
                     await self._leave(res, res.author, lobby.id)
                 
                 players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
-                embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/10] Queue ┃ {lobby.name}', description=players, color=33023)
+                embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/10] {lobby.name}', description=players, color=33023)
                 embed.set_footer(text=str(lobby.id))
                 return await res.message.edit(embed=embed)
                 

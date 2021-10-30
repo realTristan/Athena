@@ -331,12 +331,14 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond which lobby you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
                         row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id}")
+                        
                         if row is not None:
                             channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                             if str(channel.id) in str(row[1]).split(","):
                                 await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
-                                embed=discord.Embed(title=f'[0/10] Queue ┃ {channel.name}', description='None', color=33023)
+                                embed=discord.Embed(title=f'[0/10] {channel.name}', description='None', color=33023)
                                 embed.set_footer(text=str(channel.id))
+
                                 return await res.channel.send(embed=embed, components=[[
                                     Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
                                     Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
