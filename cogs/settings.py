@@ -129,7 +129,6 @@ class Settings(commands.Cog):
                             SelectOption(emoji=f'🔵', label="Remove Map", value="remove_map"),
                             SelectOption(emoji=f'🔵', label="Change Elo Per Win", value="change_win_elo"),
                             SelectOption(emoji=f'🔵', label="Change Elo Per Loss", value="change_loss_elo"),
-                            SelectOption(emoji=f'🔵', label="Create Queue Embed", value="queue_embed"),
                             SelectOption(emoji=f'🔵', label="Change Queue Party Size", value="change_queue_party_size"),
                             SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
                             SelectOption(emoji=f'{team_pick_phase[0]}', label=f"{team_pick_phase[1]} Team Picking Phase", value="team_pick_phase")
@@ -197,6 +196,7 @@ class Settings(commands.Cog):
                     Select(
                         placeholder="View Settings",
                         options=[
+                            SelectOption(emoji=f'🔵', label="Create Queue Embed", value="queue_embed"),
                             SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                             SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
                             SelectOption(emoji=f'{match_logging[0]}', label=f"{match_logging[1]} Match Logging", value="match_logging"),
@@ -328,11 +328,21 @@ class Settings(commands.Cog):
                 # // QUEUE EMBED
                 if res.values[0] == "queue_embed":
                     if res.author.guild_permissions.administrator:
-                        await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
-                        return await res.channel.send(embed=discord.Embed(title=f'[0/10] Queue', description='None', color=33023), 
-                        components=[[
-                            Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
-                            Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} respond which lobby you want to use", color=33023))
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author, timeout=10)
+                        row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id}")
+                        if row is not None:
+                            channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                            if str(channel.id) in str(row[1]).split(","):
+                                await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
+                                embed=discord.Embed(title=f'[0/10] Queue ┃ {channel.name}', description='None', color=33023)
+                                embed.set_footer(text=str(channel.id))
+                                return await res.channel.send(embed=embed, components=[[
+                                    Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
+                                    Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
+                            return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
+                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} this server has no lobbies", color=15158588))
+                                
 
                 if res.values[0] == "change_queue_party_size":
                     if res.author.guild_permissions.administrator:
