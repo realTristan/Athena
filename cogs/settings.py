@@ -342,7 +342,7 @@ class Settings(commands.Cog):
                             channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                             if str(channel.id) in str(row[1]).split(","):
                                 await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
-                                embed=discord.Embed(title=f'[0/10] {channel.name}', description='None', color=33023)
+                                embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)
                                 embed.set_footer(text=str(channel.id))
 
                                 return await res.channel.send(embed=embed, components=[[
