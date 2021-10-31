@@ -365,7 +365,7 @@ class Queue(commands.Cog):
     @commands.command(aliases=["fl"])
     async def forceleave(self, ctx, user:discord.Member):
         if not ctx.author.bot:
-            return await self._leave(ctx, user), ctx.channel.id
+            return await self._leave(ctx, user, ctx.channel.id)
 
     # // SHOW THE CURRENT QUEUE COMMAND
     # /////////////////////////////////////////
