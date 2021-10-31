@@ -71,11 +71,16 @@ class Settings(commands.Cog):
         if row is None:
             await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby_list) VALUES ({ctx.guild.id}, '{ctx.channel.id}')")
             return await ctx.send(embed=discord.Embed(description=f"**[1/3]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
+        
+        # // CONVERTING LOBBIES ROW TO A LIST
+        lobbies = str(row[1]).split(",")
+        try: 
+            lobbies.remove("")
+        except Exception: pass
 
         # // CREATE A NEW LOBBY
         if action in ["add", "create"]:
-            lobbies = str(row[1]).split(",")
-            if len(lobbies) < 4:
+            if len(lobbies) < 3:
                 if not str(ctx.channel.id) in lobbies:
                     if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}"):
                         await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby_id) VALUES ({ctx.guild.id}, '{ctx.channel.id}')")
@@ -86,23 +91,25 @@ class Settings(commands.Cog):
                     if not await SQL_CLASS().exists(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
                         await SQL_CLASS().execute(f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 'false', 'true', 5, 2, 1)")
 
-                    return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)}/3]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)+1}/3]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is already a lobby", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} maximum amount of lobbies created **[**3/3**]**", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} maximum amount of lobbies created **[3/3]**", color=15158588))
 
         # // SHOW ALL GUILD LOBBIES
         if action in ["show"]:
-            lobbies = str(row[1]).split(",")
-            if len(lobbies) > 1:
+            if len(lobbies) > 0:
                 embed=discord.Embed(title=f"Lobbies ┃ {ctx.guild.name}", color=33023)
-                for i in range(len(lobbies[1:])):
-                    embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(lobbies[i+1])).name, value=ctx.guild.get_channel(int(lobbies[i+1])).mention)
+                for i in range(len(lobbies)):
+                    if ctx.guild.get_channel(int(lobbies[i])) is None:
+                        lobbies.remove(lobbies[i])
+                        await SQL_CLASS().execute(f"UPDATE lobbies SET lobby_list = '{','.join(str(e) for e in lobbies)}' WHERE guild_id = {ctx.guild.id}")
+                    else:
+                        embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(lobbies[i])).name, value=ctx.guild.get_channel(int(lobbies[i])).mention)
                 return await ctx.send(embed=embed)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
 
         # // DELETE AN EXISTING LOBBY
         if action in ["delete", "remove", "del"]:
-            lobbies = str(row[1]).split(",")
             if str(ctx.channel.id) in lobbies:
                 lobbies.remove(str(ctx.channel.id))
                 await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
@@ -112,7 +119,6 @@ class Settings(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
         if action in ["settings", "sets", "options", "opts", "setting"]:
-            lobbies = str(row[1]).split(",")
             if not str(ctx.channel.id) in lobbies:
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 

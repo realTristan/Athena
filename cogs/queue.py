@@ -249,9 +249,9 @@ class Queue(commands.Cog):
             if self.data[ctx.guild.id][lobby]["state"] == "queue":
                 if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                     if await self._ban_check(ctx, user):
-                        for lobby in self.data[ctx.guild.id]:
-                            if user in self.data[ctx.guild.id][lobby]["queue"]:
-                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already queued in {ctx.guild.get_channel(lobby).mention}", color=15158588))
+                        for l in self.data[ctx.guild.id]:
+                            if user in self.data[ctx.guild.id][l]["queue"]:
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already queued in {ctx.guild.get_channel(l).mention}", color=15158588))
 
                         if await self._check_party(ctx, user, lobby):
                             self.data[ctx.guild.id][lobby]["queue"].append(user)
@@ -275,17 +275,6 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-
-    
-    # // FORCE START THE QUEUE COMMAND
-    # /////////////////////////////////////////
-    @commands.command(aliases=["fs"])
-    @commands.has_permissions(manage_messages=True)
-    async def forcestart(self, ctx):
-        if not ctx.author.bot:
-            if await self._data_check(ctx, ctx.channel.id):
-                return await self._start(ctx, ctx.channel.id)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
     # // PICK TEAMMATES (TEAM CAPTAIN) COMMAND
     # /////////////////////////////////////////
@@ -339,6 +328,17 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
     
+
+    # // FORCE START THE QUEUE COMMAND
+    # /////////////////////////////////////////
+    @commands.command(aliases=["fs"])
+    @commands.has_permissions(manage_messages=True)
+    async def forcestart(self, ctx):
+        if not ctx.author.bot:
+            if await self._data_check(ctx, ctx.channel.id):
+                return await self._start(ctx, ctx.channel.id)
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+
     # // JOIN THE QUEUE COMMAND
     # /////////////////////////////////////////
     @commands.command(aliases=["j"])
