@@ -235,11 +235,10 @@ class Queue(commands.Cog):
     async def _ban_check(self, ctx, user):
         row = await SQL_CLASS().select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
-            if row[2] - time.time() < 0:
-                await SQL_CLASS().execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                return True
-            await ctx.channel.send(embed=discord.Embed(title=f"{self._clean_name(user.name)} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
-            return False
+            if row[2] - time.time() > 0:
+                await ctx.channel.send(embed=discord.Embed(title=f"{self._clean_name(user.name)} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
+                return False
+            await SQL_CLASS().execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         return True
 
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
