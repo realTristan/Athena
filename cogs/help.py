@@ -68,7 +68,7 @@ class Help(commands.Cog):
 
     # // CREATING THE SELECT MENU COMMAND
     # //////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=help`')
     async def help(self, ctx):
         if not ctx.author.bot:
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Command Menu**", color=33023),

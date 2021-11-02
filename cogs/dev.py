@@ -30,7 +30,7 @@ class Dev(commands.Cog):
 
     # // REGISTER EVERY SERVER MEMBER COMMAND
     # //////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`Only "tristan#2230" has access to this command`')
     @commands.has_permissions(administrator=True)
     async def _reg_all(self, ctx):
         if ctx.author.id in self.dev_users:
@@ -51,7 +51,7 @@ class Dev(commands.Cog):
     
     # // UNREGISTER EVERY SERVER MEMBER COMMAND
     # //////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`Only "tristan#2230" has access to this command`')
     @commands.has_permissions(administrator=True)
     async def _unreg_all(self, ctx):
         if ctx.author.id in self.dev_users:

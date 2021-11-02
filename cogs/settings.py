@@ -64,7 +64,7 @@ class Settings(commands.Cog):
 
     # // GUILD LOBBIES COMMAND
     # /////////////////////////////
-    @commands.command()
+    @commands.command(description="`=lobby add`**,** `=lobby delete`**,** `=lobby show`**,** `=lobby settings`")
     @commands.has_permissions(administrator=True)
     async def lobby(self, ctx, action:str):
         row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
@@ -143,7 +143,7 @@ class Settings(commands.Cog):
 
     # // ADD MAP COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description="`=addmap (map name)`")
     @commands.has_permissions(administrator=True)
     async def addmap(self, ctx, map:str):
         if not ctx.author.bot:
@@ -154,7 +154,7 @@ class Settings(commands.Cog):
 
     # // DELETE MAP COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["removemap", "deletemap"])
+    @commands.command(aliases=["removemap", "deletemap"], description="`=delmap (map name)`")
     @commands.has_permissions(administrator=True)
     async def delmap(self, ctx, map:str):
         if not ctx.author.bot:
@@ -165,7 +165,7 @@ class Settings(commands.Cog):
 
     # // SHOW LIST OF MAPS COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description="`=maps`")
     async def maps(self, ctx):
         if not ctx.author.bot:
             row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
@@ -175,7 +175,7 @@ class Settings(commands.Cog):
 
     # // SET THE REGISTER ROLE COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description="`=regrole (@role)`")
     @commands.has_permissions(administrator=True)
     async def regrole(self, ctx, role:discord.Role):
         if not ctx.author.bot:
@@ -186,7 +186,7 @@ class Settings(commands.Cog):
 
     # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["sets", "options"])
+    @commands.command(aliases=["sets", "options"], description="`=settings`")
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
         if not ctx.author.bot:

@@ -9,7 +9,7 @@ class Bans(commands.Cog):
 
     # // ADD USER TO BAN DATABASE COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=ban (@user) (length) (reason)`')
     @commands.has_permissions(manage_messages=True)
     async def ban(self, ctx, user:discord.Member, length_str:str, *args):
         if not ctx.author.bot:
@@ -33,7 +33,7 @@ class Bans(commands.Cog):
 
     # // REMOVE USER FROM BAN DATABASE COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=unban (@user)`')
     @commands.has_permissions(manage_messages=True)
     async def unban(self, ctx, user:discord.Member):
         if not ctx.author.bot:
@@ -41,6 +41,7 @@ class Bans(commands.Cog):
                 await SQL_CLASS().execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not banned", color=33023))
+
 
 def setup(client):
     client.add_cog(Bans(client))

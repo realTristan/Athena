@@ -130,7 +130,7 @@ class Elo(commands.Cog):
 
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=match report (match id) [winners => (blue/orange)]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
     async def match(self, ctx, action:str, match_id:int, *args):
         if not ctx.author.bot:
             # // REPORTING AN ONGOING MATCH
@@ -215,7 +215,7 @@ class Elo(commands.Cog):
 
     # // SET PLAYERS STATS COMMAND
     # /////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=set elo (@user) (amount)`**,** `=set wins (@user) (amount)`**,** `=set losses (@user) (amount)`')
     @commands.has_permissions(administrator=True)
     async def set(self, ctx, action:str, user:discord.Member, amount:int):
         if not ctx.author.bot:
@@ -240,7 +240,7 @@ class Elo(commands.Cog):
 
     # // SHOW THE LAST MATCH PLAYED COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["lm"])
+    @commands.command(aliases=["lm"], description='`=lastmatch`')
     async def lastmatch(self, ctx):
         if not ctx.author.bot:
             count = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
@@ -248,7 +248,7 @@ class Elo(commands.Cog):
 
     # // REPLACE / SUB TWO PLAYERS COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["sub", "swap"])
+    @commands.command(aliases=["sub", "swap"], description='`=replace (@user to be replaced) (@user replacing) (match id)`')
     @commands.has_permissions(manage_messages=True)
     async def replace(self, ctx, user1:discord.Member, user2:discord.Member, match_id:int):
         if not ctx.author.bot:
@@ -283,7 +283,7 @@ class Elo(commands.Cog):
 
     # SHOW THE PAST 10 MATCHES PLAYED
     # /////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=recent`**,** `=recent (amount)`')
     async def recent(self, ctx, *args):
         if not ctx.author.bot:
             row = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
@@ -301,7 +301,7 @@ class Elo(commands.Cog):
     
     # // CHANGE YOUR USERNAME COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=rename (name)`')
     async def rename(self, ctx, name:str):
         if not ctx.author.bot:
             row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
@@ -314,7 +314,7 @@ class Elo(commands.Cog):
 
     # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
     # ////////////////////////////////////////////
-    @commands.command(aliases=["fr"])
+    @commands.command(aliases=["fr"], description='`=forcerename (@user) (name)`')
     @commands.has_permissions(manage_messages=True)
     async def forcerename(self, ctx, user:discord.Member, name:str):
         if not ctx.author.bot:
@@ -328,7 +328,7 @@ class Elo(commands.Cog):
 
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
-    @commands.command(aliases=["reg"])
+    @commands.command(aliases=["reg"], description='`=register (name)`')
     async def register(self, ctx, params:str, *args):
         if not ctx.author.bot:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
@@ -366,7 +366,7 @@ class Elo(commands.Cog):
         
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////
-    @commands.command(aliases=["unreg"])
+    @commands.command(aliases=["unreg"], description='`=unreg (@user)`')
     @commands.has_permissions(administrator=True)
     async def unregister(self, ctx, user:discord.Member):
         if not ctx.author.bot:
@@ -377,7 +377,7 @@ class Elo(commands.Cog):
 
     # // GIVES AN USER A WIN COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=win (@users)`')
     @commands.has_permissions(manage_messages=True)
     async def win(self, ctx, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
@@ -391,7 +391,7 @@ class Elo(commands.Cog):
 
     # // GIVES AN USER A LOSS COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=lose (@users)`')
     @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
@@ -405,7 +405,7 @@ class Elo(commands.Cog):
 
     # // SHOW YOUR OR ANOTHER PLAYER'S STATS COMMAND
     # ////////////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=stats`**,** `=stats (@user)`')
     async def stats(self, ctx, *args):
         if not ctx.author.bot:
             user = ctx.author
@@ -415,7 +415,7 @@ class Elo(commands.Cog):
 
     # // RESET AN USERS STATS COMMAND
     # /////////////////////////////////////////
-    @commands.command()
+    @commands.command(description='`=reset all`**,** `=reset (@user)`')
     @commands.has_permissions(administrator=True)
     async def reset(self, ctx, args):
         if not ctx.author.bot:
@@ -441,7 +441,7 @@ class Elo(commands.Cog):
     
     # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["lb"])
+    @commands.command(aliases=["lb"], description='`=leaderboard`')
     async def leaderboard(self, ctx):
         if not ctx.author.bot:
             users = ""
@@ -455,7 +455,7 @@ class Elo(commands.Cog):
         
     # // ROLLBACK EVERY MATCH AN USER WAS IN
     # //////////////////////////////////////////
-    @commands.command(aliases=["rb"])
+    @commands.command(aliases=["rb"], description='`=rollback (user id)`')
     @commands.has_permissions(manage_messages=True)
     async def rollback(self, ctx, user:str):
         '''
