@@ -6,64 +6,6 @@ import discord, os
 intents = discord.Intents(messages=True, guilds=True, reactions=True, members=True, presences=True)
 client = commands.Bot(command_prefix='=', intents=intents)
 client.remove_command('help')
-
-# // SORT COMMAND DESCRIPTIONS
-# ////////////////////////////////
-async def _sort_commands():
-    cogs=[]; cmds={}
-    for command in client.commands:
-        cogs.append(command.cog)
-
-    for c in list(cmds.fromkeys(cogs)):
-        if c is not None:
-            for i in list(cmds.fromkeys(c.get_commands())):
-                cmds[i.name] = i.description
-    return cmds
-
-# // GET THE SIMILAR COMMANDS TO AN UNKNWON COMMAND
-# ////////////////////////////////////////////////////
-async def _similar_cmds(ctx):
-    correct_commands = await _sort_commands()
-    similar_commands=""
-    correct_usages = ""
-    commands = {}
-
-    for cmd in client.commands:
-        for c in str(cmd):
-            if c in list(ctx.message.content):
-                if str(cmd) not in commands:
-                    commands[str(cmd)] = 0
-                commands[str(cmd)] += 1
-
-    for s in commands:
-        if commands[s] > round(len(list(s))/2):
-            similar_commands+=s+"\n"
-            correct_usages+=f"{s}: {correct_commands[s]}\n"
-    
-    if len(similar_commands.split("\n")) < 2:
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} we could not find the command you are looking for", color=15158588))
-    return [similar_commands, correct_usages]
-
-# // RETURN THE ERROR EMBED
-# //////////////////////////////
-async def _error_embed(ctx):
-    values = await _similar_cmds(ctx)
-    embed=discord.Embed(title=f"Unknown Command: [{ctx.message.content}]", description="**Similar Commands:**\n"+values[0]+"\n**Command Usages:**\n"+values[1], color=15158588)
-    embed.set_footer(text="Message \"tristan#2230\" for support")
-    return await ctx.send(embed=embed)
-
-
-
-# ON COMMAND ERROR HANDLING
-# ///////////////////////////////
-@client.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.MissingPermissions):
-        return await ctx.send(embed=discord.Embed(descriptionb=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-        
-    await _error_embed(ctx)
-    if not isinstance(error, commands.CommandNotFound):
-        raise error
     
 # // REMOVE MEMBER FROM DATABASE WHEN THEY LEAVE THE SERVER
 # //////////////////////////////////////////////////////////////
