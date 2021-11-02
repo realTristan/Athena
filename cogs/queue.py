@@ -314,18 +314,20 @@ class Queue(commands.Cog):
     @commands.command()
     async def map(self, ctx, map:str):
         if not ctx.author.bot:
-            if self.data[ctx.guild.id][ctx.channel.id]["state"] == "maps":
-                if ctx.author == self.data[ctx.guild.id][ctx.channel.id]["blue_cap"]:
-                    row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                    maps = str(row[2]).split(",")
-                    
-                    if map in maps or self._clean_name(map) in maps:
-                        self.data[ctx.guild.id][ctx.channel.id]["map"] = self._clean_name(map)
-                        self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
-                        return await self._embeds(ctx, ctx.channel.id)
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
+            if await self._data_check(ctx, ctx.channel.id):
+                if self.data[ctx.guild.id][ctx.channel.id]["state"] == "maps":
+                    if ctx.author == self.data[ctx.guild.id][ctx.channel.id]["blue_cap"]:
+                        row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                        maps = str(row[2]).split(",")
+                        
+                        if map in maps or self._clean_name(map) in maps:
+                            self.data[ctx.guild.id][ctx.channel.id]["map"] = self._clean_name(map)
+                            self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
+                            return await self._embeds(ctx, ctx.channel.id)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
     
 
     # // FORCE START THE QUEUE COMMAND
@@ -486,22 +488,16 @@ class Queue(commands.Cog):
         if not res.author.bot:
             if res.component.id in ["join_queue", "leave_queue"]:
                 lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
-
-                if not res.guild.id in self.data:
-                    self.data[res.guild.id] = {}
-
-                if not lobby.id in self.data[res.guild.id]:
-                    self.data[res.guild.id][lobby.id] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "parties": {}, "state": "queue"}
-
-                if res.component.id == "join_queue":
-                    await self._join(res, res.author, lobby.id)
-                else:
-                    await self._leave(res, res.author, lobby.id)
-                
-                players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
-                embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/10] {lobby.name}', description=players, color=33023)
-                embed.set_footer(text=str(lobby.id))
-                return await res.message.edit(embed=embed)
+                if await self._data_check(res, lobby.id):
+                    if res.component.id == "join_queue":
+                        await self._join(res, res.author, lobby.id)
+                    else:
+                        await self._leave(res, res.author, lobby.id)
+                    
+                    players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
+                    embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/10] {lobby.name}', description=players, color=33023)
+                    embed.set_footer(text=str(lobby.id))
+                    return await res.message.edit(embed=embed)
                 
 
 
