@@ -199,8 +199,11 @@ class Queue(commands.Cog):
     async def _start(self, ctx, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {lobby}")
         # // CREATING TEAM CAPTAINS
-        self.data[ctx.guild.id][lobby]["blue_cap"] = random.choice(self.data[ctx.guild.id][lobby]["queue"]); self.data[ctx.guild.id][lobby]["queue"].remove(self.data[ctx.guild.id][lobby]["blue_cap"])
-        self.data[ctx.guild.id][lobby]["orange_cap"] = random.choice(self.data[ctx.guild.id][lobby]["queue"]); self.data[ctx.guild.id][lobby]["queue"].remove(self.data[ctx.guild.id][lobby]["orange_cap"])
+        self.data[ctx.guild.id][lobby]["blue_cap"] = random.choice(self.data[ctx.guild.id][lobby]["queue"])
+        self.data[ctx.guild.id][lobby]["queue"].remove(self.data[ctx.guild.id][lobby]["blue_cap"])
+        
+        self.data[ctx.guild.id][lobby]["orange_cap"] = random.choice(self.data[ctx.guild.id][lobby]["queue"])
+        self.data[ctx.guild.id][lobby]["queue"].remove(self.data[ctx.guild.id][lobby]["orange_cap"])
 
         if row[3] == "true":
             # // PICK PHASE ENABLED
