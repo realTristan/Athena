@@ -42,6 +42,5 @@ class Bans(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not banned", color=33023))
 
-
 def setup(client):
     client.add_cog(Bans(client))
