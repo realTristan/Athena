@@ -50,6 +50,7 @@ class Help(commands.Cog):
     moderator_embed.add_field(name=' ‎\nMatch Cancel [Mod+]', value='Cancels a match\n(Usage: =match cancel [match id])')
     moderator_embed.add_field(name=' ‎\nMatch Undo [Mod+]', value='Undos a match\n(Usage: =match undo [match id])')
     moderator_embed.add_field(name=' ‎\nMatch Rollback [Mod+]', value='Rollbacks every match with the user in it\n(Usage: =rb [user id])')
+    moderator_embed.add_field(name=' ‎\nReplace [Mod+]', value='Sub players in a match\n(Usage: =sub [user 1] [user 2] [match id])')
 
     # // ADDING FIELDS TO ADMINISTRATOR EMBED
     administrator_embed.add_field(name=' ‎\nLobby Create [Admin+]', value='Create a new lobby\n(Usage: =lobby add)')
@@ -57,7 +58,6 @@ class Help(commands.Cog):
     administrator_embed.add_field(name=' ‎\nLobby Settings [Admin+]', value='Change lobby settings\n(Usage: =lobby settings)')
     administrator_embed.add_field(name=' ‎\nShow Lobbys [Admin+]', value='Show server lobby\'s\n(Usage: =lobby show)')
 
-    administrator_embed.add_field(name=' ‎\nReplace [Admin+]', value='Sub players in a match\n(Usage: =sub [match id] [user 1] [user 2])')
     administrator_embed.add_field(name=' ‎\nReset Stats [Admin+]', value='Reset an users stats\n(Usage: =reset [@user])')
     administrator_embed.add_field(name=' ‎\nReset All Stats [Admin+]', value='Reset all players stats\n(Usage: =reset all)')
     administrator_embed.add_field(name=' ‎\nSet Elo [Admin+]', value='Sets an users elo\n(Usage: =set elo [@user] [amount])')
