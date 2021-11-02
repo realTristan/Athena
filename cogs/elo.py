@@ -130,7 +130,7 @@ class Elo(commands.Cog):
 
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
     # /////////////////////////////////////////
-    @commands.command(description='`=match report (match id) [winners => (blue/orange)]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
+    @commands.command(description='`=match report (match id) [blue/orange]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
     async def match(self, ctx, action:str, match_id:int, *args):
         if not ctx.author.bot:
             # // REPORTING AN ONGOING MATCH
