@@ -24,8 +24,7 @@ async def _sort_commands():
 # ////////////////////////////////////////////////////
 async def _similar_cmds(ctx):
     correct_commands = await _sort_commands()
-    similar_commands=""
-    correct_usages = ""
+    similar_commands=""; correct_usages = ""
     commands = {}
 
     for cmd in client.commands:
