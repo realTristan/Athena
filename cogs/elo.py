@@ -91,7 +91,7 @@ class Elo(commands.Cog):
             embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=33023)
             embed.set_author(name=row[2], url=f'https://r6.tracker.network/profile/pc/{row[2]}', icon_url=user.avatar_url)
             return await ctx.send(embed=embed)
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
+        return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=15158588))
 
     # // UNDO A WIN FOR THE BLUE TEAM
     # ////////////////////////////////////
@@ -277,7 +277,7 @@ class Elo(commands.Cog):
                     blue_team.append(str(user2.id))
                     await SQL_CLASS().execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 else:
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{user1.mention} is not in this match", color=15158588))
                 return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
 
@@ -324,7 +324,7 @@ class Elo(commands.Cog):
                 await self._user_edit(user, nick=f"{row[2]} [{row[3]}]")
 
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{user.mention} was not found", color=15158588))
 
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
@@ -436,7 +436,7 @@ class Elo(commands.Cog):
                     await self._reset_stats(ctx, user)
                     await self._user_edit(user, nick=f"{row[2]} [0]")
                     return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
-                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} player not found", color=15158588))
+                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{user.mention} was not found", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
     
     # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
