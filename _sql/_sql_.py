@@ -11,11 +11,9 @@ def _connect():
         host="localhost", port="3306", user="root", password="root", database="main"
     )
 
-
 # // CREATING DATABASE VARIABLES
 # ////////////////////////////////
 db = _connect()
-
 
 class SQL_CLASS:
     def __init__(self):
