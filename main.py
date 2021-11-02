@@ -52,6 +52,8 @@ async def _error_embed(ctx):
     embed.set_footer(text="Message \"tristan#2230\" for support")
     return await ctx.send(embed=embed)
 
+
+
 # ON COMMAND ERROR HANDLING
 # ///////////////////////////////
 @client.event
