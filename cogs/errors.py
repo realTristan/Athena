@@ -32,11 +32,15 @@ class Error_Handling(commands.Cog):
                     if str(cmd) not in commands:
                         commands[str(cmd)] = 0
                     commands[str(cmd)] += 1
-
+        command_count = 0
         for s in commands:
-            if commands[s] >= round(len(list(s))/2):
+            if commands[s] >= round(len(list(s))/1.5):
                 similar_commands+=s+"\n"
                 correct_usages+=f"{s}: {correct_commands[s]}\n"
+                command_count+=1
+            if command_count >= 6:
+                break
+
         
         if len(similar_commands.split("\n")) < 2:
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} we could not find the command you are looking for", color=15158588))
