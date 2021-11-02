@@ -34,13 +34,11 @@ class Error_Handling(commands.Cog):
                     commands[str(cmd)] += 1
 
         for s in range(len(commands)):
-            if commands[list(commands)[s]] >= round(len(list(commands)[s])/1.5):
-                similar_commands+=s+"\n"
+            if (commands[list(commands)[s]] * 0.95) >= (len(list(commands)[s])/2):
+                similar_commands+=list(commands)[s]+"\n"
                 correct_usages+=f"{list(commands)[s]}: {correct_commands[list(commands)[s]]}\n"
-            if s >= 6:
-                break
         
-        if len(similar_commands.split("\n")) < 2:
+        if len(similar_commands.split("\n")) <= 1:
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} we could not find the command you are looking for", color=15158588))
         return [similar_commands, correct_usages]
 
