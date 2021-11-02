@@ -32,13 +32,13 @@ class Error_Handling(commands.Cog):
                     if str(cmd) not in commands:
                         commands[str(cmd)] = 0
                     commands[str(cmd)] += 1
-        command_count = 0
-        for s in commands:
+       
+        for s in range(len(commands)):
             if commands[s] >= round(len(list(s))/1.5):
                 similar_commands+=s+"\n"
                 correct_usages+=f"{s}: {correct_commands[s]}\n"
                 command_count+=1
-            if command_count >= 6:
+            if s >= 6:
                 break
 
         
