@@ -47,7 +47,7 @@ async def _similar_cmds(ctx):
 # // RETURN THE ERROR EMBED
 # //////////////////////////////
 async def _error_embed(ctx):
-    values = _similar_cmds()
+    values = await _similar_cmds(ctx)
     embed=discord.Embed(title=f"Unknown Command: [{ctx.message.content}]", description="**Similar Commands:**\n"+values[0]+"\n**Command Usages:**\n"+values[1], color=15158588)
     embed.set_footer(text="Message \"tristan#2230\" for support")
     return await ctx.send(embed=embed)
@@ -58,8 +58,10 @@ async def _error_embed(ctx):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         return await ctx.send(embed=discord.Embed(descriptionb=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        
     await _error_embed(ctx)
-    raise error
+    if not isinstance(error, commands.CommandNotFound):
+        raise error
     
 # // REMOVE MEMBER FROM DATABASE WHEN THEY LEAVE THE SERVER
 # //////////////////////////////////////////////////////////////
