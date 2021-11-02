@@ -24,7 +24,8 @@ async def _sort_commands():
 # ////////////////////////////////////////////////////
 async def _similar_cmds(ctx):
     correct_commands = await _sort_commands()
-    similar_commands=""; correct_usages = ""
+    similar_commands=""
+    correct_usages = ""
     commands = {}
 
     for cmd in client.commands:
@@ -41,8 +42,13 @@ async def _similar_cmds(ctx):
     
     if len(similar_commands.split("\n")) < 2:
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} we could not find the command you are looking for", color=15158588))
+    return [similar_commands, correct_usages]
 
-    embed=discord.Embed(title=f"Unknown Command: [{ctx.message.content}]", description="**Similar Commands:**\n"+similar_commands+"\n**Command Usages:**\n"+correct_usages, color=15158588)
+# // RETURN THE ERROR EMBED
+# //////////////////////////////
+async def _error_embed(ctx):
+    values = _similar_cmds()
+    embed=discord.Embed(title=f"Unknown Command: [{ctx.message.content}]", description="**Similar Commands:**\n"+values[0]+"\n**Command Usages:**\n"+values[1], color=15158588)
     embed.set_footer(text="Message \"tristan#2230\" for support")
     return await ctx.send(embed=embed)
 
@@ -52,7 +58,7 @@ async def _similar_cmds(ctx):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         return await ctx.send(embed=discord.Embed(descriptionb=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-    await _similar_cmds(ctx)
+    await _error_embed(ctx)
     raise error
     
 # // REMOVE MEMBER FROM DATABASE WHEN THEY LEAVE THE SERVER
