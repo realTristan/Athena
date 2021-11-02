@@ -34,7 +34,7 @@ class Error_Handling(commands.Cog):
                     commands[str(cmd)] += 1
 
         for s in commands:
-            if commands[s] >= round(len(list(s))/2):
+            if commands[s] >= round(len(list(s))/1.5):
                 similar_commands+=s+"\n"
                 correct_usages+=f"{s}: {correct_commands[s]}\n"
         
