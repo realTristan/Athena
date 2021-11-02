@@ -28,7 +28,7 @@ class Error_Handling(commands.Cog):
 
         for cmd in self.client.commands:
             for c in str(cmd):
-                if c in list(ctx.message.content):
+                if c in (ctx.message.content.split(" ")[0]):
                     if str(cmd) not in commands:
                         commands[str(cmd)] = 0
                     commands[str(cmd)] += 1
