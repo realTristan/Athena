@@ -21,39 +21,39 @@
 - Type (=lobby settings) to show current lobby settings
 
 > - Party Commands:
-- Type (=party create) to create a new party
-- Type (=party leave) to leave/disband party
-- Type (=party invite [@user] ) to invite an user to your party
-- Type (=party kick [@user] ) to kick an user from your party
+- Type **(=party create)** to create a new party
+- Type **(=party leave)** to leave/disband party
+- Type **(=party invite [@user] )** to invite an user to your party
+- Type **(=party kick [@user] )** to kick an user from your party
 
 > - Bot Commands:
-- Type (=help) to show a list of commands
-- Type (=reg [@user] [name] ) to register an user
-- Type (=settings) to view the settings panel and setup the bot
-- Type (=rollback [user_id] ) to undo all matches containing this user (cheaters)
-- Type (=recent) to view recent matches
-- Type (=set elo [@user] [amount] ) to set an users elo
-- Type (=set wins [@user] [amount] ) to set an users wins
-- Type (=set losses [@user] [amount] ) to set an users losses
-- Type =j to join the current queue
-- Type =l to leave the current queue
-- Type =reset (@user) to reset players stats
-- Type =reset all to reset everyones stats
-- Type =clear to clear the current queue
-- Type =q to check the current queue
-- Type =p to pick your teammates (team captains only)
-- Type =addmap (name) to add a map
-- Type =delmap (name) to delete a map
-- Type =maps to show a list of all maps
-- Type =ban (@user) (time) (reason) to ban an user from the queue
-- Type =unban (@user) to unban an user from the queue
-- Type =match report/show/cancel/undo to report/show/cancel/undo matches
-- Type =win @users to give users a win
-- Type =lose @users to give users a loss
-- Type =reg (name) to register
-- Type =unreg @user to unregister an user
-- Type =stats to show your stats or =stats @user
-- Type =lb to view the elo leaderboard
+- Type **(=help)** to show a list of commands
+- Type **(=reg [@user] [name] )** to register an user
+- Type **(=settings)** to view the settings panel and setup the bot
+- Type **(=rollback [user_id] )** to undo all matches containing this user (cheaters)
+- Type **(=recent)** to view recent matches
+- Type **(=set elo [@user] [amount] )** to set an users elo
+- Type **(=set wins [@user] [amount] )** to set an users wins
+- Type **(=set losses [@user] [amount] )** to set an users losses
+- Type **(=join)** to join the current queue
+- Type **(=leave)** to leave the current queue
+- Type **(=reset [@user] )** to reset players stats
+- Type **(=reset all)** to reset everyones stats
+- Type **(=clear)** to clear the current queue
+- Type **(=queue)** to check the current queue
+- Type **(=pick)** to pick your teammates (team captains only)
+- Type **(=addmap [name] )** to add a map
+- Type **(=delmap [name] )** to delete a map
+- Type **(=maps)** to show a list of all maps
+- Type **(=ban [@user] [time] [reason] )** to ban an user from the queue
+- Type **(=unban [@user] )** to unban an user from the queue
+- Type **(=match report/show/cancel/undo)** to report/show/cancel/undo matches
+- Type **(=win [@users] )** to give users a win
+- Type **(=lose [@users] )** to give users a loss
+- Type **(=reg [name] )** to register
+- Type **(=unreg [@user] )** to unregister an user
+- Type **(=stats)** to show your stats or =stats @user
+- Type **(=leaderboard)** to view the elo leaderboard
 - Type =sub (match id) (@user1) (@user2) to replace an user in a match
 - Type =lm to show the last match played
 - Type =rename to change your ten man name
