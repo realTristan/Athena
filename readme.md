@@ -29,8 +29,6 @@
 > - Bot Commands:
 - Type =help to show a list of commands
 - Type =reg (@user) (name) to register an user
-- Type =reg all to register every member (add your user id to self.dev_users in dev.py cog)
-- Type =unreg all to unregister every player (add your user id to self.dev_users in dev.py cog)
 - Type =settings to view the settings panel and setup the bot
 - Type =rollback (user id) to undo all matches containing this user (cheaters)
 - Type =recent to view recent matches
