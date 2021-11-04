@@ -1,24 +1,24 @@
 # Discord ELO Bot
 > - Bot Code:
-- MySQL Database
-- Fast and Clean
+- **MySQL Database**
+- **Fast and Clean**
 
 > - Bot Settings:
-- Match Logging with Easy Match Report Buttons
-- Queue Embed with Join and Leave Buttons
-- Set Register Channels
+- **Match Logging with Easy Match Report Buttons**
+- **Queue Embed with Join and Leave Buttons**
+- **Set Register Channels**
 
 > - Lobby Settings:
-- Enable/Disable Team Captain Voice Channels
-- Enable/Disable Map Picking Phase
-- Enable/Disable Team Picking Phase
-- Change Party Size
+- **Enable/Disable Team Captain Voice Channels**
+- **Enable/Disable Map Picking Phase**
+- **Enable/Disable Team Picking Phase**
+- **Change Party Size**
 
 > - Lobby Commands:
-- Type (=lobby add) to create a new lobby
-- Type (=lobby del) to remove the current lobby
-- Type (=lobby show) to show all server lobbies
-- Type (=lobby settings) to show current lobby settings
+- Type **(=lobby add)** to create a new lobby
+- Type **(=lobby del)** to remove the current lobby
+- Type **(=lobby show)** to show all server lobbies
+- Type **(=lobby settings)** to show current lobby settings
 
 > - Party Commands:
 - Type **(=party create)** to create a new party
@@ -54,10 +54,10 @@
 - Type **(=unreg [@user] )** to unregister an user
 - Type **(=stats)** to show your stats or =stats @user
 - Type **(=leaderboard)** to view the elo leaderboard
-- Type =sub (match id) (@user1) (@user2) to replace an user in a match
-- Type =lm to show the last match played
-- Type =rename to change your ten man name
-- Type =forcerename @user to change an users name for them
-- Type =fj (@user) to force join someone to the queue
-- Type =fl (@user) to force leave someone from the queue
-- Type =regrole (@role) to set the role given when an user registers 
+- Type **(=sub [@user1] [@user2] [match_id] )** to replace an user in a match
+- Type **(=lastmatch)** to show the last match played
+- Type **(=rename [name] )** to change your ten man name
+- Type **(=forcerename [@user] [name] )** to change an users name for them
+- Type **(=forcejoin [@user] )** to force join someone to the queue
+- Type **(=forceleave [@user] )** to force leave someone from the queue
+- Type **(=regrole [@role] )** to set the role given when an user registers 
