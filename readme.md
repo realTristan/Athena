@@ -6,14 +6,18 @@
 > - Bot Settings:
 - Match Logging with Easy Match Report Buttons
 - Queue Embed with Join and Leave Buttons
+- Set Register Channels
+
+> - Lobby Settings:
 - Enable/Disable Team Captain Voice Channels
 - Enable/Disable Map Picking Phase
 - Enable/Disable Team Picking Phase
-- Set Queue/Register Channels
-
 
 > - Bot Commands:
 - Type =help to show a list of commands
+- Type =lobby add to create a new lobby
+- Type =lobby del to remove the current lobby
+- Type =lobby show to show all server lobbies
 - Type =reg (@user) (name) to register an user
 - Type =reg all to register every member (add your user id to self.dev_users in dev.py cog)
 - Type =unreg all to unregister every player (add your user id to self.dev_users in dev.py cog)
