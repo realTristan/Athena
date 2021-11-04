@@ -4,8 +4,8 @@
 - **MySQL Database**
 - **Fast and Clean**
 
-> - Bot Settings:
-- **Match Logging with Easy Match Report Buttons**
+> - Server Settings:
+- **Enable/Disable Match Logging with Easy Match Report Buttons**
 - **Queue Embed with Join and Leave Buttons**
 - **Set Register Channels**
 
