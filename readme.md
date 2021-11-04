@@ -37,13 +37,16 @@
 - Type =set losses (@user) (amount) to set an users losses
 - Type =j to join the current queue
 - Type =l to leave the current queue
-- Type =reset @user to reset players stats
+- Type =reset (@user) to reset players stats
 - Type =reset all to reset everyones stats
 - Type =clear to clear the current queue
 - Type =q to check the current queue
 - Type =p to pick your teammates (team captains only)
-- Type =addmap (name) to add a map, =delmap (name) to delete a map and =maps to show a list of all maps
-- Type =ban (user) (time) (reason) to ban an user from the queue and =unban to unban an user from the queue
+- Type =addmap (name) to add a map
+- Type =delmap (name) to delete a map
+- Type =maps to show a list of all maps
+- Type =ban (@user) (time) (reason) to ban an user from the queue
+- Type =unban (@user) to unban an user from the queue
 - Type =match report/show/cancel/undo to report/show/cancel/undo matches
 - Type =win @users to give users a win
 - Type =lose @users to give users a loss
@@ -55,6 +58,6 @@
 - Type =lm to show the last match played
 - Type =rename to change your ten man name
 - Type =forcerename @user to change an users name for them
-- Type =fj @user to force join someone to the queue
-- Type =fl @user to force leave someone from the queue
-- Type =regrole @role to set the role given when an user registers 
+- Type =fj (@user) to force join someone to the queue
+- Type =fl (@user) to force leave someone from the queue
+- Type =regrole (@role) to set the role given when an user registers 
