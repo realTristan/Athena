@@ -23,18 +23,18 @@
 > - Party Commands:
 - Type (=party create) to create a new party
 - Type (=party leave) to leave/disband party
-- Type (=party invite [@user]) to invite an user to your party
-- Type (=party kick [@user]) to kick an user from your party
+- Type (=party invite [@user] ) to invite an user to your party
+- Type (=party kick [@user] ) to kick an user from your party
 
 > - Bot Commands:
 - Type (=help) to show a list of commands
-- Type (=reg [@user] [name]) to register an user
+- Type (=reg [@user] [name] ) to register an user
 - Type (=settings) to view the settings panel and setup the bot
-- Type (=rollback [user_id]) to undo all matches containing this user (cheaters)
-- Type =recent to view recent matches
-- Type =set elo (@user) (amount) to set an users elo
-- Type =set wins (@user) (amount) to set an users wins
-- Type =set losses (@user) (amount) to set an users losses
+- Type (=rollback [user_id] ) to undo all matches containing this user (cheaters)
+- Type (=recent) to view recent matches
+- Type (=set elo [@user] [amount] ) to set an users elo
+- Type (=set wins [@user] [amount] ) to set an users wins
+- Type (=set losses [@user] [amount] ) to set an users losses
 - Type =j to join the current queue
 - Type =l to leave the current queue
 - Type =reset (@user) to reset players stats
