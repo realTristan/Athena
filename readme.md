@@ -15,22 +15,22 @@
 - Change Party Size
 
 > - Lobby Commands:
-- Type =lobby add to create a new lobby
-- Type =lobby del to remove the current lobby
-- Type =lobby show to show all server lobbies
-- Type =lobby settings to show current lobby settings
+- Type (=lobby add) to create a new lobby
+- Type (=lobby del) to remove the current lobby
+- Type (=lobby show) to show all server lobbies
+- Type (=lobby settings) to show current lobby settings
 
 > - Party Commands:
-- Type =party create to create a new party
-- Type =party leave to leave/disband party
-- Type =party invite @user to invite an user to your party
-- Type =party kick @user to kick an user from your party
+- Type (=party create) to create a new party
+- Type (=party leave) to leave/disband party
+- Type (=party invite [@user]) to invite an user to your party
+- Type (=party kick [@user]) to kick an user from your party
 
 > - Bot Commands:
-- Type =help to show a list of commands
-- Type =reg (@user) (name) to register an user
-- Type =settings to view the settings panel and setup the bot
-- Type =rollback (user id) to undo all matches containing this user (cheaters)
+- Type (=help) to show a list of commands
+- Type (=reg [@user] [name]) to register an user
+- Type (=settings) to view the settings panel and setup the bot
+- Type (=rollback [user_id]) to undo all matches containing this user (cheaters)
 - Type =recent to view recent matches
 - Type =set elo (@user) (amount) to set an users elo
 - Type =set wins (@user) (amount) to set an users wins
