@@ -10,9 +10,8 @@ class Error_Handling(commands.Cog):
     # //////////////////////////////
     async def _run_sorter(self, ctx, _user_command):
         _sorted_commands = await self._command_sort(_user_command)
-        
-        correct_usages=""; _correct_usages=[]
-        similar_commands=""; _similar_commands=[]
+        correct_usages=""
+        similar_commands=""
         
         # // CHECK IF THERE'S ANY SIMILAR COMMANDS
         if len(_sorted_commands) <= 1:
@@ -21,13 +20,8 @@ class Error_Handling(commands.Cog):
         # // SORT COMMANDS INTO A LIST
         for command in self.client.commands:
             if str(command) in _sorted_commands:
-                _similar_commands.append(f"{str(command)}\n")
-                _correct_usages.append(f"{str(command)}: {command.description}\n")
-        
-        # // ADD THE COMMANDS TO A STRING
-        for x in range(round(len(_similar_commands)/1)):
-            similar_commands+=_similar_commands[x]
-            correct_usages+=_correct_usages[x]
+                similar_commands+=f"{str(command)}\n"
+                correct_usages+=f"{str(command)}: {command.description}\n"
 
         embed=embed=discord.Embed(title=f"Command Error: [={_user_command}]", description=f"**Similar Commands:**\n{similar_commands}\n**Command Usages:**\n{correct_usages}", color=15158588)
         embed.set_footer(text="Message \"tristan#2230\" for support")
