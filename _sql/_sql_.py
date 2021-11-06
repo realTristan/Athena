@@ -17,7 +17,7 @@ db = _connect()
 
 class SQL_CLASS:
     def __init__(self):
-        print("[ ! ] SQL Database Has Been Accessed")
+        print(" >> Database Has Been Accessed")
         # cur.execute(f"DROP TABLE bans")
         # cur.execute(f"DROP TABLE maps")
         # cur.execute(f"DROP TABLE matches")
