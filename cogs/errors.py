@@ -97,7 +97,7 @@ class Error_Handling(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            return await ctx.send(embed=discord.Embed(descriptionb=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             
         await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
         if not isinstance(error, commands.CommandNotFound):
