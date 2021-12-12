@@ -70,7 +70,7 @@ class Settings(commands.Cog):
         row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
         if row is None:
             await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby_list) VALUES ({ctx.guild.id}, '{ctx.channel.id}')")
-            return await ctx.send(embed=discord.Embed(description=f"**[1/3]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"**[1/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
         
         # // CONVERTING LOBBIES ROW TO A LIST
         lobbies = str(row[1]).split(",")
@@ -80,7 +80,7 @@ class Settings(commands.Cog):
 
         # // CREATE A NEW LOBBY
         if action in ["add", "create"]:
-            if len(lobbies) < 3:
+            if len(lobbies) < 10:
                 if not str(ctx.channel.id) in lobbies:
                     if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}"):
                         await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby_id) VALUES ({ctx.guild.id}, '{ctx.channel.id}')")
@@ -91,9 +91,9 @@ class Settings(commands.Cog):
                     if not await SQL_CLASS().exists(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
                         await SQL_CLASS().execute(f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 'false', 'true', 5, 2, 1)")
 
-                    return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)+1}/3]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)+1}/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is already a lobby", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} maximum amount of lobbies created **[3/3]**", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} maximum amount of lobbies created **[10/10]**", color=15158588))
 
         # // SHOW ALL GUILD LOBBIES
         if action in ["show"]:
@@ -115,7 +115,7 @@ class Settings(commands.Cog):
                 await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 await SQL_CLASS().execute(f"UPDATE lobbies SET lobby_list = '{','.join(str(e) for e in lobbies)}' WHERE guild_id = {ctx.guild.id}")
 
-                return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)}/3]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)}/10]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
         if action in ["settings", "sets", "options", "opts", "setting"]:
