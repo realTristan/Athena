@@ -36,8 +36,7 @@ class Settings(commands.Cog):
             if row[3] == "true":
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
-
-
+        
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
     async def _add_map(self, ctx, map, lobby):
