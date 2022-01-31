@@ -45,7 +45,6 @@ class Help(commands.Cog):
     moderator_embed.add_field(name=' ‎\nForce Rename [Mod+]', value='Renames the user\n(Usage: =fr [@user] [new name])')
     moderator_embed.add_field(name=' ‎\nForce Join [Mod+]', value='Adds an user to the queue\n(Usage: =fj [@user])')
     moderator_embed.add_field(name=' ‎\nForce Leave [Mod+]', value='Removes an user from the queue\n(Usage: =fl [@user])')
-    moderator_embed.add_field(name=' ‎\nForce Start [Mod+]', value='Force starts the queue\n(Usage: =fs)')
     moderator_embed.add_field(name=' ‎\nMatch Report [Mod+]', value='Reports a match\n(Usage: =match report [match id] [orange/blue])')
     moderator_embed.add_field(name=' ‎\nMatch Cancel [Mod+]', value='Cancels a match\n(Usage: =match cancel [match id])')
     moderator_embed.add_field(name=' ‎\nMatch Undo [Mod+]', value='Undos a match\n(Usage: =match undo [match id])')

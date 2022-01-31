@@ -340,19 +340,6 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
     
-
-    # // FORCE START THE QUEUE COMMAND
-    # /////////////////////////////////////////
-    @commands.command(aliases=["fs"], description='`=forcestart`')
-    @commands.has_permissions(manage_messages=True)
-    async def forcestart(self, ctx):
-        if not ctx.author.bot:
-            if self.data[ctx.guild.id][ctx.channel.id]["state"] == "queue":
-                if await self._data_check(ctx, ctx.channel.id):
-                    return await self._start(ctx, ctx.channel.id)
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the queueing phase", color=15158588))
-
     # // JOIN THE QUEUE COMMAND
     # /////////////////////////////////////////
     @commands.command(aliases=["j"], description='`=join`')
