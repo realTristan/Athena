@@ -34,7 +34,7 @@ class SQL_CLASS:
             #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // LOBBIES TABLE
-            # cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby_list VARCHAR(60), id INT PRIMARY KEY AUTO_INCREMENT)")
+            # cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby_list VARCHAR(205), id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // LOBBY SETTINGS
             #cur.execute("CREATE TABLE lobby_settings (guild_id BIGINT, lobby_id BIGINT, map_pick_phase INT, team_pick_phase INT, win_elo int, loss_elo INT, party_size INT, negative_elo INT, queue_size INT, id INT PRIMARY KEY AUTO_INCREMENT)")

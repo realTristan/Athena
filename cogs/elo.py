@@ -169,7 +169,7 @@ class Elo(commands.Cog):
             description=""
             for i in self.data["elo_roles"][ctx.guild.id]:
                 role = self.data["elo_roles"][ctx.guild.id][i]
-                description+=f"{role.mention} [**{i}**]"
+                description+=f"{role.mention} [**{i}**]\n"
             embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023)
             await ctx.send(embed=embed)
             
