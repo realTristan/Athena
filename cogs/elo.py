@@ -89,7 +89,7 @@ class Elo(commands.Cog):
                 await self._user_edit(user, nick=f"{row[2]} [0]")
             else:
                 await SQL_CLASS().execute(f"UPDATE users SET elo = {row[3]-lobby_settings[5]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                await self._user_edit(user, nick=f"{row[2]} {row[3]-lobby_settings[5]}")
+                await self._user_edit(user, nick=f"{row[2]} [{row[3]-lobby_settings[5]}]")
             await self.remove_elo_role(ctx, user, row[3]-lobby_settings[5])
             return await SQL_CLASS().execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
