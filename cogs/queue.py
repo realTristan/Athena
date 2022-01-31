@@ -30,7 +30,7 @@ class Queue(commands.Cog):
     async def _data_check(self, ctx, lobby):
         # // CHECK SETTINGS DATABASE
         if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs) VALUES ({ctx.guild.id}, 0, 'false', 0, 0)")
+            await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs) VALUES ({ctx.guild.id}, 0, 0, 0, 0)")
         
         # // CHECK IF GUILD IS IN SELF.DATA
         if not ctx.guild.id in self.data:
@@ -53,7 +53,8 @@ class Queue(commands.Cog):
                 return False
 
         if user.id in self.data[ctx.guild.id][lobby]["parties"]:
-            if len(self.data[ctx.guild.id][lobby]["parties"][user.id]) + len(self.data[ctx.guild.id][lobby]["queue"]) <= 10:
+            row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
+            if len(self.data[ctx.guild.id][lobby]["parties"][user.id]) + len(self.data[ctx.guild.id][lobby]["queue"]) <= row[8]:
                 for player in self.data[ctx.guild.id][lobby]["parties"][user.id][1:]:
                     await self._join(ctx, ctx.guild.get_member(player), lobby)
                 return True
@@ -79,7 +80,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     async def _match_category(self, ctx, match_id, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-        if row[3] == "true":
+        if row[3] == 1:
             if not get(ctx.guild.categories, name=f'Match #{match_id}'):
                 # // CREATING CATEGORY AND SETTING PERMISSIONS
                 category = await ctx.guild.create_category(f'Match #{match_id}')
@@ -136,7 +137,8 @@ class Queue(commands.Cog):
             current_queue = "None"
             if len(self.data[ctx.guild.id][lobby]["queue"]) != 0:
                 current_queue = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id][lobby]["queue"])
-            return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id][lobby]['queue'])}/10] {ctx.channel.name}", description=current_queue, color=33023))
+            row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
+            return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id][lobby]['queue'])}/{row[8]}] {ctx.channel.name}", description=current_queue, color=33023))
 
         # // TEAM PICKING PHASE EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "pick":
@@ -194,7 +196,7 @@ class Queue(commands.Cog):
             await self._match_category(ctx, len(count)+1, lobby)
             await self._reset(ctx, lobby)
 
-    # // WHEN QUEUE REACHES 10 PEOPLE FUNCTION
+    # // WHEN QUEUE REACHES QUEUE SIZE FUNCTION
     # /////////////////////////////////////////
     async def _start(self, ctx, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {lobby}")
@@ -205,7 +207,7 @@ class Queue(commands.Cog):
         self.data[ctx.guild.id][lobby]["orange_cap"] = random.choice(self.data[ctx.guild.id][lobby]["queue"])
         self.data[ctx.guild.id][lobby]["queue"].remove(self.data[ctx.guild.id][lobby]["orange_cap"])
 
-        if row[3] == "true":
+        if row[3] == 1:
             # // PICK PHASE ENABLED
             # // CREATING LOGIC AND CHANGING STATE
             self.data[ctx.guild.id][lobby]["state"] = "pick"
@@ -225,11 +227,14 @@ class Queue(commands.Cog):
             self.data[ctx.guild.id][lobby]["queue"].remove(_user)
         
         # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
-        if row[2] == "true":
+        if row[2] == 1:
             self.data[ctx.guild.id][lobby]["state"] = "maps"
         else:
             _row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
-            self.data[ctx.guild.id][lobby]["map"] = random.choice(str(_row[2]).split(","))
+            self.data[ctx.guild.id][lobby]["map"] = "None"
+            
+            if _row is not None:
+                self.data[ctx.guild.id][lobby]["map"] = random.choice(str(_row[2]).split(","))
             self.data[ctx.guild.id][lobby]["state"] = "final"
         return await self._embeds(ctx, lobby)
 
@@ -257,9 +262,10 @@ class Queue(commands.Cog):
 
                         if await self._check_party(ctx, user, lobby):
                             self.data[ctx.guild.id][lobby]["queue"].append(user)
-                            if len(self.data[ctx.guild.id][lobby]["queue"]) == 10:
+                            row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
+                            if len(self.data[ctx.guild.id][lobby]["queue"]) == row[8]:
                                 return await self._start(ctx, lobby)
-                            return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/10]** {user.mention} has joined the queue", color=33023))
+                            return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/{row[8]}]** {user.mention} has joined the queue", color=33023))
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader / party too full", color=15158588))
                     return False
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
@@ -273,7 +279,8 @@ class Queue(commands.Cog):
             if self.data[ctx.guild.id][lobby]["state"] == "queue":
                 if user in self.data[ctx.guild.id][lobby]["queue"]:
                     self.data[ctx.guild.id][lobby]["queue"].remove(user)
-                    return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/10]** {user.mention} has left the queue", color=33023))
+                    row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
+                    return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/{row[8]}]** {user.mention} has left the queue", color=33023))
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
@@ -300,7 +307,7 @@ class Queue(commands.Cog):
                             self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
                             self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
 
-                            if row[2] == "true":
+                            if row[2] == 1:
                                 self.data[ctx.guild.id][ctx.channel.id]["state"] = "maps"
                             else:
                                 _row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
@@ -500,7 +507,8 @@ class Queue(commands.Cog):
                         await self._leave(res, res.author, lobby.id)
                     
                     players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
-                    embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/10] {lobby.name}', description=players, color=33023)
+                    row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {lobby.id}")
+                    embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/{row[8]}] {lobby.name}', description=players, color=33023)
                     embed.set_footer(text=str(lobby.id))
                     return await res.message.edit(embed=embed)
                 

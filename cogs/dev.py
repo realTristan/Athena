@@ -34,10 +34,7 @@ class Dev(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def _reg_all(self, ctx):
         if ctx.author.id in self.dev_users:
-            # // REGISTER EVERY MEMBER IN THE SERVER
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-
-            # // GETTING THE REGISTER ROLE FROM SETTINGS
             role = None
             if settings[1] != 0:
                 role = ctx.guild.get_role(settings[1])
