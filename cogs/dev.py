@@ -12,7 +12,6 @@ class Dev(commands.Cog):
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
-    @cache
     async def _user_edit(self, user, nick=None, role=None):
         try:
             if nick is not None:
@@ -25,7 +24,6 @@ class Dev(commands.Cog):
             
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////
-    @cache
     async def _register_user(self, ctx, user, name, role):
         await SQL_CLASS().execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
         if role not in user.roles:

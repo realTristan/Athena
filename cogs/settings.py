@@ -11,7 +11,6 @@ class Settings(commands.Cog):
     
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    @cache
     async def _guild_settings_status(self, option, row):
         # // MATCH CATEGORIES
         if option == "match_category":
@@ -27,7 +26,6 @@ class Settings(commands.Cog):
 
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    @cache
     async def _lobby_settings_status(self, option, row):
         # // MAP PICKING PHASE
         if option == "map_pick_phase":
@@ -50,7 +48,6 @@ class Settings(commands.Cog):
         
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
-    @cache
     async def _add_map(self, ctx, map, lobby):
         if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
             await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map_list) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
@@ -62,7 +59,6 @@ class Settings(commands.Cog):
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
-    @cache
     async def _del_map(self, ctx, map, lobby):
         if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
             row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
@@ -112,7 +108,9 @@ class Settings(commands.Cog):
             if len(lobbies) > 0:
                 embed=discord.Embed(title=f"Lobbies ┃ {ctx.guild.name}", color=33023)
                 for i in range(len(lobbies)):
-                    embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(lobbies[i])).name, value=ctx.guild.get_channel(int(lobbies[i])).mention)
+                    try:
+                        embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(lobbies[i])).name, value=ctx.guild.get_channel(int(lobbies[i])).mention)
+                    except Exception: pass
                 return await ctx.send(embed=embed)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
 

@@ -10,7 +10,6 @@ class Elo(commands.Cog):
 
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
-    @cache
     async def _delete_channels(self, ctx, match_id):
         _category = discord.utils.get(ctx.guild.categories, name=f"Match #{match_id}")
         if _category:
@@ -20,7 +19,6 @@ class Elo(commands.Cog):
 
     # RESET AN USERS STATS
     # ///////////////////////////////////////
-    @cache
     async def _reset_stats(self, ctx, user):
         await SQL_CLASS().execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         await SQL_CLASS().execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -28,7 +26,6 @@ class Elo(commands.Cog):
 
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////
-    @cache
     async def _register_user(self, ctx, user, name, role):
         await SQL_CLASS().execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
         if role not in user.roles:
@@ -36,7 +33,6 @@ class Elo(commands.Cog):
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
-    @cache
     async def _user_edit(self, user, nick=None, role=None, remove_role=None):
         if nick is not None:
             await user.edit(nick=nick)
@@ -49,13 +45,11 @@ class Elo(commands.Cog):
 
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
-    @cache
     async def _clean(self, user):
         return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
     
     # // ADD AN USERS ELO ROLE
     # /////////////////////////////////////////
-    @cache
     async def add_elo_role(self, ctx, user, elo_amount):
         if ctx.guild.id not in self.data["elo_roles"]:
             return
@@ -66,7 +60,6 @@ class Elo(commands.Cog):
                 
     # // REMOVE AN USERS ELO ROLE
     # /////////////////////////////////////////
-    @cache
     async def remove_elo_role(self, ctx, user, elo_amount):
         if ctx.guild.id not in self.data["elo_roles"]:
             return
@@ -77,7 +70,6 @@ class Elo(commands.Cog):
 
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
-    @cache
     async def _win(self, ctx, user, lobby_settings):
         row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
@@ -90,7 +82,6 @@ class Elo(commands.Cog):
 
     # // GIVE AN USER A LOSS FUNCTION
     # /////////////////////////////////////////
-    @cache
     async def _loss(self, ctx, user, lobby_settings):
         row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
@@ -107,7 +98,6 @@ class Elo(commands.Cog):
 
     # // LOG A MATCH TO THE DATABASE FUNCTION
     # /////////////////////////////////////////
-    @cache
     async def _match_show(self, ctx, match_id):
         row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
         embed=discord.Embed(title=f"Match #{match_id} ┃ {row[8].upper()}", description=f"**Map:** {row[3]}\n**Winners:** {row[9][0].upper()+row[9][1:]}", color=33023)
@@ -121,7 +111,6 @@ class Elo(commands.Cog):
 
     # // SHOW THE USERS STATS FUNCTION
     # /////////////////////////////////////////
-    @cache
     async def _stats(self, ctx, user):
         row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
@@ -132,7 +121,6 @@ class Elo(commands.Cog):
 
     # // UNDO A WIN FOR THE ORANGE TEAM
     # ////////////////////////////////////
-    @cache
     async def _undo_win(self, ctx, lobby_id, winners, losers):
         lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby_id}")
 
@@ -155,7 +143,6 @@ class Elo(commands.Cog):
     # // ADD / REMOVE A NEW ELO ROLE
     # //////////////////////////
     @commands.command()
-    @commands.has_permissions(administrator=True)
     async def elorole(self, ctx, option:str, *args):
         if ctx.guild.id not in self.data["elo_roles"]:
             self.data["elo_roles"][ctx.guild.id] = {}
@@ -166,15 +153,17 @@ class Elo(commands.Cog):
             elo_amount = int(list(args)[1])
             
         if option in ["add", "create", "new"]:
-            self.data["elo_roles"][ctx.guild.id][elo_amount] = role
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
+            if ctx.author.guild_permissions.administrator:
+                self.data["elo_roles"][ctx.guild.id][elo_amount] = role
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
         
         if option in ["remove", "delete", "del"]:
-            for i in self.data["elo_roles"][ctx.guild.id]:
-                if self.data["elo_roles"][ctx.guild.id][i] == role:
-                    del self.data["elo_roles"][ctx.guild.id][i]
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} has been removed", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
+            if ctx.author.guild_permissions.administrator:
+                for i in self.data["elo_roles"][ctx.guild.id]:
+                    if self.data["elo_roles"][ctx.guild.id][i] == role:
+                        del self.data["elo_roles"][ctx.guild.id][i]
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} has been removed", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
         
         if option in ["list", "show"]:
             description=""
