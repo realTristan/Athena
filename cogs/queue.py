@@ -3,6 +3,7 @@ from discord_components import *
 from discord.ext import commands
 from discord.utils import get
 import datetime as datetime
+from functools import *
 from _sql import *
 
 class Queue(commands.Cog):
@@ -12,21 +13,25 @@ class Queue(commands.Cog):
 
     # // RESET THE GUILD'S VARIABLES FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _reset(self, ctx, lobby):
         self.data[ctx.guild.id][lobby] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "parties": {}, "state": "queue"}
 
     # // CLEAN A PLAYERS NAME TO LOOK CLEANER
     # ////////////////////////////////////////////
+    @cache
     def _clean_name(self, name):
         return str(name[0]).upper() + str(name[1:]).lower()
 
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
+    @cache
     async def _clean(self, user):
         return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
         
     # // CHECK SELF.DATA FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _data_check(self, ctx, lobby):
         # // CHECK SETTINGS DATABASE
         if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
@@ -47,6 +52,7 @@ class Queue(commands.Cog):
 
     # // ADD OTHER PARTY MEMBERS TO THE QUEUE
     # ////////////////////////////////////////////
+    @cache
     async def _check_party(self, ctx, user, lobby):
         for party in self.data[ctx.guild.id][lobby]["parties"]:
             if user.id in self.data[ctx.guild.id][lobby]["parties"][party] and party != user.id:
@@ -63,6 +69,7 @@ class Queue(commands.Cog):
     
     # // SEND MATCH LOGS TO THE GIVEN CHANNEL
     # //////////////////////////////////////////
+    @cache
     async def _match_log(self, ctx, embed):
         # // SEND THE MATCH LOGGING EMBED TO THE CHANNEL
         row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
@@ -78,6 +85,7 @@ class Queue(commands.Cog):
 
     # // CREATE MATCH CATEGORY FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _match_category(self, ctx, match_id, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         if row[3] == 1:
@@ -110,6 +118,7 @@ class Queue(commands.Cog):
 
     # // MATCH LOGGING FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _match(self, ctx, lobby):
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['orange_team'])
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['blue_team'])
@@ -121,6 +130,7 @@ class Queue(commands.Cog):
 
     # CREATE TEAM PICK LOGIC
     # /////////////////////////
+    @cache
     async def _pick_logic(self, ctx, lobby):
         for _ in range(round(len(self.data[ctx.guild.id][lobby]["queue"]) / 2)):
             self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["blue_cap"])
@@ -131,6 +141,7 @@ class Queue(commands.Cog):
 
     # // EMBED GENERATOR FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _embeds(self, ctx, lobby):
         # // QUEUE PHASE EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "queue":
@@ -198,6 +209,7 @@ class Queue(commands.Cog):
 
     # // WHEN QUEUE REACHES QUEUE SIZE FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _start(self, ctx, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {lobby}")
         # // CREATING TEAM CAPTAINS
@@ -240,6 +252,7 @@ class Queue(commands.Cog):
 
     # // CHECK IF THE USER IS BANNED FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _ban_check(self, ctx, user):
         row = await SQL_CLASS().select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
@@ -251,6 +264,7 @@ class Queue(commands.Cog):
 
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _join(self, ctx, user, lobby):
         if await self._data_check(ctx, lobby):
             if self.data[ctx.guild.id][lobby]["state"] == "queue":
@@ -274,6 +288,7 @@ class Queue(commands.Cog):
 
     # // WHEN AN USER LEAVES THE QUEUE FUNCTION
     # /////////////////////////////////////////
+    @cache
     async def _leave(self, ctx, user, lobby):
         if await self._data_check(ctx, lobby):
             if self.data[ctx.guild.id][lobby]["state"] == "queue":

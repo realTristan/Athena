@@ -1,4 +1,5 @@
 from discord.ext import commands
+from functools import *
 import discord
 
 class Error_Handling(commands.Cog):
@@ -8,6 +9,7 @@ class Error_Handling(commands.Cog):
 
     # // RUN THE COMMAND SORTER
     # //////////////////////////////
+    @cache
     async def _run_sorter(self, ctx, _user_command):
         _sorted_commands = await self._command_sort(_user_command)
         correct_usages=""
@@ -29,6 +31,7 @@ class Error_Handling(commands.Cog):
 
     # CHECK HOW MANY TIMES A LETTER APPEARS IN BOTH WORDS
     # //////////////////////////////////////////////////////
+    @cache
     async def _letter_count(self, _user_command):
         try:
             _letter_dict = {}
@@ -47,6 +50,7 @@ class Error_Handling(commands.Cog):
 
     # // CHECK LETTER POSITIONING
     # ////////////////////////////////
+    @cache
     async def _letter_position(self, _user_command):
         _letter_dict = await self._letter_count(_user_command)
         for command in self.client.commands:
@@ -62,6 +66,7 @@ class Error_Handling(commands.Cog):
 
     # // GIVE EACH COMMAND THEIR RATING
     # /////////////////////////////////////
+    @cache
     async def _command_rate(self, _user_command):
         try:
             _letter_dict = await self._letter_position(_user_command)
@@ -78,6 +83,7 @@ class Error_Handling(commands.Cog):
 
     # SORT THE COMMANDS
     # /////////////////////
+    @cache
     async def _command_sort(self, _user_command):
         try:
             _command_dict = await self._command_rate(_user_command)

@@ -1,18 +1,17 @@
 from discord_components import *
 from discord.ext import commands
 import discord, asyncio
+from functools import *
 from _sql import *
 
 class Settings(commands.Cog):
     def __init__(self, client):
         self.client = client
-        
-    # 1 == true, 0 == false
+        # 1 == true, 0 == false
     
-    
-
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
+    @cache
     async def _guild_settings_status(self, option, row):
         # // MATCH CATEGORIES
         if option == "match_category":
@@ -28,6 +27,7 @@ class Settings(commands.Cog):
 
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
+    @cache
     async def _lobby_settings_status(self, option, row):
         # // MAP PICKING PHASE
         if option == "map_pick_phase":
@@ -48,12 +48,9 @@ class Settings(commands.Cog):
             return ["🔴", "Enable"]
         
         
-        
-        
-        
-        
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
+    @cache
     async def _add_map(self, ctx, map, lobby):
         if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
             await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map_list) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
@@ -65,6 +62,7 @@ class Settings(commands.Cog):
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
+    @cache
     async def _del_map(self, ctx, map, lobby):
         if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
             row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
