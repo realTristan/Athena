@@ -31,6 +31,7 @@ class Help(commands.Cog):
     player_embed.add_field(name=' ‎\nLeave Party', value='Leave a party\n(Usage: =party leave)')
     player_embed.add_field(name=' ‎\nShow Party', value='Show a players party\n(Usage: =party show [@user])')
     player_embed.add_field(name=' ‎\nKick User in Party', value='Kick a player from your party\n(Usage: =party kick [@user])')
+    player_embed.add_field(name=' ‎\nLobby Info', value='Get information about the current lobby\n(Usage: =lobby info)')
 
     # // ADDING FIELDS TO MODERATOR EMBED
     moderator_embed.add_field(name=' ‎\nBan [Mod+]', value='Bans a player from the queue\n(Usage: =ban [@user] [length] [reason])')
