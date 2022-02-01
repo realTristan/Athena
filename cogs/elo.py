@@ -182,18 +182,18 @@ class Elo(commands.Cog):
             # // REPORTING AN ONGOING MATCH
             if action in ["report"]:
                 if ctx.author.guild_permissions.manage_messages:
-                    row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {row[2]}")
+                    match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {match[2]}")
 
-                    if args and row[8] in ["ongoing"]:
+                    if args and match[8] in ["ongoing"]:
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await SQL_CLASS().execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
-                        orange_team = str(row[5]).split(",")
-                        orange_team.append(int(row[4]))
+                        orange_team = str(match[5]).split(",")
+                        orange_team.append(int(match[4]))
 
-                        blue_team = str(row[7]).split(",")
-                        blue_team.append(int(row[6]))
+                        blue_team = str(match[7]).split(",")
+                        blue_team.append(int(match[6]))
 
                         if "blue" in list(args)[0]:
                             for user in orange_team:
@@ -217,8 +217,8 @@ class Elo(commands.Cog):
             # // CANCELLING AN ONGOING MATCH
             if action in ["cancel"]:
                 if ctx.author.guild_permissions.manage_messages:
-                    row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    if row[8] in ["ongoing"]:
+                    status = (await SQL_CLASS().select(f"SELECT status FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"))[0]
+                    if status in ["ongoing"]:
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await self._match_show(ctx, match_id)
@@ -265,12 +265,12 @@ class Elo(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def set(self, ctx, action:str, user:discord.Member, amount:int):
         if not ctx.author.bot:
-            row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            if row is not None:
+            user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
+            if user_name is not None:
                 # // SET A PLAYERS ELO
                 if action in ["elo", "points"]:
                     await SQL_CLASS().execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                    await self._user_edit(user, nick=f"{row[2]} [{amount}]")
+                    await self._user_edit(user, nick=f"{user_name} [{amount}]")
                     
                 # // SET A PLAYERS WINS
                 elif action in ["wins", "win"]:
@@ -466,18 +466,17 @@ class Elo(commands.Cog):
             if args == "all":
                 for user in ctx.guild.members:
                     if not user.bot:
-                        row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                        if row is not None:
+                        if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                             await self._reset_stats(ctx, user)
                 return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset every players stats", color=3066992))
             
             # // RESET THE MENTIONED USERS STATS
             if "@" in args:
                 user = ctx.guild.get_member(await self._clean(args))
-                row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                if row is not None:
+                user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
+                if user_name is not None:
                     await self._reset_stats(ctx, user)
-                    await self._user_edit(user, nick=f"{row[2]} [0]")
+                    await self._user_edit(user, nick=f"{user_name} [0]")
                     return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
                 return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{user.mention} is not registered", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
@@ -539,10 +538,10 @@ class Elo(commands.Cog):
                     lobby_id = int(res.message.embeds[0].footer.text)
                     
                     # // GETTING THE ROWS FROM DATABASE
-                    row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                    status = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
                     lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {lobby_id}")
 
-                    if "ongoing" in row[8]:
+                    if status in ["ongoing"]:
                         # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
                         blue_team=res.message.embeds[0].fields[5].value.split("\n")
                         blue_team.append(await self._clean(res.message.embeds[0].fields[2].value))

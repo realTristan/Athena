@@ -49,90 +49,64 @@ class Settings(commands.Cog):
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
     async def _add_map(self, ctx, map, lobby):
-        if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
-            await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map_list) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
-        else:
-            row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
-            if map not in str(row[2]).split(","):
-                await SQL_CLASS().execute(f"UPDATE maps SET map_list = '{str(row[2])},{map}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=3066992))
+        if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
+            await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
+            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=3066992))
+        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** already exists", color=15158588))
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
     async def _del_map(self, ctx, map, lobby):
-        if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"):
-            row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
-            map_list = str(row[2]).split(',')
-            if map in map_list:
-                map_list.remove(map)
-                await SQL_CLASS().execute(f"UPDATE maps SET map_list = '{','.join(str(e) for e in map_list)}' WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
-                return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=3066992))
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} the map pool is empty", color=15158588))
+        if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
+            await SQL_CLASS().execute(f"DELETE FROM maps WHERE map = '{map}' AND guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
+            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=3066992))
+        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
 
     # // GUILD LOBBIES COMMAND
     # /////////////////////////////
     @commands.command(description="`=lobby add`**,** `=lobby delete`**,** `=lobby list`**,** `=lobby settings`")
     @commands.has_permissions(administrator=True)
     async def lobby(self, ctx, action:str):
-        row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
-        if row is None:
-            await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby_list) VALUES ({ctx.guild.id}, '{ctx.channel.id}')")
-            return await ctx.send(embed=discord.Embed(description=f"**[1/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
-        
-        # // CONVERTING LOBBIES ROW TO A LIST
-        lobbies = str(row[1]).split(",")
-        try: 
-            lobbies.remove("")
-        except Exception: pass
-
+        rows = await SQL_CLASS().select_all(f"SELECT lobby FROM lobbies WHERE guild_id = {ctx.guild.id}")
         # // CREATE A NEW LOBBY
         if action in ["add", "create"]:
-            if len(lobbies) < 10:
-                if not str(ctx.channel.id) in lobbies:
-                    if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}"):
-                        await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby_id) VALUES ({ctx.guild.id}, '{ctx.channel.id}')")
+            if len(rows) < 10:
+                if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                    await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby) VALUES ({ctx.guild.id}, {ctx.channel.id})")
                     
-                    if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}"):
-                        await SQL_CLASS().execute(f"UPDATE lobbies SET lobby_list = '{str(row[1])},{ctx.channel.id}' WHERE guild_id = {ctx.guild.id}")
-
                     if not await SQL_CLASS().exists(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
                         await SQL_CLASS().execute(f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10)")
-
-                    return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)+1}/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)+1}/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is already a lobby", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} maximum amount of lobbies created **[10/10]**", color=15158588))
 
         # // SHOW ALL GUILD LOBBIES
         if action in ["show", "list"]:
-            if len(lobbies) > 0:
+            if len(rows) > 0:
                 embed=discord.Embed(title=f"Lobbies ┃ {ctx.guild.name}", color=33023)
-                for i in range(len(lobbies)):
+                for i in range(len(rows)):
                     try:
-                        embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(lobbies[i])).name, value=ctx.guild.get_channel(int(lobbies[i])).mention)
+                        embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(rows[i][0])).name, value=ctx.guild.get_channel(int(rows[i][0])).mention)
                     except Exception: pass
                 return await ctx.send(embed=embed)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
 
         # // DELETE AN EXISTING LOBBY
         if action in ["delete", "remove", "del"]:
-            if str(ctx.channel.id) in lobbies:
-                lobbies.remove(str(ctx.channel.id))
+            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                 await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                await SQL_CLASS().execute(f"UPDATE lobbies SET lobby_list = '{','.join(str(e) for e in lobbies)}' WHERE guild_id = {ctx.guild.id}")
-
-                return await ctx.send(embed=discord.Embed(description=f"**[{len(lobbies)}/10]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
+                await SQL_CLASS().execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}")
+                return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)-1}/10]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
         if action in ["settings", "sets", "options", "opts", "setting"]:
-            if not str(ctx.channel.id) in lobbies:
+            if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
             lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
             team_pick_phase = await self._lobby_settings_status("team_pick_phase", lobby_settings)
             map_pick_phase = await self._lobby_settings_status("map_pick_phase", lobby_settings)
             negative_elo = await self._lobby_settings_status("negative_elo", lobby_settings)
-
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's {ctx.channel.mention} Settings Menu**", color=33023),
                 components=[
                     Select(
@@ -156,8 +130,7 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def addmap(self, ctx, map:str):
         if not ctx.author.bot:
-            row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
-            if str(ctx.channel.id) in str(row[1]).split(","):
+            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                 return await self._add_map(ctx, map, ctx.channel.id)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
@@ -167,8 +140,7 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def delmap(self, ctx, map:str):
         if not ctx.author.bot:
-            row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id}")
-            if str(ctx.channel.id) in str(row[1]).split(","):
+            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                 return await self._del_map(ctx, map, ctx.channel.id)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
@@ -177,10 +149,10 @@ class Settings(commands.Cog):
     @commands.command(description="`=maps`")
     async def maps(self, ctx):
         if not ctx.author.bot:
-            row = await SQL_CLASS().select(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-            if row is not None:
-                return await ctx.send(embed=discord.Embed(title=f"Maps ┃ {ctx.guild.name}", description=str(row[2]).replace(",", "\n"), color=33023))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby / no maps in map pool", color=15158588))
+            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                rows = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                return await ctx.send(embed=discord.Embed(title=f"Maps ┃ {ctx.guild.name}", description="\n".join(e[0] for e in rows), color=33023))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
     # // SET THE REGISTER ROLE COMMAND
     # /////////////////////////////////////////
@@ -239,8 +211,8 @@ class Settings(commands.Cog):
                 # // MAP PICKING PHASE
                 if res.values[0] == 'map_pick_phase':
                     if res.author.guild_permissions.administrator:
-                        row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
-                        if row[2] == 0:
+                        row = (await SQL_CLASS().select(f"SELECT map_pick_phase FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
+                        if row == 0:
                             await SQL_CLASS().execute(f"UPDATE lobby_settings SET map_pick_phase = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Map Picking Phase**", color=3066992))
@@ -252,8 +224,8 @@ class Settings(commands.Cog):
                 # // MATCH LOGGING
                 if res.values[0] == "match_logging":
                     if res.author.guild_permissions.administrator:
-                        row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
-                        if row[4] == 0:
+                        row = (await SQL_CLASS().select(f"SELECT match_logs FROM settings WHERE guild_id = {res.guild.id}"))[0]
+                        if row == 0:
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=33023))
                             c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
@@ -261,6 +233,7 @@ class Settings(commands.Cog):
                                 channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                                 await SQL_CLASS().execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
                                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} invalid channel (please mention the channel)", color=15158588))
 
                         await SQL_CLASS().execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
@@ -269,8 +242,8 @@ class Settings(commands.Cog):
                 # // MATCH CATEGORIES
                 if res.values[0] == 'match_category':
                     if res.author.guild_permissions.administrator:
-                        row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {res.guild.id}")
-                        if row[2] == 0:
+                        row = (await SQL_CLASS().select(f"SELECT match_categories FROM settings WHERE guild_id = {res.guild.id}"))[0]
+                        if row == 0:
                             await SQL_CLASS().execute(f"UPDATE settings SET match_categories = 1 WHERE guild_id = {res.guild.id}")
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Categories**", color=3066992))
@@ -282,8 +255,8 @@ class Settings(commands.Cog):
                 # // TEAM PICKING PHASE
                 if res.values[0] == 'team_pick_phase':
                     if res.author.guild_permissions.administrator:
-                        row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
-                        if row[3] == 0:
+                        row = (await SQL_CLASS().select(f"SELECT team_pick_phase FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
+                        if row == 0:
                             await SQL_CLASS().execute(f"UPDATE lobby_settings SET team_pick_phase = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Picking Phase**", color=3066992))
@@ -323,8 +296,8 @@ class Settings(commands.Cog):
                 # // NEGATIVE ELO
                 if res.values[0] == "negative_elo":
                     if res.author.guild_permissions.administrator:
-                        row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
-                        if row[7] == 0:
+                        row = (await SQL_CLASS().select(f"SELECT negative_elo FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
+                        if row == 0:
                             await SQL_CLASS().execute(f"UPDATE lobby_settings SET negative_elo = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Negative Elo**", color=3066992))
@@ -370,20 +343,17 @@ class Settings(commands.Cog):
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond which lobby you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
-                        row = await SQL_CLASS().select(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id}")
                         
-                        if row is not None:
-                            channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
-                            if str(channel.id) in str(row[1]).split(","):
-                                await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
-                                embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)
-                                embed.set_footer(text=str(channel.id))
+                        channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                        if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id} AND lobby = {channel.id}"):
+                            await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
+                            embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)
+                            embed.set_footer(text=str(channel.id))
 
-                                return await res.channel.send(embed=embed, components=[[
-                                    Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
-                                    Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
-                            return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
-                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} this server has no lobbies", color=15158588))
+                            return await res.channel.send(embed=embed, components=[[
+                                Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
+                                Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
+                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
                                 
 
                 if res.values[0] == "change_queue_party_size":
