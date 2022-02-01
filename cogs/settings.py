@@ -45,21 +45,29 @@ class Settings(commands.Cog):
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
         
+    # // CONVERT 0-1 TO FALSE-TRUE
+    # /////////////////////////////////////
+    def num_to_words(self, value:int):
+        if value == 1:
+            return 'ENABLED'
+        return 'DISABLED'
         
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
     async def _add_map(self, ctx, map, lobby):
+        maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
         if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
             await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} added **{map}** to the map pool", color=3066992))
+            return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)+1}/20]** {ctx.author.mention} added **{map}** to the map pool", color=3066992))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** already exists", color=15158588))
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
     async def _del_map(self, ctx, map, lobby):
         if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
+            maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
             await SQL_CLASS().execute(f"DELETE FROM maps WHERE map = '{map}' AND guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
-            return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} removed **{map}** from the map pool", color=3066992))
+            return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)-1}/20]** {ctx.author.mention} removed **{map}** from the map pool", color=3066992))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
 
     # // GUILD LOBBIES COMMAND
@@ -78,7 +86,7 @@ class Settings(commands.Cog):
                         await SQL_CLASS().execute(f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10)")
                     return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)+1}/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is already a lobby", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} maximum amount of lobbies created **[10/10]**", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"**[10/10]** {ctx.author.mention} maximum amount of lobbies created", color=15158588))
 
         # // SHOW ALL GUILD LOBBIES
         if action in ["show", "list"]:
@@ -90,6 +98,18 @@ class Settings(commands.Cog):
                     except Exception: pass
                 return await ctx.send(embed=embed)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
+        
+        # // SHOWS LOBBY INFO
+        if action in ["info", "information", "about", "help"]:
+            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                rows = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                embed=discord.Embed(title=f"About #{ctx.channel.name}", color=33023)
+                embed.description = f"**Settings:**\n• Team Pick Phase: [**{self.num_to_words(rows[3])}**]\n• Map Pick Phase: [**{self.num_to_words(rows[2])}**]\n• Negative Elo: [**{self.num_to_words(rows[7])}**]\n• Win Elo: [**{rows[4]}**]\n• Loss Elo: [**{rows[5]}**]\n• Party Size: [**{rows[6]}**]\n• Queue Size: [**{rows[8]}**]\n\n**Maps:**\n"
+                embed.description = embed.description+"\n".join("• "+e[0] for e in maps)
+                return await ctx.send(embed=embed)
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            
 
         # // DELETE AN EXISTING LOBBY
         if action in ["delete", "remove", "del"]:
@@ -130,9 +150,11 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def addmap(self, ctx, map:str):
         if not ctx.author.bot:
-            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                return await self._add_map(ctx, map, ctx.channel.id)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            if len((await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))) < 20:
+                if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                    return await self._add_map(ctx, map, ctx.channel.id)
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of maps reached", color=15158588))
 
     # // DELETE MAP COMMAND
     # /////////////////////////////////////////
@@ -355,7 +377,7 @@ class Settings(commands.Cog):
                                 Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
                                 
-
+                # // CHANGE THE QUEUE PARTY SIZE
                 if res.values[0] == "change_queue_party_size":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the maximum party size", color=33023))

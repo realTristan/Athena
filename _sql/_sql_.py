@@ -46,6 +46,9 @@ class SQL_CLASS():
 
             # // BANS TABLE
             # cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50), id INT PRIMARY KEY AUTO_INCREMENT)")
+            
+            # // ELO ROLE TABLE
+            # cur.execute("CREATE TABLE elo_roles (guild_id BIGINT, role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT, id INT PRIMARY KEY AUTO_INCREMENT)")
             pass
             
             

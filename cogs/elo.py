@@ -6,7 +6,6 @@ import discord
 class Elo(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.data = {"elo_roles": {}}
 
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
@@ -54,22 +53,22 @@ class Elo(commands.Cog):
     # // ADD AN USERS ELO ROLE
     # /////////////////////////////////////////
     async def add_elo_role(self, ctx, user, elo_amount):
-        if ctx.guild.id not in self.data["elo_roles"]:
-            return
-        for i in self.data["elo_roles"][ctx.guild.id]:
-            if i <= elo_amount:
-                role = self.data["elo_roles"][ctx.guild.id][i]
-                await self._user_edit(user, role=role)
+        roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level < {elo_amount} AND guild_id = {ctx.guild.id}")
+        if len(roles) > 0:
+            for _role in roles:
+                role = ctx.guild.get_role(_role)
+                if role not in user.roles:
+                    await self._user_edit(user, role=role)
                 
     # // REMOVE AN USERS ELO ROLE
     # /////////////////////////////////////////
     async def remove_elo_role(self, ctx, user, elo_amount):
-        if ctx.guild.id not in self.data["elo_roles"]:
-            return
-        for i in self.data["elo_roles"][ctx.guild.id]:
-            role = self.data["elo_roles"][ctx.guild.id][i]
-            if i > elo_amount and role in user.roles:
-                await self._user_edit(user, remove_role=role)
+        roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo_amount} AND guild_id = {ctx.guild.id}")
+        if len(roles) > 0:
+            for _role in roles:
+                role = ctx.guild.get_role(_role)
+                if role in user.roles:
+                    await self._user_edit(user, remove_role=role)
 
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
@@ -132,6 +131,7 @@ class Elo(commands.Cog):
             _row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
             await SQL_CLASS().execute(f"UPDATE users SET elo = {_row[3]+lobby_settings[5]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
             await SQL_CLASS().execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await self.add_elo_role(ctx, user, _row[3]+lobby_settings[5])
         
         # // REMOVE WIN FROM WINNERS
         for user in winners:
@@ -141,15 +141,13 @@ class Elo(commands.Cog):
             else:
                 await SQL_CLASS().execute(f"UPDATE users SET elo = {_row[3]-lobby_settings[4]} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
             await SQL_CLASS().execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user}")
+            await self.remove_elo_role(ctx, user, _row[3]-lobby_settings[4])
             
     
     # // ADD / REMOVE A NEW ELO ROLE
     # //////////////////////////
-    @commands.command()
+    @commands.command(description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`**')
     async def elorole(self, ctx, option:str, *args):
-        if ctx.guild.id not in self.data["elo_roles"]:
-            self.data["elo_roles"][ctx.guild.id] = {}
-        
         if option in ["add", "create", "new", "remove", "delete", "del"]:
             role_id = str(list(args)[0]).strip("<").strip(">").replace("@&", "").replace("!", "")
             role = ctx.guild.get_role(int(role_id))
@@ -157,25 +155,27 @@ class Elo(commands.Cog):
             
         if option in ["add", "create", "new"]:
             if ctx.author.guild_permissions.administrator:
-                self.data["elo_roles"][ctx.guild.id][elo_amount] = role
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
+                elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
+                if len(elo_roles) < 20:
+                    if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {int(role_id)}"):
+                        await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {int(role_id)}, {elo_amount}, 5, 2)")
+                        return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
         
         if option in ["remove", "delete", "del"]:
             if ctx.author.guild_permissions.administrator:
-                for i in self.data["elo_roles"][ctx.guild.id]:
-                    if self.data["elo_roles"][ctx.guild.id][i] == role:
-                        del self.data["elo_roles"][ctx.guild.id][i]
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} has been removed", color=3066992))
+                if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {int(role_id)}"):
+                    elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
+                    
+                    await SQL_CLASS().execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {int(role_id)}")
+                    return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)-1}/20]** {ctx.author.mention} {role.mention} has been removed", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
         
         if option in ["list", "show"]:
-            description=""
-            for i in self.data["elo_roles"][ctx.guild.id]:
-                role = self.data["elo_roles"][ctx.guild.id][i]
-                description+=f"{role.mention} [**{i}**]\n"
-            embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023)
-            await ctx.send(embed=embed)
-            
+            if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}"):
+                rows = await SQL_CLASS().select_all(f"SELECT map FROM elo_roles WHERE guild_id = {ctx.guild.id}")
+                return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description="\n".join(ctx.guild.get_role(e[1]).mention+f" [**{rows[2]}**]\n" for e in rows), color=33023))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} there are no elo roles", color=33023))
     
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
     # /////////////////////////////////////////
@@ -251,11 +251,11 @@ class Elo(commands.Cog):
 
                         # // REMOVE WIN FROM BLUE TEAM
                         if str(row[9]) == "blue":
-                            await self._undo_win(ctx, blue_team, orange_team, row[2])
+                            await self._undo_win(ctx, row[2], blue_team, orange_team)
                         
                         # // REMOVE LOSS FROM BLUE TEAM
                         if str(row[9]) == "orange":
-                            await self._undo_win(ctx, orange_team, blue_team, row[2])
+                            await self._undo_win(ctx, row[2], orange_team, blue_team)
 
                         return await self._match_show(ctx, match_id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
@@ -518,11 +518,11 @@ class Elo(commands.Cog):
                     if user in [blue_team, orange_team]:
                         if row[9] == "orange":
                             if user in orange_team:
-                                await self._undo_win(ctx, orange_team, blue_team, row[2])
+                                await self._undo_win(ctx, row[2], orange_team, blue_team)
                         
                         if row[9] == "blue":
                             if user in blue_team:
-                                await self._undo_win(ctx, blue_team, orange_team, row[2])
+                                await self._undo_win(ctx, row[2], blue_team, orange_team)
                             
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
                         await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Match **#{row[1]}** has been rollbacked", color=3066992))
