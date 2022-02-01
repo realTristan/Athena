@@ -151,12 +151,12 @@ class Elo(commands.Cog):
         if option in ["add", "create", "new", "remove", "delete", "del"]:
             role_id = str(list(args)[0]).strip("<").strip(">").replace("@&", "").replace("!", "")
             role = ctx.guild.get_role(int(role_id))
-            elo_amount = int(list(args)[1])
             
         if option in ["add", "create", "new"]:
             if ctx.author.guild_permissions.administrator:
                 elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                 if len(elo_roles) < 20:
+                    elo_amount = int(list(args)[1])
                     if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {int(role_id)}"):
                         await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {int(role_id)}, {elo_amount}, 5, 2)")
                         return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
