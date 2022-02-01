@@ -56,7 +56,7 @@ class Elo(commands.Cog):
         roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level < {elo_amount} AND guild_id = {ctx.guild.id}")
         if len(roles) > 0:
             for _role in roles:
-                role = ctx.guild.get_role(_role)
+                role = ctx.guild.get_role(_role[0])
                 if role not in user.roles:
                     await self._user_edit(user, role=role)
                 
@@ -66,7 +66,7 @@ class Elo(commands.Cog):
         roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo_amount} AND guild_id = {ctx.guild.id}")
         if len(roles) > 0:
             for _role in roles:
-                role = ctx.guild.get_role(_role)
+                role = ctx.guild.get_role(_role[0])
                 if role in user.roles:
                     await self._user_edit(user, remove_role=role)
 
@@ -146,7 +146,7 @@ class Elo(commands.Cog):
     
     # // ADD / REMOVE A NEW ELO ROLE
     # //////////////////////////
-    @commands.command(description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`**')
+    @commands.command(description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`')
     async def elorole(self, ctx, option:str, *args):
         if option in ["add", "create", "new", "remove", "delete", "del"]:
             role_id = str(list(args)[0]).strip("<").strip(">").replace("@&", "").replace("!", "")
@@ -173,8 +173,8 @@ class Elo(commands.Cog):
         
         if option in ["list", "show"]:
             if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}"):
-                rows = await SQL_CLASS().select_all(f"SELECT map FROM elo_roles WHERE guild_id = {ctx.guild.id}")
-                return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description="\n".join(ctx.guild.get_role(e[1]).mention+f" [**{rows[2]}**]\n" for e in rows), color=33023))
+                rows = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
+                return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description="\n".join(ctx.guild.get_role(e[1]).mention+f" [**{e[2]}**]\n" for e in rows), color=33023))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} there are no elo roles", color=33023))
     
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
