@@ -145,7 +145,7 @@ class Elo(commands.Cog):
             
     
     # // ADD / REMOVE A NEW ELO ROLE
-    # //////////////////////////
+    # /////////////////////////////////
     @commands.command(description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`')
     async def elorole(self, ctx, option:str, *args):
         if option in ["add", "create", "new", "remove", "delete", "del"]:
