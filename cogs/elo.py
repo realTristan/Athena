@@ -35,13 +35,16 @@ class Elo(commands.Cog):
     # ////////////////////////////////////////
     async def _user_edit(self, user, nick=None, role=None, remove_role=None):
         if nick is not None:
-            await user.edit(nick=nick)
+            try: await user.edit(nick=nick)
+            except Exception: pass
 
         if role is not None:
-            await user.add_roles(role)
+            try: await user.add_roles(role)
+            except Exception: pass
             
         if remove_role is not None:
-            await user.remove_roles(remove_role)
+            try: await user.remove_roles(remove_role)
+            except Exception: pass
 
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
