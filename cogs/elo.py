@@ -541,7 +541,7 @@ class Elo(commands.Cog):
                     lobby_id = int(res.message.embeds[0].footer.text)
                     
                     # // GETTING THE ROWS FROM DATABASE
-                    status = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                    status = (await SQL_CLASS().select(f"SELECT status FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}"))[0]
                     lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {lobby_id}")
 
                     if status in ["ongoing"]:

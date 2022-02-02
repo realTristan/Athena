@@ -14,7 +14,7 @@ class Queue(commands.Cog):
     # // RESET THE GUILD'S VARIABLES FUNCTION
     # /////////////////////////////////////////
     async def _reset(self, ctx, lobby):
-        self.data[ctx.guild.id][lobby] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "", "parties": {}, "state": "queue"}
+        self.data[ctx.guild.id][lobby] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "None", "parties": {}, "state": "queue"}
 
     # // CLEAN A PLAYERS NAME TO LOOK CLEANER
     # ////////////////////////////////////////////
@@ -199,11 +199,13 @@ class Queue(commands.Cog):
     async def _start(self, ctx, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {lobby}")
         # // CREATING TEAM CAPTAINS
-        self.data[ctx.guild.id][lobby]["blue_cap"] = random.choice(self.data[ctx.guild.id][lobby]["queue"])
-        self.data[ctx.guild.id][lobby]["queue"].remove(self.data[ctx.guild.id][lobby]["blue_cap"])
+        blue_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
+        orange_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
+        self.data[ctx.guild.id][lobby]["blue_cap"] = blue_cap
+        self.data[ctx.guild.id][lobby]["queue"].remove(blue_cap)
         
-        self.data[ctx.guild.id][lobby]["orange_cap"] = random.choice(self.data[ctx.guild.id][lobby]["queue"])
-        self.data[ctx.guild.id][lobby]["queue"].remove(self.data[ctx.guild.id][lobby]["orange_cap"])
+        self.data[ctx.guild.id][lobby]["orange_cap"] = orange_cap
+        self.data[ctx.guild.id][lobby]["queue"].remove(orange_cap)
 
         if row[3] == 1:
             # // PICK PHASE ENABLED
@@ -214,12 +216,12 @@ class Queue(commands.Cog):
         
         # // PICK PHASE DISABLED
         # // CREATING THE RANDOM TEAMS
-        for _ in range(round(len(self.data[ctx.guild.id][lobby]["queue"]) / 2)):
+        for _ in range(len(self.data[ctx.guild.id][lobby]["queue"]) // 2):
             _user = random.choice(self.data[ctx.guild.id][lobby]["queue"])
             self.data[ctx.guild.id][lobby]['orange_team'].append(_user)
             self.data[ctx.guild.id][lobby]["queue"].remove(_user)
         
-        for _ in range(round(len(self.data[ctx.guild.id][lobby]["queue"]))):
+        for _ in range(len(self.data[ctx.guild.id][lobby]["queue"])):
             _user = random.choice(self.data[ctx.guild.id][lobby]["queue"])
             self.data[ctx.guild.id][lobby]['blue_team'].append(_user)
             self.data[ctx.guild.id][lobby]["queue"].remove(_user)
@@ -309,7 +311,8 @@ class Queue(commands.Cog):
                                 self.data[ctx.guild.id][ctx.channel.id]["state"] = "maps"
                             else:
                                 maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                                self.data[ctx.guild.id][ctx.channel.id]["map"] = random.choice(maps)[0]
+                                if len(maps) > 0:
+                                    self.data[ctx.guild.id][ctx.channel.id]["map"] = random.choice(maps)[0]
                                 self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
                         return await self._embeds(ctx, ctx.channel.id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=15158588))
