@@ -1,6 +1,6 @@
 from discord.ext import commands
 from functools import *
-import discord
+import discord, datetime
 
 class Error_Handling(commands.Cog):
     def __init__(self, client):
@@ -102,6 +102,8 @@ class Error_Handling(commands.Cog):
             
         await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
         if not isinstance(error, commands.CommandNotFound):
+            error_logs = self.client.get_channel(938482543227994132)
+            await error_logs.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
             raise error
 
 def setup(client):
