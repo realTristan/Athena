@@ -392,7 +392,7 @@ class Elo(commands.Cog):
                         if not user.bot:
                             if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                                 name = user.name
-                                if list(args)[1] is not None:
+                                if len(list(args)) > 1:
                                     name = list(args)[1]
                                 await self._register_user(ctx, user, name, role)
                                 await self._user_edit(user, nick=f"{name} [0]")
@@ -404,7 +404,7 @@ class Elo(commands.Cog):
                 # // REGISTER THE MESSAGE AUTHOR
                 else:
                     name = ctx.author.name
-                    if list(args)[0] is None:
+                    if len(list(args)) > 0:
                         name = list(args)[0]
                     if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                         await self._register_user(ctx, ctx.author, name, role)
