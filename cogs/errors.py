@@ -16,7 +16,7 @@ class Error_Handling(commands.Cog):
         
         # // CHECK IF THERE'S ANY SIMILAR COMMANDS
         if len(_sorted_commands) <= 1:
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} we could not find the command you are looking for", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"**[ERROR]** {ctx.author.mention} we could not find the command you are looking for", color=15158588))
 
         # // SORT COMMANDS INTO A LIST
         for command in self.client.commands:
@@ -99,6 +99,9 @@ class Error_Handling(commands.Cog):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        
+        if isinstance(error, commands.MemberNotFound):
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
             
         await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
         if not isinstance(error, commands.CommandNotFound):

@@ -293,28 +293,30 @@ class Queue(commands.Cog):
             if await self._data_check(ctx, ctx.channel.id):
                 if self.data[ctx.guild.id][ctx.channel.id]["state"] == "pick":
                     if ctx.author == self.data[ctx.guild.id][ctx.channel.id]["pick_logic"][0]:
-                        self.data[ctx.guild.id][ctx.channel.id]["pick_logic"].pop(0)
-                        if self.data[ctx.guild.id][ctx.channel.id]["blue_cap"] == ctx.author:
-                            self.data[ctx.guild.id][ctx.channel.id]["blue_team"].append(user)
-                            self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(user)
-                        else:
-                            self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(user)
-                            self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(user)
-                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
-
-                        if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 1:
-                            map_pick_phase = (await SQL_CLASS().select(f"SELECT map_pick_phase FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))[0]
-                            self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
-                            self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
-
-                            if map_pick_phase == 1:
-                                self.data[ctx.guild.id][ctx.channel.id]["state"] = "maps"
+                        if user in self.data[ctx.guild.id][ctx.channel.id]["queue"]:
+                            self.data[ctx.guild.id][ctx.channel.id]["pick_logic"].pop(0)
+                            if self.data[ctx.guild.id][ctx.channel.id]["blue_cap"] == ctx.author:
+                                self.data[ctx.guild.id][ctx.channel.id]["blue_team"].append(user)
+                                self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(user)
                             else:
-                                maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                                if len(maps) > 0:
-                                    self.data[ctx.guild.id][ctx.channel.id]["map"] = random.choice(maps)[0]
-                                self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
-                        return await self._embeds(ctx, ctx.channel.id)
+                                self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(user)
+                                self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(user)
+                            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
+
+                            if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 1:
+                                map_pick_phase = (await SQL_CLASS().select(f"SELECT map_pick_phase FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))[0]
+                                self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
+                                self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
+
+                                if map_pick_phase == 1:
+                                    self.data[ctx.guild.id][ctx.channel.id]["state"] = "maps"
+                                else:
+                                    maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                                    if len(maps) > 0:
+                                        self.data[ctx.guild.id][ctx.channel.id]["map"] = random.choice(maps)[0]
+                                    self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
+                            return await self._embeds(ctx, ctx.channel.id)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in this queue", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
