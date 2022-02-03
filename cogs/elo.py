@@ -307,26 +307,24 @@ class Elo(commands.Cog):
                 orange_team = str(row[5]).split(",")
 
                 # // REPLACE USER FROM ORANGE CAPTAIN
-                if str(user1.id) in str(row[4]):
+                if str(user1.id) in str(row[4]) and str(user2.id) not in str(row[4]):
                     await SQL_CLASS().execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                 # // REPLACE USER FROM BLUE CAPTAIN
-                elif str(user1.id) in str(row[6]):
+                elif str(user1.id) in str(row[6]) and str(user2.id) not in str(row[6]):
                     await SQL_CLASS().execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 
                 # // REPLACE USER FROM ORANGE TEAM
-                elif str(user1.id) in orange_team:
-                    orange_team.remove(str(user1.id))
-                    orange_team.append(str(user2.id))
+                elif str(user1.id) in orange_team and str(user2.id) not in orange_team:
+                    orange_team[orange_team.index(str(user1.id))] = str(user2.id)
                     await SQL_CLASS().execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                 # // REPLACE USER FROM BLUE TEAM
-                elif str(user1.id) in blue_team:
-                    blue_team.remove(str(user1.id))
-                    blue_team.append(str(user2.id))
+                elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
+                    blue_team[blue_team.index(str(user1.id))] = str(user2.id)
                     await SQL_CLASS().execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 else:
-                    return await ctx.send(embed=discord.Embed(description=f"{user1.mention} is not in this match", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player(s) not found/error", color=15158588))
                 return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
 
@@ -375,7 +373,7 @@ class Elo(commands.Cog):
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
     @commands.command(aliases=["reg"], description='`=register (name)`')
-    async def register(self, ctx, params:str, *args):
+    async def register(self, ctx, *args):
         if not ctx.author.bot:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if settings is None:
@@ -388,12 +386,14 @@ class Elo(commands.Cog):
                     role = ctx.guild.get_role(settings[1])
             
                 # // REGISTER THE MENTIONED USER
-                if args and "@" in params:
+                if args and "@" in list(args)[0]:
                     if ctx.author.guild_permissions.manage_messages:
-                        user = ctx.guild.get_member(await self._clean(params))
+                        user = ctx.guild.get_member(await self._clean(list(args)[0]))
                         if not user.bot:
                             if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                                name = list(args)[0]
+                                name = user.name
+                                if list(args)[1] is not None:
+                                    name = list(args)[1]
                                 await self._register_user(ctx, user, name, role)
                                 await self._user_edit(user, nick=f"{name} [0]")
                                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
@@ -403,10 +403,13 @@ class Elo(commands.Cog):
 
                 # // REGISTER THE MESSAGE AUTHOR
                 else:
+                    name = ctx.author.name
+                    if list(args)[0] is None:
+                        name = list(args)[0]
                     if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-                        await self._register_user(ctx, ctx.author, params, role)
-                        await self._user_edit(ctx.author, nick=f"{params} [0]")
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{params}**", color=3066992))
+                        await self._register_user(ctx, ctx.author, name, role)
+                        await self._user_edit(ctx.author, nick=f"{name} [0]")
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(settings[3]).mention}", color=33023))
         
