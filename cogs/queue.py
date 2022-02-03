@@ -200,10 +200,10 @@ class Queue(commands.Cog):
         row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {lobby}")
         # // CREATING TEAM CAPTAINS
         blue_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
-        orange_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
         self.data[ctx.guild.id][lobby]["blue_cap"] = blue_cap
         self.data[ctx.guild.id][lobby]["queue"].remove(blue_cap)
         
+        orange_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
         self.data[ctx.guild.id][lobby]["orange_cap"] = orange_cap
         self.data[ctx.guild.id][lobby]["queue"].remove(orange_cap)
 
