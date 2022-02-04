@@ -186,48 +186,51 @@ class Elo(commands.Cog):
             if action in ["report"]:
                 if ctx.author.guild_permissions.manage_messages:
                     match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {match[2]}")
+                    if match is not None:
+                        lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {match[2]}")
 
-                    if len(args) > 0 and match[8] in ["ongoing"]:
-                        await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                        await SQL_CLASS().execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        if len(args) > 0 and match[8] in ["ongoing"]:
+                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SQL_CLASS().execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
-                        orange_team = str(match[5]).split(",")
-                        orange_team.append(int(match[4]))
+                            orange_team = str(match[5]).split(",")
+                            orange_team.append(int(match[4]))
 
-                        blue_team = str(match[7]).split(",")
-                        blue_team.append(int(match[6]))
+                            blue_team = str(match[7]).split(",")
+                            blue_team.append(int(match[6]))
 
-                        if "blue" in list(args)[0]:
-                            for user in orange_team:
-                                await self._loss(ctx, ctx.guild.get_member(int(user)), lobby_settings)
+                            if "blue" in list(args)[0]:
+                                for user in orange_team:
+                                    await self._loss(ctx, ctx.guild.get_member(int(user)), lobby_settings)
 
-                            for user in blue_team:
-                                await self._win(ctx, ctx.guild.get_member(int(user)), lobby_settings)
-                                
-                        if "orange" in list(args)[0]:
-                            for user in orange_team:
-                                await self._win(ctx, ctx.guild.get_member(int(user)), lobby_settings)
+                                for user in blue_team:
+                                    await self._win(ctx, ctx.guild.get_member(int(user)), lobby_settings)
+                                    
+                            if "orange" in list(args)[0]:
+                                for user in orange_team:
+                                    await self._win(ctx, ctx.guild.get_member(int(user)), lobby_settings)
 
-                            for user in blue_team:
-                                await self._loss(ctx, ctx.guild.get_member(int(user)), lobby_settings)
-                        await self._match_show(ctx, match_id)
-
-                        return await self._delete_channels(ctx, match_id)
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+                                for user in blue_team:
+                                    await self._loss(ctx, ctx.guild.get_member(int(user)), lobby_settings)
+                            await self._match_show(ctx, match_id)
+                            return await self._delete_channels(ctx, match_id)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid match id", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
             # // CANCELLING AN ONGOING MATCH
             if action in ["cancel"]:
                 if ctx.author.guild_permissions.manage_messages:
                     status = (await SQL_CLASS().select(f"SELECT status FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"))[0]
-                    if status in ["ongoing"]:
-                        await SQL_CLASS().execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                        await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                        await self._match_show(ctx, match_id)
+                    if status is not None:
+                        if status in ["ongoing"]:
+                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await self._match_show(ctx, match_id)
 
-                        return await self._delete_channels(ctx, match_id)
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+                            return await self._delete_channels(ctx, match_id)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid match id", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
             # // SHOWING A LOGGED MATCH
@@ -237,28 +240,30 @@ class Elo(commands.Cog):
             # // UNDOING A REPORTED MATCH
             if action in ["undo"]:
                 if ctx.author.guild_permissions.manage_messages:
-                    row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                    if row[8] in ["reported", "cancelled"]:
-                        # // UPDATING THE DATABASE
-                        await SQL_CLASS().execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
-                        await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    if match is not None:
+                        if match[8] in ["reported", "cancelled"]:
+                            # // UPDATING THE DATABASE
+                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match[1]}")
+                            await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
-                        # // ADD THE CAPTAINS TO EACH TEAM
-                        blue_team = str(row[7]).split(",")
-                        blue_team.append(row[6])
-                        orange_team = str(row[5]).split(",")
-                        orange_team.append(row[4])
+                            # // ADD THE CAPTAINS TO EACH TEAM
+                            blue_team = str(match[7]).split(",")
+                            blue_team.append(match[6])
+                            orange_team = str(match[5]).split(",")
+                            orange_team.append(match[4])
 
-                        # // REMOVE WIN FROM BLUE TEAM
-                        if str(row[9]) == "blue":
-                            await self._undo_win(ctx, row[2], blue_team, orange_team)
-                        
-                        # // REMOVE LOSS FROM BLUE TEAM
-                        if str(row[9]) == "orange":
-                            await self._undo_win(ctx, row[2], orange_team, blue_team)
+                            # // REMOVE WIN FROM BLUE TEAM
+                            if str(match[9]) == "blue":
+                                await self._undo_win(ctx, match[2], blue_team, orange_team)
+                            
+                            # // REMOVE LOSS FROM BLUE TEAM
+                            if str(match[9]) == "orange":
+                                await self._undo_win(ctx, match[2], orange_team, blue_team)
 
-                        return await self._match_show(ctx, match_id)
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
+                            return await self._match_show(ctx, match_id)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid match id", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
 
