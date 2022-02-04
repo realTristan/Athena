@@ -188,7 +188,7 @@ class Elo(commands.Cog):
                     match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {match[2]}")
 
-                    if args and match[8] in ["ongoing"]:
+                    if len(args) > 0 and match[8] in ["ongoing"]:
                         await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                         await SQL_CLASS().execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
@@ -335,11 +335,11 @@ class Elo(commands.Cog):
         if not ctx.author.bot:
             row = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             amount = len(row)
-            if args:
-                amount = list(args)[0]
+            if len(args) > 0:
+                amount = int(list(args)[0])
             
             embed=discord.Embed(title=f"Recent Matches ┃ {ctx.guild.name}", color=33023)
-            for i in range(int(amount)):
+            for i in range(amount):
                 embed.add_field(name=f"Match #{row[-i-1][1]}", value=f"`{str(row[-i-1][8]).upper()}`")
             return await ctx.send(embed=embed)
     
@@ -386,13 +386,13 @@ class Elo(commands.Cog):
                     role = ctx.guild.get_role(settings[1])
             
                 # // REGISTER THE MENTIONED USER
-                if args and "@" in list(args)[0]:
+                if len(args) > 0 and "@" in list(args)[0]:
                     if ctx.author.guild_permissions.manage_messages:
                         user = ctx.guild.get_member(await self._clean(list(args)[0]))
                         if not user.bot:
                             if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                                 name = user.name
-                                if len(list(args)) > 1:
+                                if len(args) > 1:
                                     name = list(args)[1]
                                 await self._register_user(ctx, user, name, role)
                                 await self._user_edit(user, nick=f"{name} [0]")
@@ -404,7 +404,7 @@ class Elo(commands.Cog):
                 # // REGISTER THE MESSAGE AUTHOR
                 else:
                     name = ctx.author.name
-                    if len(list(args)) > 0:
+                    if len(args) > 0:
                         name = list(args)[0]
                     if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                         await self._register_user(ctx, ctx.author, name, role)
@@ -458,7 +458,7 @@ class Elo(commands.Cog):
     async def stats(self, ctx, *args):
         if not ctx.author.bot:
             user = ctx.author
-            if args and "@" in list(args)[0]:
+            if len(args) > 0 and "@" in list(args)[0]:
                 user = ctx.guild.get_member(await self._clean(list(args)[0]))
             return await self._stats(ctx, user)
 
