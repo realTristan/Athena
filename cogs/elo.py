@@ -346,6 +346,7 @@ class Elo(commands.Cog):
     # // CHANGE YOUR USERNAME COMMAND
     # /////////////////////////////////////////
     @commands.command(name="rename", description='`=rename (name)`')
+    @commands.has_permissions(change_nickname=True)
     async def rename(self, ctx, name:str):
         if not ctx.author.bot:
             row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
