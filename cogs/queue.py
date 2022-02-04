@@ -287,7 +287,7 @@ class Queue(commands.Cog):
 
     # // PICK TEAMMATES (TEAM CAPTAIN) COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["p"], description='`=pick (@user)`')
+    @commands.command(name="pick", aliases=["p"], description='`=pick (@user)`')
     async def pick(self, ctx, user:discord.Member):
         if not ctx.author.bot:
             if await self._data_check(ctx, ctx.channel.id):
@@ -323,7 +323,7 @@ class Queue(commands.Cog):
         
     # // PICK MAP TO PLAY (BLUE CAPTAIN) COMMAND
     # ///////////////////////////////////////////
-    @commands.command(description='`=map (map name)`')
+    @commands.command(name="map", description='`=map (map name)`')
     async def map(self, ctx, map:str):
         if not ctx.author.bot:
             if await self._data_check(ctx, ctx.channel.id):
@@ -344,35 +344,35 @@ class Queue(commands.Cog):
     
     # // JOIN THE QUEUE COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["j"], description='`=join`')
+    @commands.command(name="join", aliases=["j"], description='`=join`')
     async def join(self, ctx):
         if not ctx.author.bot:
             return await self._join(ctx, ctx.author, ctx.channel.id)
 
     # // FORCE ADD AN USER TO THE QUEUE COMMAND
     # //////////////////////////////////////////
-    @commands.command(aliases=["fj"], description='`=forcejoin (@user)`')
+    @commands.command(name="forcejoin", aliases=["fj"], description='`=forcejoin (@user)`')
     async def forcejoin(self, ctx, user:discord.Member):
         if not ctx.author.bot:
             return await self._join(ctx, user, ctx.channel.id)
 
     # // LEAVE THE QUEUE COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["l"], description='`=leave`')
+    @commands.command(name="leave", aliases=["l"], description='`=leave`')
     async def leave(self, ctx):
         if not ctx.author.bot:
             return await self._leave(ctx, ctx.author, ctx.channel.id)
 
     # // FORCE REMOVE A PLAYER FROM THE QUEUE COMMAND
     # ////////////////////////////////////////////////
-    @commands.command(aliases=["fl"], description='`=forceleave (@user)`')
+    @commands.command(name="forceleave", aliases=["fl"], description='`=forceleave (@user)`')
     async def forceleave(self, ctx, user:discord.Member):
         if not ctx.author.bot:
             return await self._leave(ctx, user, ctx.channel.id)
 
     # // SHOW THE CURRENT QUEUE COMMAND
     # /////////////////////////////////////////
-    @commands.command(aliases=["q"], description='`=queue`')
+    @commands.command(name="queue", aliases=["q"], description='`=queue`')
     async def queue(self, ctx):
         if not ctx.author.bot:
             if await self._data_check(ctx, ctx.channel.id):
@@ -381,7 +381,7 @@ class Queue(commands.Cog):
     
     # // CLEAR THE CURRENT QUEUE COMMAND
     # /////////////////////////////////////////
-    @commands.command(description='`=clear`')
+    @commands.command(name="clear", description='`=clear`')
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx):
         if not ctx.author.bot:
@@ -392,7 +392,7 @@ class Queue(commands.Cog):
 
     # // PARTY COMMAND
     # ////////////////////////////
-    @commands.command(aliases=["team"], description='`=party create`**,** `=party leave)`**,** `=party show`**,** `=party kick (@user)`**,** `=party invite (@user)`')
+    @commands.command(name="party", aliases=["team"], description='`=party create`**,** `=party leave)`**,** `=party show`**,** `=party kick (@user)`**,** `=party invite (@user)`')
     async def party(self, ctx, action:str, *args):
         if await self._data_check(ctx, ctx.channel.id):
             parties = self.data[ctx.guild.id][ctx.channel.id]["parties"]

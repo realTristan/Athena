@@ -9,7 +9,7 @@ class Bans(commands.Cog):
 
     # // ADD USER TO BAN DATABASE COMMAND
     # /////////////////////////////////////////
-    @commands.command(description='`=ban (@user) (length) (reason)`')
+    @commands.command(name="ban", description='`=ban (@user) (length) (reason)`')
     @commands.has_permissions(manage_messages=True)
     async def ban(self, ctx, user:discord.Member, length_str:str, *args):
         if not ctx.author.bot:
@@ -33,7 +33,7 @@ class Bans(commands.Cog):
 
     # // REMOVE USER FROM BAN DATABASE COMMAND
     # /////////////////////////////////////////
-    @commands.command(description='`=unban (@user)`')
+    @commands.command(name="unban", description='`=unban (@user)`')
     @commands.has_permissions(manage_messages=True)
     async def unban(self, ctx, user:discord.Member):
         if not ctx.author.bot:

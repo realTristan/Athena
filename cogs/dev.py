@@ -13,14 +13,13 @@ class Dev(commands.Cog):
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
     async def _user_edit(self, user, nick=None, role=None):
-        try:
-            if nick is not None:
-                await user.edit(nick=nick)
+        if nick is not None:
+            try: await user.edit(nick=nick)
+            except Exception: pass
 
-            if role is not None:
-                await user.add_roles(role)
-        except Exception as e:
-            print(e)
+        if role is not None:
+            try: await user.add_roles(role)
+            except Exception: pass
             
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////

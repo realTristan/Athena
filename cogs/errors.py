@@ -2,7 +2,7 @@ from discord.ext import commands
 from functools import *
 import discord, datetime
 
-class Error_Handling(commands.Cog):
+class ErrorHandling(commands.Cog):
     def __init__(self, client):
         self.client = client
 
@@ -10,21 +10,23 @@ class Error_Handling(commands.Cog):
     # // RUN THE COMMAND SORTER
     # //////////////////////////////
     async def _run_sorter(self, ctx, _user_command):
-        _sorted_commands = await self._command_sort(_user_command)
-        correct_usages=""
-        similar_commands=""
+        sorted_cmds = await self._command_sort(_user_command)
+        similar_cmds=""
         
         # // CHECK IF THERE'S ANY SIMILAR COMMANDS
-        if len(_sorted_commands) <= 1:
+        if len(sorted_cmds) <= 0:
             return await ctx.send(embed=discord.Embed(description=f"**[ERROR]** {ctx.author.mention} we could not find the command you are looking for", color=15158588))
+        
+        # // GET CLIENT COMMANDS
+        client_cmds = {}
+        for cmd in self.client.commands:
+            client_cmds[cmd.name] = cmd.description
+            
+        # // CREATE EMBED
+        for i in range(len(sorted_cmds)):
+            similar_cmds+=f"**{i+1}:** {sorted_cmds[i][0].upper()+sorted_cmds[i][1:]} {client_cmds[sorted_cmds[i]]}\n"
 
-        # // SORT COMMANDS INTO A LIST
-        for command in self.client.commands:
-            if str(command) in _sorted_commands:
-                similar_commands+=f"{str(command)}\n"
-                correct_usages+=f"{str(command)}: {command.description}\n"
-
-        embed=embed=discord.Embed(title=f"Command Error: [={_user_command}]", description=f"**Similar Commands:**\n{similar_commands}\n**Command Usages:**\n{correct_usages}", color=15158588)
+        embed=discord.Embed(title=f"Similar Commands [{_user_command}]", description=f"{similar_cmds}", color=15158588)
         embed.set_footer(text="Message \"tristan#2230\" for support")
         return await ctx.send(embed=embed)
 
@@ -32,34 +34,34 @@ class Error_Handling(commands.Cog):
     # //////////////////////////////////////////////////////
     async def _letter_count(self, _user_command):
         try:
-            _letter_dict = {}
+            _result = {}
             for index in range(len(self.client.commands)):
-                if str(list(self.client.commands)[index]) not in _letter_dict:
-                    _letter_dict[str(list(self.client.commands)[index])] = {}
+                if str(list(self.client.commands)[index]) not in _result:
+                    _result[str(list(self.client.commands)[index])] = {}
 
                 for letter in str(list(self.client.commands)[index]):
                     if letter in list(_user_command):
-                        if letter not in _letter_dict[str(list(self.client.commands)[index])]:
-                            _letter_dict[str(list(self.client.commands)[index])][letter] = 0
-                        _letter_dict[str(list(self.client.commands)[index])][letter] += 1
+                        if letter not in _result[str(list(self.client.commands)[index])]:
+                            _result[str(list(self.client.commands)[index])][letter] = 0
+                        _result[str(list(self.client.commands)[index])][letter] += 1
         except Exception:
-            return _letter_dict
-        return _letter_dict
+            return _result
+        return _result
 
     # // CHECK LETTER POSITIONING
     # ////////////////////////////////
     async def _letter_position(self, _user_command):
-        _letter_dict = await self._letter_count(_user_command)
+        _result = await self._letter_count(_user_command)
         for command in self.client.commands:
             for index in range(len(_user_command)):
                 try:
                     if _user_command[index] == str(command)[index]:
-                        if _user_command[index] not in _letter_dict[str(command)]:
-                            _letter_dict[str(command)][str(command)[index]] = 0
-                        _letter_dict[str(command)][str(command)[index]] += 1.5
+                        if _user_command[index] not in _result[str(command)]:
+                            _result[str(command)][str(command)[index]] = 0
+                        _result[str(command)][str(command)[index]] += 1.5
                 except Exception:
                     pass
-        return _letter_dict
+        return _result
 
     # // GIVE EACH COMMAND THEIR RATING
     # /////////////////////////////////////
@@ -84,10 +86,11 @@ class Error_Handling(commands.Cog):
             _command_dict = await self._command_rate(_user_command)
             _sorted_command_dict = {k: v for k, v in sorted(_command_dict.items(), key=lambda item: item[1], reverse=True)}
             _result = []
-
             for command in _sorted_command_dict:
                 if _sorted_command_dict[command] > (len(command)*0.85):
                     _result.append(command)
+                    if len(_result) >= 6:
+                        return _result
         except Exception:
             return _result
         return _result
@@ -110,4 +113,4 @@ class Error_Handling(commands.Cog):
             raise error
 
 def setup(client):
-    client.add_cog(Error_Handling(client))
+    client.add_cog(ErrorHandling(client))
