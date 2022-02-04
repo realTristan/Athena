@@ -185,7 +185,7 @@ class Settings(commands.Cog):
             if await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
                 await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has not setup the bot yet", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
 
     # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
@@ -193,9 +193,6 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx):
         if not ctx.author.bot:
-            if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-               await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs) VALUES ({ctx.guild.id}, 0, 0, 0, 0)")
-
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             match_category = await self._guild_settings_status("match_category", settings)
             match_logging = await self._guild_settings_status("match_logging", settings)

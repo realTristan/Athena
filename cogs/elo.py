@@ -116,7 +116,7 @@ class Elo(commands.Cog):
     async def _stats(self, ctx, user):
         row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
-            embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}", color=33023)
+            embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}\n**Matches:** {row[5]+row[4]}", color=33023)
             embed.set_author(name=row[2], icon_url=user.avatar_url)
             return await ctx.send(embed=embed)
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
@@ -383,7 +383,7 @@ class Elo(commands.Cog):
         if not ctx.author.bot:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if settings is None:
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has not setup the bot yet (=settings)", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
 
             # // GETTING THE REGISTER ROLE FROM SETTINGS
             if settings[3] is not None:
@@ -419,7 +419,7 @@ class Elo(commands.Cog):
                             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(settings[3]).mention}", color=33023))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} the owner has not setup the bot yet (=settings)", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
         
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////

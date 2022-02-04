@@ -51,9 +51,6 @@ class Help(commands.Cog):
     moderator_embed.add_field(name=' ‎\nMatch Undo [Mod+]', value='Undos a match\n(Usage: =match undo [match id])')
     moderator_embed.add_field(name=' ‎\nMatch Rollback [Mod+]', value='Rollbacks every match with the user in it\n(Usage: =rb [user id])')
     moderator_embed.add_field(name=' ‎\nReplace [Mod+]', value='Sub players in a match\n(Usage: =sub [user 1] [user 2] [match id])')
-    moderator_embed.add_field(name=' ‎\nAdd Elo Role [Mod+]', value='Add new elo role\n(Usage: =elorole add [@role] [elo])')
-    moderator_embed.add_field(name=' ‎\nRemove Elo Role [Mod+]', value='Remove elo role\n(Usage: =elorole del [@role])')
-    moderator_embed.add_field(name=' ‎\nShow Elo Roles [Mod+]', value='Show elo roles\n(Usage: =elorole list)')
     
     # // ADDING FIELDS TO ADMINISTRATOR EMBED
     administrator_embed.add_field(name=' ‎\nLobby Create [Admin+]', value='Create a new lobby\n(Usage: =lobby add)')
@@ -66,6 +63,9 @@ class Help(commands.Cog):
     administrator_embed.add_field(name=' ‎\nSet Wins [Admin+]', value='Sets an users wins\n(Usage: =set wins [@user] [amount])')
     administrator_embed.add_field(name=' ‎\nSet Losses [Admin+]', value='Sets an users losses\n(Usage: =set loss [@user] [amount])')
     administrator_embed.add_field(name=' ‎\nSettings Menu [Admin+]', value='Open Settings Menu\n(Usage: =settings)')
+    administrator_embed.add_field(name=' ‎\nAdd Elo Role [Admin+]', value='Add new elo role\n(Usage: =elorole add [@role] [elo])')
+    administrator_embed.add_field(name=' ‎\nRemove Elo Role [Admin+]', value='Remove elo role\n(Usage: =elorole del [@role])')
+    administrator_embed.add_field(name=' ‎\nShow Elo Roles [Admin+]', value='Show elo roles\n(Usage: =elorole list)')
 
 
     # // CREATING THE SELECT MENU COMMAND
