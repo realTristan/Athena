@@ -323,8 +323,8 @@ class Queue(commands.Cog):
         
     # // PICK MAP TO PLAY (BLUE CAPTAIN) COMMAND
     # ///////////////////////////////////////////
-    @commands.command(name="map", description='`=map (map name)`')
-    async def map(self, ctx, map:str):
+    @commands.command(name="pickmap", description='`=pickmap (map name)`')
+    async def pickmap(self, ctx, map:str):
         if not ctx.author.bot:
             if await self._data_check(ctx, ctx.channel.id):
                 if self.data[ctx.guild.id][ctx.channel.id]["state"] == "maps":

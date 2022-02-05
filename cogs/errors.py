@@ -5,6 +5,9 @@ import discord, datetime
 class ErrorHandling(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.client_cmds = {}
+        for cmd in self.client.commands:
+            self.client_cmds[cmd.name] = cmd.description
 
 
     # // RUN THE COMMAND SORTER
@@ -17,14 +20,9 @@ class ErrorHandling(commands.Cog):
         if len(sorted_cmds) <= 0:
             return await ctx.send(embed=discord.Embed(description=f"**[ERROR]** {ctx.author.mention} we could not find the command you are looking for", color=15158588))
         
-        # // GET CLIENT COMMANDS
-        client_cmds = {}
-        for cmd in self.client.commands:
-            client_cmds[cmd.name] = cmd.description
-            
         # // CREATE EMBED
         for i in range(len(sorted_cmds)):
-            similar_cmds+=f"**{i+1}:** {sorted_cmds[i][0].upper()+sorted_cmds[i][1:]} {client_cmds[sorted_cmds[i]]}\n"
+            similar_cmds+=f"**{i+1}:** {sorted_cmds[i][0].upper()+sorted_cmds[i][1:]} {self.client_cmds[sorted_cmds[i]]}\n"
 
         embed=discord.Embed(title=f"Similar Commands [{_user_command}]", description=f"{similar_cmds}", color=15158588)
         embed.set_footer(text="Message \"tristan#2230\" for support")
