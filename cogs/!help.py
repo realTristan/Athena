@@ -16,7 +16,7 @@ class Help(commands.Cog):
     player_embed.add_field(name='‏‏‎ ‎\nJoin', value='Join the current queue\n(Usage: =j)')
     player_embed.add_field(name=' ‎\nLeave', value='Leave the current queue\n(Usage: =l)')
     player_embed.add_field(name=' ‎\nPick', value='Pick an user to be on your team\n(Usage: =p [@user])')
-    player_embed.add_field(name=' ‎\nSelect Map', value='Pick a map to play\n(Usage: =map [name])')
+    player_embed.add_field(name=' ‎\nPick Map', value='Pick a map to play\n(Usage: =pickmap [name])')
     player_embed.add_field(name=' ‎\nRename', value='Change your Ten Man username\n(Usage: =rename [name])')
     player_embed.add_field(name=' ‎\nRegister', value='Register yourself to play in the ten mans\n(Usage: =reg [name])')
     player_embed.add_field(name=' ‎\nShow Queue', value='Show the current queue\n(Usage: =q)')
