@@ -386,40 +386,38 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
 
             # // GETTING THE REGISTER ROLE FROM SETTINGS
-            if settings[3] is not None:
-                if settings[3] in [0, ctx.channel.id]:
-                    role = None
-                    if settings[1] != 0:
-                        role = ctx.guild.get_role(settings[1])
-                
-                    # // REGISTER THE MENTIONED USER
-                    if len(args) > 0 and "@" in list(args)[0]:
-                        if ctx.author.guild_permissions.manage_messages:
-                            user = ctx.guild.get_member(await self._clean(list(args)[0]))
-                            if not user.bot:
-                                if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                                    name = user.name
-                                    if len(args) > 1:
-                                        name = list(args)[1]
-                                    await self._register_user(ctx, user, name, role)
-                                    await self._user_edit(user, nick=f"{name} [0]")
-                                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
-                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
-                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            if settings[3] in [0, ctx.channel.id]:
+                role = None
+                if settings[1] != 0:
+                    role = ctx.guild.get_role(settings[1])
+            
+                # // REGISTER THE MENTIONED USER
+                if len(args) > 0 and "@" in list(args)[0]:
+                    if ctx.author.guild_permissions.manage_messages:
+                        user = ctx.guild.get_member(await self._clean(list(args)[0]))
+                        if not user.bot:
+                            if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                                name = user.name
+                                if len(args) > 1:
+                                    name = list(args)[1]
+                                await self._register_user(ctx, user, name, role)
+                                await self._user_edit(user, nick=f"{name} [0]")
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
-                    # // REGISTER THE MESSAGE AUTHOR
-                    else:
-                        name = ctx.author.name
-                        if len(args) > 0:
-                            name = list(args)[0]
-                        if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-                            await self._register_user(ctx, ctx.author, name, role)
-                            await self._user_edit(ctx.author, nick=f"{name} [0]")
-                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(settings[3]).mention}", color=33023))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
+                # // REGISTER THE MESSAGE AUTHOR
+                else:
+                    name = ctx.author.name
+                    if len(args) > 0:
+                        name = list(args)[0]
+                    if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                        await self._register_user(ctx, ctx.author, name, role)
+                        await self._user_edit(ctx.author, nick=f"{name} [0]")
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(settings[3]).mention}", color=33023))
         
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////

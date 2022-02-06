@@ -21,6 +21,15 @@ async def on_guild_join(guild):
     if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {guild.id}"):
         await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs) VALUES ({guild.id}, 0, 0, 0, 0)")
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{len(client.guilds)} Servers"))
+    
+@client.event
+async def on_guild_leave(guild):
+    tables = [
+        "lobby_settings", "elo_roles", "settings", 
+        "lobbies", "matches", "users", "bans", "maps"]
+    for i in range(len(tables)):
+        try: await SQL_CLASS().execute(f"DELETE FROM {tables[i]} WHERE guild_id = {guild.id}")
+        except Exception: pass
 
 # // ON BOT LAUNCH
 # ///////////////////
