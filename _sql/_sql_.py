@@ -57,12 +57,13 @@ class SQL_CLASS():
     async def exists(self, command):
         global db
         try:
-            with closing(db.cursor()) as cur:
+            with closing(db.cursor(buffered=True)) as cur:
                 cur.execute(command)
                 if cur.fetchone() is None:
                     return False  # // Doesn't exist
                 return True  # // Does exist
-        except mysql.connector.Error:
+        except mysql.connector.Error as e:
+            print(e)
             db.close()
             db = _connect()
 

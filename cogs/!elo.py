@@ -161,6 +161,7 @@ class Elo(commands.Cog):
                         await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {int(role_id)}, {elo_amount}, 5, 2)")
                         return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
         
         if option in ["remove", "delete", "del"]:
             if ctx.author.guild_permissions.administrator:
