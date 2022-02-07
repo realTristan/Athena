@@ -173,11 +173,13 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
         
         if option in ["list", "show"]:
-            if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}"):
-                rows = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
-                return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description="\n".join(ctx.guild.get_role(e[1]).mention+f" [**{e[2]}**]\n" for e in rows), color=33023))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} there are no elo roles", color=33023))
-    
+            description = ""
+            rows = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
+            for i in range(len(rows)):
+                role = ctx.guild.get_role(rows[i][1])
+                description += f'**{i+1}:** {role.mention} [**{rows[i][2]}**]\n'
+            return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023))
+        
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
     # /////////////////////////////////////////
     @commands.command(name="match", description='`=match report (match id) [blue/orange]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
