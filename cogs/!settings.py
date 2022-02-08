@@ -222,7 +222,7 @@ class Settings(commands.Cog):
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         
                         if int(c.content) >= 4 and int(c.content) <= 20:
-                            await SQL_CLASS().execute(f"UPDATE lobby_settings SET queue_size = {int(c.content)} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                            await SQL_CLASS().execute(f"UPDATE lobby_settings SET queue_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the queue size to **{c.content} players**", color=3066992))
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} please respond with a number from **4-20**", color=15158588))
@@ -345,7 +345,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to gain", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET win_elo = {int(c.content)} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET win_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Win Elo** to **{c.content}**", color=3066992))
                     
                 # // CHANGE THE ELO PER LOSS
@@ -354,7 +354,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to lose", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET loss_elo = {int(c.content)} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET loss_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Loss Elo** to **{c.content}**", color=3066992))
 
                 # // QUEUE EMBED
@@ -380,7 +380,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the maximum party size", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET party_size = {int(c.content)} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET party_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to **{c.content}**", color=3066992))
             except asyncio.TimeoutError:
                 return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond in time", color=15158588))

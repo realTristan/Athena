@@ -103,8 +103,8 @@ class Queue(commands.Cog):
                 for user in orange_team:
                     await category.set_permissions(user, connect=True, send_messages=True)
 
-                for user in blue_team:
-                    await category.set_permissions(user, connect=True, send_messages=True)
+                for _user in blue_team:
+                    await category.set_permissions(_user, connect=True, send_messages=True)
 
     # // MATCH LOGGING FUNCTION
     # /////////////////////////////////////////
