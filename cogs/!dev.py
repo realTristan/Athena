@@ -12,7 +12,7 @@ class Dev(commands.Cog):
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
-    async def _user_edit(self, user, nick=None, role=None):
+    async def _user_edit(self, user:discord.Member, nick=None, role=None):
         if nick is not None:
             try: await user.edit(nick=nick)
             except Exception: pass
@@ -23,7 +23,7 @@ class Dev(commands.Cog):
             
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////
-    async def _register_user(self, ctx, user, name, role):
+    async def _register_user(self, ctx:commands.Context, user:discord.Member, name:str, role:discord.Role):
         await SQL_CLASS().execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
         if role not in user.roles:
             await self._user_edit(user, role=role)
@@ -32,7 +32,7 @@ class Dev(commands.Cog):
     # //////////////////////////////////////////
     @commands.command(description='`Only "tristan#2230" has access to this command`')
     @commands.has_permissions(administrator=True)
-    async def _reg_all(self, ctx):
+    async def _reg_all(self, ctx:commands.Context):
         if ctx.author.id in self.dev_users:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             role = None
@@ -50,7 +50,7 @@ class Dev(commands.Cog):
     # //////////////////////////////////////////
     @commands.command(description='`Only "tristan#2230" has access to this command`')
     @commands.has_permissions(administrator=True)
-    async def _unreg_all(self, ctx):
+    async def _unreg_all(self, ctx:commands.Context):
         if ctx.author.id in self.dev_users:
             for user in ctx.guild.members:
                 if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):

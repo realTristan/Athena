@@ -11,7 +11,7 @@ class Settings(commands.Cog):
     
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    async def _guild_settings_status(self, option, row):
+    def _guild_settings_status(self, option, row):
         # // MATCH CATEGORIES
         if option == "match_category":
             if row[2] == 1: # true
@@ -26,7 +26,7 @@ class Settings(commands.Cog):
 
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    async def _lobby_settings_status(self, option, row):
+    def _lobby_settings_status(self, option, row):
         # // MAP PICKING PHASE
         if option == "map_pick_phase":
             if row[2] == 1: # true
@@ -54,7 +54,7 @@ class Settings(commands.Cog):
         
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
-    async def _add_map(self, ctx, map, lobby):
+    async def _add_map(self, ctx:commands.Context, map:str, lobby:int):
         maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
         if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
             await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
@@ -63,7 +63,7 @@ class Settings(commands.Cog):
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
-    async def _del_map(self, ctx, map, lobby):
+    async def _del_map(self, ctx:commands.Context, map:str, lobby:int):
         if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
             maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
             await SQL_CLASS().execute(f"DELETE FROM maps WHERE map = '{map}' AND guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
@@ -74,7 +74,7 @@ class Settings(commands.Cog):
     # /////////////////////////////
     @commands.command(name="lobby", description="`=lobby add`**,** `=lobby delete`**,** `=lobby list`**,** `=lobby settings`")
     @commands.has_permissions(administrator=True)
-    async def lobby(self, ctx, action:str):
+    async def lobby(self, ctx:commands.Context, action:str):
         rows = await SQL_CLASS().select_all(f"SELECT lobby FROM lobbies WHERE guild_id = {ctx.guild.id}")
         # // CREATE A NEW LOBBY
         if action in ["add", "create"]:
@@ -124,9 +124,9 @@ class Settings(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
             lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-            team_pick_phase = await self._lobby_settings_status("team_pick_phase", lobby_settings)
-            map_pick_phase = await self._lobby_settings_status("map_pick_phase", lobby_settings)
-            negative_elo = await self._lobby_settings_status("negative_elo", lobby_settings)
+            team_pick_phase = self._lobby_settings_status("team_pick_phase", lobby_settings)
+            map_pick_phase = self._lobby_settings_status("map_pick_phase", lobby_settings)
+            negative_elo = self._lobby_settings_status("negative_elo", lobby_settings)
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's {ctx.channel.mention} Settings Menu**", color=33023),
                 components=[
                     Select(
@@ -148,7 +148,7 @@ class Settings(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="addmap", description="`=addmap (map name)`")
     @commands.has_permissions(administrator=True)
-    async def addmap(self, ctx, map:str):
+    async def addmap(self, ctx:commands.Context, map:str):
         if not ctx.author.bot:
             if len((await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))) < 20:
                 if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
@@ -160,7 +160,7 @@ class Settings(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="delmap", aliases=["removemap", "deletemap"], description="`=delmap (map name)`")
     @commands.has_permissions(administrator=True)
-    async def delmap(self, ctx, map:str):
+    async def delmap(self, ctx:commands.Context, map:str):
         if not ctx.author.bot:
             if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                 return await self._del_map(ctx, map, ctx.channel.id)
@@ -169,7 +169,7 @@ class Settings(commands.Cog):
     # // SHOW LIST OF MAPS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="maps", description="`=maps`")
-    async def maps(self, ctx):
+    async def maps(self, ctx:commands.Context):
         if not ctx.author.bot:
             if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                 rows = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
@@ -180,7 +180,7 @@ class Settings(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="regrole", description="`=regrole (@role)`")
     @commands.has_permissions(administrator=True)
-    async def regrole(self, ctx, role:discord.Role):
+    async def regrole(self, ctx:commands.Context, role:discord.Role):
         if not ctx.author.bot:
             if await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
                 await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
@@ -191,11 +191,11 @@ class Settings(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="settings", aliases=["sets", "options"], description="`=settings`")
     @commands.has_permissions(administrator=True)
-    async def settings(self, ctx):
+    async def settings(self, ctx:commands.Context):
         if not ctx.author.bot:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
-            match_category = await self._guild_settings_status("match_category", settings)
-            match_logging = await self._guild_settings_status("match_logging", settings)
+            match_category = self._guild_settings_status("match_category", settings)
+            match_logging = self._guild_settings_status("match_logging", settings)
 
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Server Settings Menu**", color=33023),
                 components=[

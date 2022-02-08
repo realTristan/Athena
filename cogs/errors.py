@@ -12,7 +12,7 @@ class ErrorHandling(commands.Cog):
 
     # // RUN THE COMMAND SORTER
     # //////////////////////////////
-    async def _run_sorter(self, ctx, _user_command):
+    async def _run_sorter(self, ctx:commands.Context, _user_command:str):
         sorted_cmds = await self._command_sort(_user_command)
         similar_cmds=""
         
@@ -30,62 +30,40 @@ class ErrorHandling(commands.Cog):
 
     # CHECK HOW MANY TIMES A LETTER APPEARS IN BOTH WORDS
     # //////////////////////////////////////////////////////
-    async def _letter_count(self, _user_command):
+    async def _letter_count(self, _user_command:str):
         try:
             _result = {}
             for index in range(len(self.client.commands)):
                 if str(list(self.client.commands)[index]) not in _result:
-                    _result[str(list(self.client.commands)[index])] = {}
+                    _result[str(list(self.client.commands)[index])] = 0
 
                 for letter in str(list(self.client.commands)[index]):
                     if letter in list(_user_command):
-                        if letter not in _result[str(list(self.client.commands)[index])]:
-                            _result[str(list(self.client.commands)[index])][letter] = 0
-                        _result[str(list(self.client.commands)[index])][letter] += 1
-        except Exception:
-            return _result
+                        _result[str(list(self.client.commands)[index])] += 1.09
+        except Exception: pass
         return _result
 
     # // CHECK LETTER POSITIONING
     # ////////////////////////////////
-    async def _letter_position(self, _user_command):
+    async def _letter_position(self, _user_command:str):
         _result = await self._letter_count(_user_command)
         for command in self.client.commands:
             for index in range(len(_user_command)):
                 try:
                     if _user_command[index] == str(command)[index]:
-                        if _user_command[index] not in _result[str(command)]:
-                            _result[str(command)][str(command)[index]] = 0
-                        _result[str(command)][str(command)[index]] += 1.5
-                except Exception:
-                    pass
-        return _result
-
-    # // GIVE EACH COMMAND THEIR RATING
-    # /////////////////////////////////////
-    async def _command_rate(self, _user_command):
-        try:
-            _letter_dict = await self._letter_position(_user_command)
-            _result = {}
-            for command in _letter_dict:
-                if not command in _result:
-                    _result[command] = 0
-
-                for letter in _letter_dict[command]:
-                    _result[command] += _letter_dict[command][letter]
-        except Exception:
-            return _result
+                        _result[str(command)] += 1.509
+                except Exception: pass
         return _result
 
     # SORT THE COMMANDS
     # /////////////////////
-    async def _command_sort(self, _user_command):
+    async def _command_sort(self, _user_command:str):
         try:
-            _command_dict = await self._command_rate(_user_command)
+            _command_dict = await self._letter_position(_user_command)
             _sorted_command_dict = {k: v for k, v in sorted(_command_dict.items(), key=lambda item: item[1], reverse=True)}
             _result = []
             for command in _sorted_command_dict:
-                if _sorted_command_dict[command] > (len(command)*0.85):
+                if _sorted_command_dict[command] > (len(command)*0.8509):
                     _result.append(command)
                     if len(_result) >= 6:
                         return _result
@@ -97,7 +75,7 @@ class ErrorHandling(commands.Cog):
     # ON COMMAND ERROR HANDLING
     # ///////////////////////////////
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx:commands.Context, error):
         if isinstance(error, commands.MissingPermissions):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         

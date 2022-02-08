@@ -11,7 +11,7 @@ class Bans(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="ban", description='`=ban (@user) (length) (reason)`')
     @commands.has_permissions(manage_messages=True)
-    async def ban(self, ctx, user:discord.Member, length_str:str, *args):
+    async def ban(self, ctx:commands.Context, user:discord.Member, length_str:str, *args):
         if not ctx.author.bot:
             if "s" in length_str:
                 length = int(length_str.strip("s"))
@@ -35,7 +35,7 @@ class Bans(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="unban", description='`=unban (@user)`')
     @commands.has_permissions(manage_messages=True)
-    async def unban(self, ctx, user:discord.Member):
+    async def unban(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if await SQL_CLASS().exists(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                 await SQL_CLASS().execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")

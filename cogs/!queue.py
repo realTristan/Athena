@@ -13,7 +13,7 @@ class Queue(commands.Cog):
 
     # // RESET THE GUILD'S VARIABLES FUNCTION
     # /////////////////////////////////////////
-    async def _reset(self, ctx, lobby):
+    def _reset(self, ctx, lobby):
         self.data[ctx.guild.id][lobby] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "None", "parties": {}, "state": "queue"}
 
     # // CLEAN A PLAYERS NAME TO LOOK CLEANER
@@ -23,7 +23,7 @@ class Queue(commands.Cog):
 
     # // GET THE USERS ID FROM A STRING
     # /////////////////////////////////////////
-    async def _clean(self, user):
+    def _clean_user(self, user):
         return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
         
     # // CHECK SELF.DATA FUNCTION
@@ -42,7 +42,7 @@ class Queue(commands.Cog):
         if len(rows) > 0:
             if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {lobby}"):
                 if lobby not in self.data[ctx.guild.id]:
-                    await self._reset(ctx, lobby)
+                    self._reset(ctx, lobby)
                 return True
         return False
 
@@ -95,18 +95,15 @@ class Queue(commands.Cog):
                 # // CREATING TEAMS
                 blue_team = self.data[ctx.guild.id][lobby]["blue_team"]
                 blue_team.append(self.data[ctx.guild.id][lobby]["blue_cap"])
-
                 orange_team = self.data[ctx.guild.id][lobby]["orange_team"]
                 orange_team.append(self.data[ctx.guild.id][lobby]["orange_cap"])
-                
-                # // RESET DATA PARAMS
-                await self._reset(ctx, lobby)
+                self._reset(ctx, lobby)
 
                 # // CHANGE PERMISSIONS FOR MATCH PLAYERS
-                for user in list(dict.fromkeys(orange_team)):
+                for user in orange_team:
                     await category.set_permissions(user, connect=True, send_messages=True)
 
-                for user in list(dict.fromkeys(blue_team)):
+                for user in blue_team:
                     await category.set_permissions(user, connect=True, send_messages=True)
 
     # // MATCH LOGGING FUNCTION
@@ -192,7 +189,7 @@ class Queue(commands.Cog):
             await self._match(ctx, lobby)
             await self._match_log(ctx, embed)
             await self._match_category(ctx, len(count)+1, lobby)
-            await self._reset(ctx, lobby)
+            self._reset(ctx, lobby)
 
     # // WHEN QUEUE REACHES QUEUE SIZE FUNCTION
     # /////////////////////////////////////////
@@ -386,7 +383,7 @@ class Queue(commands.Cog):
     async def clear(self, ctx):
         if not ctx.author.bot:
             if await self._data_check(ctx, ctx.channel.id):
-                await self._reset(ctx, ctx.channel.id)
+                self._reset(ctx, ctx.channel.id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
@@ -402,7 +399,7 @@ class Queue(commands.Cog):
             if action in ["invite", "inv"]:
                 if ctx.author.id in parties:
                     if len(parties[ctx.author.id])+1 <= max_party_size:
-                        user = ctx.guild.get_member(await self._clean(list(args)[0]))
+                        user = ctx.guild.get_member(self._clean_user(list(args)[0]))
 
                         # CHECK IF USER IS IN A PARTY
                         for party in parties:
@@ -454,7 +451,7 @@ class Queue(commands.Cog):
                 
                 # // SHOW ANOTHER PLAYER'S PARTY
                 if "@" in list(args)[0]:
-                    user = ctx.guild.get_member(await self._clean(list(args)[0]))
+                    user = ctx.guild.get_member(self._clean_user(list(args)[0]))
                     for party in parties:
                         if user.id in parties[party]:
                             return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(ctx.guild.get_member(party).name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
@@ -474,7 +471,7 @@ class Queue(commands.Cog):
             # // KICK AN USER FROM YOUR PARTY
             if action in ["kick", "remove"]:
                 if ctx.author.id in parties:
-                    user = ctx.guild.get_member(await self._clean(list(args)[0]))
+                    user = ctx.guild.get_member(self._clean_user(list(args)[0]))
                     if user.id in parties[ctx.author.id]:
                         parties[ctx.author.id].remove(user.id)
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from the party", color=3066992))
