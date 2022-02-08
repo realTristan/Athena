@@ -504,7 +504,7 @@ class Elo(commands.Cog):
             users = ""
             rows = await SQL_CLASS().select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
             for count in range(len(rows)):
-                user = ctx.guild.get_member(rows[count])[1]
+                user = ctx.guild.get_member(rows[count][1])
                 users += f'**{count+1}:** {user.mention} [**{rows[count][3]}**]\n'
                 if count >= 20:
                     break
