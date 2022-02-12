@@ -185,18 +185,18 @@ class Elo(commands.Cog):
                 elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                 if len(elo_roles) < 20:
                     elo_amount = int(list(args)[1])
-                    if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role_id}"):
-                        await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role_id}, {elo_amount}, 5, 2)")
+                    if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
+                        await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {elo_amount}, 5, 2)")
                         return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
         
         if option in ["remove", "delete", "del"]:
             if await self.check_admin_role(ctx):
-                if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role_id}"):
+                if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
                     elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                     
-                    await SQL_CLASS().execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role_id}")
+                    await SQL_CLASS().execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}")
                     return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)-1}/20]** {ctx.author.mention} {role.mention} has been removed", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
         
@@ -205,7 +205,8 @@ class Elo(commands.Cog):
             rows = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
             for i in range(len(rows)):
                 role = ctx.guild.get_role(rows[i][1])
-                description += f'**{i+1}:** {role.mention} [**{rows[i][2]}**]\n'
+                try: description += f'**{i+1}:** {role.mention} [**{rows[i][2]}**]\n'
+                except Exception: pass
             return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023))
         
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
