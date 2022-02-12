@@ -271,6 +271,8 @@ class Settings(commands.Cog):
                     Select(
                         placeholder="View Settings",
                         options=[
+                            SelectOption(emoji=f'🔵', label="Change Mod Role", value="change_mod_role"),
+                            SelectOption(emoji=f'🔵', label="Change Admin Role", value="change_admin_role"),
                             SelectOption(emoji=f'🔵', label="Create Queue Embed", value="queue_embed"),
                             SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                             SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
@@ -284,6 +286,35 @@ class Settings(commands.Cog):
     async def on_select_option(self, res):
         if not res.author.bot:
             try:
+                # // CHANGE MOD ROLE
+                if res.values[0] == "change_admin_role":
+                    if res.author.guild_permissions.administrator:
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
+                        if "@" in str(c.content):
+                            role = res.guild.get_role(int(self._clean_role(c.content)))
+                            await SQL_CLASS().execute(f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {res.guild.id}")
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the admin role to {role.mention}", color=3066992))
+                        
+                        await SQL_CLASS().execute(f"UPDATE settings SET admin_role = 0 WHERE guild_id = {res.guild.id}")
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the admin role to None", color=3066992))
+                
+                # // CHANGE ADMIN ROLE
+                if res.values[0] == "change_mod_role":
+                    if res.author.guild_permissions.administrator:
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
+                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
+                        if "@" in str(c.content):
+                            role = res.guild.get_role(int(self._clean_role(c.content)))
+                            await SQL_CLASS().execute(f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {res.guild.id}")
+                            return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the mod role to {role.mention}", color=3066992))
+                        
+                        await SQL_CLASS().execute(f"UPDATE settings SET mod_role = 0 WHERE guild_id = {res.guild.id}")
+                        await res.send(embed=discord.Embed(description=f"{res.author.mention} Success!", color=3066992))
+                        return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the mod role to None", color=3066992))
+                    
+                
                 # // CHANGE QUEUE SIZE
                 if res.values[0] == "change_queue_size":
                     if await self.check_admin_role(res):
@@ -359,7 +390,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):
-                            role = res.guild.get_role(int(str(c.content).strip("<").strip(">").strip("@").strip("&")))
+                            role = res.guild.get_role(int(self._clean_role(c.content)))
                             await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
                             return await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Role** to {role.mention}", color=3066992))
                         
