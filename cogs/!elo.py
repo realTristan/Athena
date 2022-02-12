@@ -64,7 +64,7 @@ class Elo(commands.Cog):
 
     # // EDIT AN USERS NAME OR ROLE FUNCTION
     # ////////////////////////////////////////
-    async def _user_edit(self, user:discord.Member, nick=None, role=None, remove_role=None):
+    async def _user_edit(self, user:discord.Member, nick:str=None, role:discord.Role=None, remove_role:discord.Role=None):
         if nick is not None:
             try: await user.edit(nick=nick)
             except Exception: pass
@@ -88,14 +88,19 @@ class Elo(commands.Cog):
     # // EDIT AN USERS ELO ROLE
     # /////////////////////////////////////////
     async def edit_elo_role(self, ctx:commands.Context, user:discord.Member, elo_amount:int, option:str):
-        roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo_amount} AND guild_id = {ctx.guild.id}")
+        roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level <= {elo_amount} AND guild_id = {ctx.guild.id}")
+        if option == "remove":
+            roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo_amount} AND guild_id = {ctx.guild.id}")
+        
+        # // Check roles and add them
         if len(roles) > 0:
             for _role in roles:
                 role = ctx.guild.get_role(_role[0])
-                if role in user.roles:
-                    if option == "remove":
+                if option == "remove":
+                    if role in user.roles:
                         await self._user_edit(user, remove_role=role)
-                    else:
+                else:
+                    if role not in user.roles:
                         await self._user_edit(user, role=role)
 
     # // GIVE AN USER A WIN FUNCTION
@@ -130,14 +135,16 @@ class Elo(commands.Cog):
     # /////////////////////////////////////////
     async def _match_show(self, ctx:commands.Context, match_id:int):
         row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-        embed=discord.Embed(title=f"Match #{match_id} ┃ {row[8].upper()}", description=f"**Map:** {row[3]}\n**Winners:** {row[9][0].upper()+row[9][1:]}", color=33023)
-        embed.add_field(name="Orange Captain", value=f"<@{row[4]}>")
-        embed.add_field(name="\u200b", value="\u200b")
-        embed.add_field(name="Blue Captain", value=f"<@{row[6]}>")
-        embed.add_field(name="Orange Team", value='\n'.join(f"<@{e}>" for e in row[5].split(",")))
-        embed.add_field(name="\u200b", value="\u200b")
-        embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in row[7].split(",")))
-        return await ctx.send(embed=embed)
+        if row is not None:
+            embed=discord.Embed(title=f"Match #{match_id} ┃ {row[8].upper()}", description=f"**Map:** {row[3]}\n**Winners:** {row[9][0].upper()+row[9][1:]}", color=33023)
+            embed.add_field(name="Orange Captain", value=f"<@{row[4]}>")
+            embed.add_field(name="\u200b", value="\u200b")
+            embed.add_field(name="Blue Captain", value=f"<@{row[6]}>")
+            embed.add_field(name="Orange Team", value='\n'.join(f"<@{e}>" for e in row[5].split(",")))
+            embed.add_field(name="\u200b", value="\u200b")
+            embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in row[7].split(",")))
+            return await ctx.send(embed=embed)
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} we were unable to find **Match #{match_id}**", color=15158588))
 
     # // SHOW THE USERS STATS FUNCTION
     # /////////////////////////////////////////

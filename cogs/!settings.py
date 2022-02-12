@@ -91,12 +91,11 @@ class Settings(commands.Cog):
     def _clean_role(self, role:str):
         return int(role.strip("<").strip(">").replace("@&", "").replace("!", ""))
     
-    
     # // SET THE MOD ROLE
     # ////////////////////////
-    @commands.command()
+    @commands.command(name="modrole", description="`=modrole set @role, =modrole show, =modrole delete`")
     @commands.has_permissions(administrator=True)
-    async def modrole(self, ctx, *args):
+    async def modrole(self, ctx:commands.Context, *args):
         if args[0] in ["set", "create"]:
             role = ctx.guild.get_role(self._clean_role(args[1]))
             if role is not None:
@@ -119,9 +118,9 @@ class Settings(commands.Cog):
         
     # // SET THE ADMIN ROLE
     # ////////////////////////
-    @commands.command()
+    @commands.command(name="adminrole", description="`=adminrole set @role, =adminrole show, =adminrole delete`")
     @commands.has_permissions(administrator=True)
-    async def adminrole(self, ctx, *args):
+    async def adminrole(self, ctx:commands.Context, *args):
         if args[0] in ["set", "create"]:
             role = ctx.guild.get_role(int(self._clean_role(args[1])))
             print(role)
@@ -217,8 +216,7 @@ class Settings(commands.Cog):
                             SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
                             SelectOption(emoji=f'{team_pick_phase[0]}', label=f"{team_pick_phase[1]} Team Picking Phase", value="team_pick_phase")
                         ])])
-
-
+        
     # // ADD MAP COMMAND
     # /////////////////////////////////////////
     @commands.command(name="addmap", description="`=addmap (map name)`")
