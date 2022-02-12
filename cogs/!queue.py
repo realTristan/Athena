@@ -259,7 +259,7 @@ class Queue(commands.Cog):
         if row[2] == 1:
             self.data[ctx.guild.id][lobby]["state"] = "maps"
         else:
-            maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")[0]
+            maps = (await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"))[0]
             self.data[ctx.guild.id][lobby]["map"] = "None"
             
             if len(maps) > 0:
