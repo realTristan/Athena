@@ -6,13 +6,42 @@ from _sql import *
 class Bans(commands.Cog):
     def __init__(self, client):
         self.client = client
+        
+    # // Check mod role or mod permissions
+    # //////////////////////////////////////////
+    async def check_mod_role(self, ctx):
+        if await self.check_admin_role(ctx):
+            return True
+        mod_role = (await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
+        if mod_role == 0:
+            if not ctx.author.guild_permissions.manage_messages:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        else:
+            if ctx.guild.get_role(mod_role) not in ctx.author.roles:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        return True
+    
+    # // Check admin role or admin permissions
+    # //////////////////////////////////////////
+    async def check_admin_role(self, ctx):
+        admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
+        if admin_role == 0:
+            if not ctx.author.guild_permissions.administrator:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        else:
+            if ctx.guild.get_role(admin_role) not in ctx.author.roles:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        return True
 
     # // ADD USER TO BAN DATABASE COMMAND
     # /////////////////////////////////////////
     @commands.command(name="ban", description='`=ban (@user) (length) (reason)`')
-    @commands.has_permissions(manage_messages=True)
     async def ban(self, ctx:commands.Context, user:discord.Member, length_str:str, *args):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_mod_role(ctx):
             if "s" in length_str:
                 length = int(length_str.strip("s"))
             if "m" in length_str:
@@ -34,9 +63,8 @@ class Bans(commands.Cog):
     # // REMOVE USER FROM BAN DATABASE COMMAND
     # /////////////////////////////////////////
     @commands.command(name="unban", description='`=unban (@user)`')
-    @commands.has_permissions(manage_messages=True)
     async def unban(self, ctx:commands.Context, user:discord.Member):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_mod_role(ctx):
             if await SQL_CLASS().exists(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                 await SQL_CLASS().execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=3066992))

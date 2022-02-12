@@ -66,6 +66,12 @@ class Help(commands.Cog):
     administrator_embed.add_field(name=' ‎\nAdd Elo Role [Admin+]', value='Add new elo role\n(Usage: =elorole add [@role] [elo])')
     administrator_embed.add_field(name=' ‎\nRemove Elo Role [Admin+]', value='Remove elo role\n(Usage: =elorole del [@role])')
     administrator_embed.add_field(name=' ‎\nShow Elo Roles [Admin+]', value='Show elo roles\n(Usage: =elorole list)')
+    administrator_embed.add_field(name=' ‎\nSet Admin Role [Admin+]', value='Sets the current admin role\n(Usage: =adminrole set @role)')
+    administrator_embed.add_field(name=' ‎\nRemove Admin Role [Admin+]', value='Removes the current admin role\n(Usage: =adminrole remove)')
+    administrator_embed.add_field(name=' ‎\nShow Admin Role [Admin+]', value='Shows the current admin role\n(Usage: =adminrole show)')
+    administrator_embed.add_field(name=' ‎\nSet Mod Role [Admin+]', value='Sets the current mod role\n(Usage: =modrole set @role)')
+    administrator_embed.add_field(name=' ‎\nRemove Mod Role [Admin+]', value='Removes the current mod role\n(Usage: =modrole remove)')
+    administrator_embed.add_field(name=' ‎\nShow Mod Role [Admin+]', value='Shows the current mod role\n(Usage: =modrole show)')
 
 
     # // CREATING THE SELECT MENU COMMAND

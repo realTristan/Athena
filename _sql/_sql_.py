@@ -30,7 +30,7 @@ class SQL_CLASS():
             # cur.execute("CREATE TABLE users (guild_id BIGINT, user_id BIGINT, user_name VARCHAR(50), elo INT, wins INT, loss INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // SETTINGS TABLE
-            #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // LOBBIES TABLE
             #cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby BIGINT, id INT PRIMARY KEY AUTO_INCREMENT)")

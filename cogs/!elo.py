@@ -7,6 +7,36 @@ class Elo(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    # // Check mod role or mod permissions
+    # //////////////////////////////////////////
+    async def check_mod_role(self, ctx):
+        if await self.check_admin_role(ctx):
+            return True
+        mod_role = (await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
+        if mod_role == 0:
+            if not ctx.author.guild_permissions.manage_messages:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        else:
+            if ctx.guild.get_role(mod_role) not in ctx.author.roles:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        return True
+    
+    # // Check admin role or admin permissions
+    # //////////////////////////////////////////
+    async def check_admin_role(self, ctx):
+        admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
+        if admin_role == 0:
+            if not ctx.author.guild_permissions.administrator:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        else:
+            if ctx.guild.get_role(admin_role) not in ctx.author.roles:
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return False
+        return True
+    
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
     async def _delete_channels(self, ctx:commands.Context, match_id:int):
@@ -45,8 +75,8 @@ class Elo(commands.Cog):
             try: await user.remove_roles(remove_role)
             except Exception: pass
 
-    # // GET THE USERS ID FROM A STRING
-    # /////////////////////////////////////////
+    # // CLEAN USER/ROLE
+    # ////////////////////////
     def _clean_user(self, user:str):
         return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
     
@@ -149,7 +179,7 @@ class Elo(commands.Cog):
             role = ctx.guild.get_role(int(role_id))
             
         if option in ["add", "create", "new"]:
-            if ctx.author.guild_permissions.administrator:
+            if await self.check_admin_role(ctx):
                 elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                 if len(elo_roles) < 20:
                     elo_amount = int(list(args)[1])
@@ -160,7 +190,7 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
         
         if option in ["remove", "delete", "del"]:
-            if ctx.author.guild_permissions.administrator:
+            if await self.check_admin_role(ctx):
                 if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role_id}"):
                     elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                     
@@ -183,7 +213,7 @@ class Elo(commands.Cog):
         if not ctx.author.bot:
             # // REPORTING AN ONGOING MATCH
             if action in ["report"]:
-                if ctx.author.guild_permissions.manage_messages:
+                if await self.check_mod_role(ctx):
                     match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     if match is not None:
                         lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {match[2]}")
@@ -218,8 +248,8 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
             # // CANCELLING AN ONGOING MATCH
-            if action in ["cancel"]:
-                if ctx.author.guild_permissions.manage_messages:
+            elif action in ["cancel"]:
+                if await self.check_mod_role(ctx):
                     status = (await SQL_CLASS().select(f"SELECT status FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"))[0]
                     if status is not None:
                         if status in ["ongoing"]:
@@ -233,12 +263,12 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
             # // SHOWING A LOGGED MATCH
-            if action in ["show"]:
+            elif action in ["show"]:
                 return await self._match_show(ctx, match_id)
 
             # // UNDOING A REPORTED MATCH
-            if action in ["undo"]:
-                if ctx.author.guild_permissions.manage_messages:
+            elif action in ["undo"]:
+                if await self.check_mod_role(ctx):
                     match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     if match is not None:
                         if match[8] in ["reported", "cancelled"]:
@@ -264,14 +294,13 @@ class Elo(commands.Cog):
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid match id", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
+            raise Exception("Invalid option")
 
     # // SET PLAYERS STATS COMMAND
     # /////////////////////////////////
     @commands.command(name="set", description='`=set elo (@user) (amount)`**,** `=set wins (@user) (amount)`**,** `=set losses (@user) (amount)`')
-    @commands.has_permissions(administrator=True)
     async def set(self, ctx:commands.Context, action:str, user:discord.Member, amount:int):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_admin_role(ctx):
             user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
             if user_name is not None:
                 # // SET A PLAYERS ELO
@@ -287,7 +316,7 @@ class Elo(commands.Cog):
                 elif action in ["losses", "lose", "loss"]:
                     await SQL_CLASS().execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 else:
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
+                    raise Exception("Invalid option")
                 return await self._stats(ctx, user)
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
 
@@ -302,9 +331,8 @@ class Elo(commands.Cog):
     # // REPLACE / SUB TWO PLAYERS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="replace", aliases=["sub", "swap"], description='`=replace (@user to be replaced) (@user replacing) (match id)`')
-    @commands.has_permissions(manage_messages=True)
     async def replace(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, match_id:int):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_mod_role(ctx):
             row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
             if "reported" not in row[8] and "cancelled" not in row[8] and "rollbacked" not in row[8]:
                 blue_team = str(row[7]).split(",")
@@ -364,9 +392,8 @@ class Elo(commands.Cog):
     # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
     # ////////////////////////////////////////////
     @commands.command(name="forcerename", aliases=["fr"], description='`=forcerename (@user) (name)`')
-    @commands.has_permissions(manage_messages=True)
     async def forcerename(self, ctx:commands.Context, user:discord.Member, name:str):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_mod_role(ctx):
             row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             if row is not None:
                 await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
@@ -392,7 +419,7 @@ class Elo(commands.Cog):
             
                 # // REGISTER THE MENTIONED USER
                 if len(args) > 0 and "@" in list(args)[0]:
-                    if ctx.author.guild_permissions.manage_messages:
+                    if await self.check_mod_role(ctx):
                         user = ctx.guild.get_member(self._clean_user(list(args)[0]))
                         if not user.bot:
                             if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
@@ -421,9 +448,8 @@ class Elo(commands.Cog):
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////
     @commands.command(name="unregister", aliases=["unreg"], description='`=unreg (@user)`')
-    @commands.has_permissions(administrator=True)
     async def unregister(self, ctx:commands.Context, user:discord.Member):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_admin_role(ctx):
             if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                 await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
@@ -432,9 +458,8 @@ class Elo(commands.Cog):
     # // GIVES AN USER A WIN COMMAND
     # /////////////////////////////////////////
     @commands.command(name="win", description='`=win (@users)`')
-    @commands.has_permissions(manage_messages=True)
     async def win(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_mod_role(ctx):
             lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
             if lobby_settings is not None:
                 if len(users) > 0:
@@ -448,9 +473,8 @@ class Elo(commands.Cog):
     # // GIVES AN USER A LOSS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="lose", description='`=lose (@users)`')
-    @commands.has_permissions(manage_messages=True)
     async def lose(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_mod_role(ctx):
             lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
             if lobby_settings is not None:
                 if len(users) > 0:
@@ -474,9 +498,8 @@ class Elo(commands.Cog):
     # // RESET AN USERS STATS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="reset", description='`=reset all`**,** `=reset (@user)`')
-    @commands.has_permissions(administrator=True)
     async def reset(self, ctx:commands.Context, args:str):
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_admin_role(ctx):
             # // RESET EVERY PLAYERS STATS
             if args == "all":
                 for user in ctx.guild.members:
@@ -513,14 +536,13 @@ class Elo(commands.Cog):
     # // ROLLBACK EVERY MATCH AN USER WAS IN
     # //////////////////////////////////////////
     @commands.command(name="rollback", aliases=["rb"], description='`=rollback (user id)`')
-    @commands.has_permissions(manage_messages=True)
     async def rollback(self, ctx:commands.Context, user:str):
         '''
         REMOVE THE WIN IF CHEATER IS ON THE WINNING TEAM THEN REMOVE LOSS FOR OPPOSITE TEAM
         IF THE CHEATER IS NOT ON THE WINNING TEAM, THEN THE MATCH STILL COUNTS 
         (RAINBOW SIX SIEGE ROLLBACK SYSTEM)
         '''
-        if not ctx.author.bot:
+        if not ctx.author.bot and await self.check_mod_role(ctx):
             rows = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             for row in rows:
                 if "ongoing" not in row[8] and "rollbacked" not in row[8] and "cancelled" not in row[8]:
@@ -547,7 +569,7 @@ class Elo(commands.Cog):
     async def on_button_click(self, res):
         if not res.author.bot:
             if res.component.id in ['blue_report', 'orange_report', 'match_cancel']:
-                if res.author.guild_permissions.manage_messages:
+                if await self.check_mod_role(res):
                     # // GETTING THE MATCH ID
                     match_id = int(str(res.message.embeds[0].title).replace("Match #", ""))
                     lobby_id = int(res.message.embeds[0].footer.text)
