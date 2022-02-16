@@ -189,7 +189,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value=blue_team)
             embed.add_field(name="Available Players", value="\n".join(str(e.mention) for e in self.data[ctx.guild.id][lobby]["queue"]))
             await ctx.send(embed=embed)
-            return await ctx.send(f"**{self.data[ctx.guild.id][lobby]['pick_logic'][0].mention} it is your turn to pick**")
+            return await ctx.send(f"**{self.data[ctx.guild.id][lobby]['pick_logic'][0].mention} it is your turn to pick (=pick [@user])**")
 
         # // MAP PICKING PHASE EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "maps":
@@ -203,7 +203,7 @@ class Queue(commands.Cog):
             embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id][lobby]["blue_team"]))
             embed.add_field(name="Available Maps", value="\n".join(e[0] for e in rows))
             await ctx.send(embed=embed)
-            return await ctx.send(f"**{self.data[ctx.guild.id][lobby]['blue_cap'].mention} select a map to play**")
+            return await ctx.send(f"**{self.data[ctx.guild.id][lobby]['blue_cap'].mention} select a map to play (=pickmap [map])**")
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "final":
@@ -358,14 +358,12 @@ class Queue(commands.Cog):
             if await self._data_check(ctx, ctx.channel.id):
                 if self.data[ctx.guild.id][ctx.channel.id]["state"] == "maps":
                     if ctx.author == self.data[ctx.guild.id][ctx.channel.id]["blue_cap"]:
-                        if await SQL_CLASS().exists(
-                            f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id} AND map = '{map}'"
-                        ) or await SQL_CLASS().exists(
-                            f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id} AND map = '{self._clean_name(map)}'"
-                        ):
-                            self.data[ctx.guild.id][ctx.channel.id]["map"] = self._clean_name(map)
-                            self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
-                            return await self._embeds(ctx, ctx.channel.id)
+                        _maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                        for i in _maps:
+                            if map.lower() in i[0].lower():
+                                self.data[ctx.guild.id][ctx.channel.id]["map"] = self._clean_name(map)
+                                self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
+                                return await self._embeds(ctx, ctx.channel.id)
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
