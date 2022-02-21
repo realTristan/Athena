@@ -4,6 +4,7 @@ import discord, datetime
 
 class ErrorHandling(commands.Cog):
     def __init__(self, client):
+        self.error_channel = self.client.get_channel(938482543227994132)
         self.client = client
         self.client_cmds = {}
         for cmd in self.client.commands:
@@ -76,16 +77,21 @@ class ErrorHandling(commands.Cog):
     # ///////////////////////////////
     @commands.Cog.listener()
     async def on_command_error(self, ctx:commands.Context, error):
-        if isinstance(error, commands.MissingPermissions):
+        if isinstance(error, commands.CommandNotFound):
+            return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
+            
+        elif isinstance(error, commands.MissingPermissions):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
-        if isinstance(error, commands.MemberNotFound):
+        elif isinstance(error, commands.MemberNotFound):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
-            
-        await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
-        if not isinstance(error, commands.CommandNotFound):
-            error_logs = self.client.get_channel(938482543227994132)
-            await error_logs.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
+        
+        elif isinstance(error, commands.MissingRequiredArgument):
+            return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
+        
+        else:
+            await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
+            await self.error_channel.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
             raise error
 
 def setup(client):
