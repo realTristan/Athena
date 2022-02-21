@@ -4,8 +4,8 @@ import discord, datetime
 
 class ErrorHandling(commands.Cog):
     def __init__(self, client):
-        self.error_channel = self.client.get_channel(938482543227994132)
         self.client = client
+        self.error_channel = self.client.get_channel(938482543227994132)
         self.client_cmds = {}
         for cmd in self.client.commands:
             self.client_cmds[cmd.name] = cmd.description
