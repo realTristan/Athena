@@ -14,14 +14,8 @@ class Elo(commands.Cog):
             return True
         mod_role = (await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
         if mod_role == 0:
-            if not ctx.author.guild_permissions.manage_messages:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        else:
-            if ctx.guild.get_role(mod_role) not in ctx.author.roles:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        return True
+            return ctx.author.guild_permissions.manage_messages
+        return ctx.guild.get_role(mod_role) in ctx.author.roles
     
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
@@ -30,14 +24,8 @@ class Elo(commands.Cog):
             return True
         admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
         if admin_role == 0:
-            if not ctx.author.guild_permissions.administrator:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        else:
-            if ctx.guild.get_role(admin_role) not in ctx.author.roles:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        return True
+            return ctx.author.guild_permissions.administrator
+        return ctx.guild.get_role(admin_role) in ctx.author.roles
     
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
@@ -197,6 +185,7 @@ class Elo(commands.Cog):
                         return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         if option in ["remove", "delete", "del"]:
             if await self.check_admin_role(ctx):
@@ -206,6 +195,7 @@ class Elo(commands.Cog):
                     await SQL_CLASS().execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}")
                     return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)-1}/20]** {ctx.author.mention} {role.mention} has been removed", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         if option in ["list", "show"]:
             description = ""
@@ -310,25 +300,27 @@ class Elo(commands.Cog):
     # /////////////////////////////////
     @commands.command(name="set", description='`=set elo (@user) (amount)`**,** `=set wins (@user) (amount)`**,** `=set losses (@user) (amount)`')
     async def set(self, ctx:commands.Context, action:str, user:discord.Member, amount:int):
-        if not ctx.author.bot and await self.check_admin_role(ctx):
-            user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
-            if user_name is not None:
-                # // SET A PLAYERS ELO
-                if action in ["elo", "points"]:
-                    await SQL_CLASS().execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                    await self._user_edit(user, nick=f"{user_name} [{amount}]")
-                    
-                # // SET A PLAYERS WINS
-                elif action in ["wins", "win"]:
-                    await SQL_CLASS().execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        if not ctx.author.bot:
+            if await self.check_admin_role(ctx):
+                user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
+                if user_name is not None:
+                    # // SET A PLAYERS ELO
+                    if action in ["elo", "points"]:
+                        await SQL_CLASS().execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        await self._user_edit(user, nick=f"{user_name} [{amount}]")
+                        
+                    # // SET A PLAYERS WINS
+                    elif action in ["wins", "win"]:
+                        await SQL_CLASS().execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
-                # // SET A PLAYERS LOSSES
-                elif action in ["losses", "lose", "loss"]:
-                    await SQL_CLASS().execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                else:
-                    raise Exception("Invalid option")
-                return await self._stats(ctx, user)
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+                    # // SET A PLAYERS LOSSES
+                    elif action in ["losses", "lose", "loss"]:
+                        await SQL_CLASS().execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                    else:
+                        raise Exception("Invalid option")
+                    return await self._stats(ctx, user)
+                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # // SHOW THE LAST MATCH PLAYED COMMAND
     # /////////////////////////////////////////
@@ -342,33 +334,35 @@ class Elo(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="replace", aliases=["sub", "swap"], description='`=replace (@user to be replaced) (@user replacing) (match id)`')
     async def replace(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, match_id:int):
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-            if "reported" not in row[8] and "cancelled" not in row[8] and "rollbacked" not in row[8]:
-                blue_team = str(row[7]).split(",")
-                orange_team = str(row[5]).split(",")
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                if "reported" not in row[8] and "cancelled" not in row[8] and "rollbacked" not in row[8]:
+                    blue_team = str(row[7]).split(",")
+                    orange_team = str(row[5]).split(",")
 
-                # // REPLACE USER FROM ORANGE CAPTAIN
-                if str(user1.id) in str(row[4]) and str(user2.id) not in str(row[4]):
-                    await SQL_CLASS().execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    # // REPLACE USER FROM ORANGE CAPTAIN
+                    if str(user1.id) in str(row[4]) and str(user2.id) not in str(row[4]):
+                        await SQL_CLASS().execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
-                # // REPLACE USER FROM BLUE CAPTAIN
-                elif str(user1.id) in str(row[6]) and str(user2.id) not in str(row[6]):
-                    await SQL_CLASS().execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                
-                # // REPLACE USER FROM ORANGE TEAM
-                elif str(user1.id) in orange_team and str(user2.id) not in orange_team:
-                    orange_team[orange_team.index(str(user1.id))] = str(user2.id)
-                    await SQL_CLASS().execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    # // REPLACE USER FROM BLUE CAPTAIN
+                    elif str(user1.id) in str(row[6]) and str(user2.id) not in str(row[6]):
+                        await SQL_CLASS().execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    
+                    # // REPLACE USER FROM ORANGE TEAM
+                    elif str(user1.id) in orange_team and str(user2.id) not in orange_team:
+                        orange_team[orange_team.index(str(user1.id))] = str(user2.id)
+                        await SQL_CLASS().execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
-                # // REPLACE USER FROM BLUE TEAM
-                elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
-                    blue_team[blue_team.index(str(user1.id))] = str(user2.id)
-                    await SQL_CLASS().execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                else:
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player(s) not found/error", color=15158588))
-                return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+                    # // REPLACE USER FROM BLUE TEAM
+                    elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
+                        blue_team[blue_team.index(str(user1.id))] = str(user2.id)
+                        await SQL_CLASS().execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    else:
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player(s) not found/error", color=15158588))
+                    return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # SHOW THE PAST 10 MATCHES PLAYED
     # /////////////////////////////////
@@ -403,14 +397,16 @@ class Elo(commands.Cog):
     # ////////////////////////////////////////////
     @commands.command(name="forcerename", aliases=["fr"], description='`=forcerename (@user) (name)`')
     async def forcerename(self, ctx:commands.Context, user:discord.Member, name:str):
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            if row is not None:
-                await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                await self._user_edit(user, nick=f"{row[2]} [{row[3]}]")
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                if row is not None:
+                    await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                    await self._user_edit(user, nick=f"{row[2]} [{row[3]}]")
 
-                return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
@@ -459,41 +455,47 @@ class Elo(commands.Cog):
     # ////////////////////////////////////////////////
     @commands.command(name="unregister", aliases=["unreg"], description='`=unreg (@user)`')
     async def unregister(self, ctx:commands.Context, user:discord.Member):
-        if not ctx.author.bot and await self.check_admin_role(ctx):
-            if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+        if not ctx.author.bot:
+            if await self.check_admin_role(ctx):
+                if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                    await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # // GIVES AN USER A WIN COMMAND
     # /////////////////////////////////////////
     @commands.command(name="win", description='`=win (@users)`')
     async def win(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-            if lobby_settings is not None:
-                if len(users) > 0:
-                    for user in users:
-                        await self._win(ctx, user, lobby_settings)
-                        await self._stats(ctx, user)
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully added wins", color=3066992))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please mention atleast one player", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                if lobby_settings is not None:
+                    if len(users) > 0:
+                        for user in users:
+                            await self._win(ctx, user, lobby_settings)
+                            await self._stats(ctx, user)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully added wins", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please mention atleast one player", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # // GIVES AN USER A LOSS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="lose", description='`=lose (@users)`')
     async def lose(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-            if lobby_settings is not None:
-                if len(users) > 0:
-                    for user in users:
-                        await self._loss(ctx, user, lobby_settings)
-                        await self._stats(ctx, user)
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully added losses", color=3066992))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please mention at least one player", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                if lobby_settings is not None:
+                    if len(users) > 0:
+                        for user in users:
+                            await self._loss(ctx, user, lobby_settings)
+                            await self._stats(ctx, user)
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully added losses", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please mention at least one player", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # // SHOW YOUR OR ANOTHER PLAYER'S STATS COMMAND
     # ////////////////////////////////////////////////
@@ -509,25 +511,27 @@ class Elo(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="reset", description='`=reset all`**,** `=reset (@user)`')
     async def reset(self, ctx:commands.Context, args:str):
-        if not ctx.author.bot and await self.check_admin_role(ctx):
-            # // RESET EVERY PLAYERS STATS
-            if args == "all":
-                for user in ctx.guild.members:
-                    if not user.bot:
-                        if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                            await self._reset_stats(ctx, user)
-                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset every players stats", color=3066992))
+        if not ctx.author.bot:
+            if await self.check_admin_role(ctx):
+                # // RESET EVERY PLAYERS STATS
+                if args == "all":
+                    for user in ctx.guild.members:
+                        if not user.bot:
+                            if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                                await self._reset_stats(ctx, user)
+                    return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset every players stats", color=3066992))
             
-            # // RESET THE MENTIONED USERS STATS
-            if "<@" in args:
-                user = ctx.guild.get_member(self._clean_user(args))
-                user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
-                if user_name is not None:
-                    await self._reset_stats(ctx, user)
-                    await self._user_edit(user, nick=f"{user_name} [0]")
-                    return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
-                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{user.mention} is not registered", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
+                # // RESET THE MENTIONED USERS STATS
+                if "<@" in args:
+                    user = ctx.guild.get_member(self._clean_user(args))
+                    user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
+                    if user_name is not None:
+                        await self._reset_stats(ctx, user)
+                        await self._user_edit(user, nick=f"{user_name} [0]")
+                        return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset {user.mention}'s stats", color=3066992))
+                    return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{user.mention} is not registered", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} incorrect command usage", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
     
     # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
     # /////////////////////////////////////////
@@ -552,25 +556,27 @@ class Elo(commands.Cog):
         IF THE CHEATER IS NOT ON THE WINNING TEAM, THEN THE MATCH STILL COUNTS 
         (RAINBOW SIX SIEGE ROLLBACK SYSTEM)
         '''
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            rows = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
-            for row in rows:
-                if "ongoing" not in row[8] and "rollbacked" not in row[8] and "cancelled" not in row[8]:
-                    blue_team = str(row[7]).split(","); blue_team.append(row[6])
-                    orange_team =str(row[5]).split(","); orange_team.append(row[4])
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                rows = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+                for row in rows:
+                    if "ongoing" not in row[8] and "rollbacked" not in row[8] and "cancelled" not in row[8]:
+                        blue_team = str(row[7]).split(","); blue_team.append(row[6])
+                        orange_team =str(row[5]).split(","); orange_team.append(row[4])
 
-                    if user in [blue_team, orange_team]:
-                        if row[9] == "orange":
-                            if user in orange_team:
-                                await self._undo_win(ctx, row[2], orange_team, blue_team)
-                        
-                        if row[9] == "blue":
-                            if user in blue_team:
-                                await self._undo_win(ctx, row[2], blue_team, orange_team)
+                        if user in [blue_team, orange_team]:
+                            if row[9] == "orange":
+                                if user in orange_team:
+                                    await self._undo_win(ctx, row[2], orange_team, blue_team)
                             
-                        await SQL_CLASS().execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
-                        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Match **#{row[1]}** has been rollbacked", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully rollbacked all matches with the user **{user}**", color=3066992))
+                            if row[9] == "blue":
+                                if user in blue_team:
+                                    await self._undo_win(ctx, row[2], blue_team, orange_team)
+                                
+                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
+                            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Match **#{row[1]}** has been rollbacked", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully rollbacked all matches with the user **{user}**", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
                 
 
     # // BUTTON CLICK LISTENER

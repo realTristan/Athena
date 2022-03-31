@@ -51,7 +51,7 @@ class Settings(commands.Cog):
         if value == 1:
             return 'ENABLED'
         return 'DISABLED'
-    
+
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
     async def check_admin_role(self, ctx):
@@ -59,14 +59,8 @@ class Settings(commands.Cog):
             return True
         admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
         if admin_role == 0:
-            if not ctx.author.guild_permissions.administrator:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        else:
-            if ctx.guild.get_role(admin_role) not in ctx.author.roles:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        return True
+            return ctx.author.guild_permissions.administrator
+        return ctx.guild.get_role(admin_role) in ctx.author.roles
         
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
@@ -148,10 +142,9 @@ class Settings(commands.Cog):
     @commands.command(name="lobby", description="`=lobby add`**,** `=lobby delete`**,** `=lobby list`**,** `=lobby settings`")
     async def lobby(self, ctx:commands.Context, action:str):
         if not ctx.author.bot:
-            if await self.check_admin_role(ctx):
-                rows = await SQL_CLASS().select_all(f"SELECT lobby FROM lobbies WHERE guild_id = {ctx.guild.id}")
-                # // CREATE A NEW LOBBY
-                if action in ["add", "create"]:
+            rows = await SQL_CLASS().select_all(f"SELECT lobby FROM lobbies WHERE guild_id = {ctx.guild.id}")
+            if action in ["add", "create"]:
+                if await self.check_admin_role(ctx):
                     if len(rows) < 10:
                         if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                             await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby) VALUES ({ctx.guild.id}, {ctx.channel.id})")
@@ -161,7 +154,45 @@ class Settings(commands.Cog):
                             return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)+1}/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is already a lobby", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"**[10/10]** {ctx.author.mention} maximum amount of lobbies created", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            
+            # // DELETE AN EXISTING LOBBY
+            if action in ["delete", "remove", "del"]:
+                if await self.check_admin_role(ctx):
+                    if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                        await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                        await SQL_CLASS().execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}")
+                        return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)-1}/10]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            
+            if action in ["settings", "sets", "options", "opts", "setting"]:
+                if not await self.check_admin_role(ctx):
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                
+                if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
+                lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                team_pick_phase = self._lobby_settings_status("team_pick_phase", lobby_settings)
+                map_pick_phase = self._lobby_settings_status("map_pick_phase", lobby_settings)
+                negative_elo = self._lobby_settings_status("negative_elo", lobby_settings)
+                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's {ctx.channel.mention} Settings Menu**", color=33023),
+                    components=[
+                        Select(
+                            placeholder="View Settings",
+                            options=[
+                                SelectOption(emoji=f'🔵', label="Add Map", value="add_map"),
+                                SelectOption(emoji=f'🔵', label="Remove Map", value="remove_map"),
+                                SelectOption(emoji=f'🔵', label="Change Queue Size", value="change_queue_size"),
+                                SelectOption(emoji=f'🔵', label="Change Elo Per Win", value="change_win_elo"),
+                                SelectOption(emoji=f'🔵', label="Change Elo Per Loss", value="change_loss_elo"),
+                                SelectOption(emoji=f'🔵', label="Change Queue Party Size", value="change_queue_party_size"),
+                                SelectOption(emoji=f'{negative_elo[0]}', label=f"{negative_elo[1]} Negative Elo", value="negative_elo"),
+                                SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
+                                SelectOption(emoji=f'{team_pick_phase[0]}', label=f"{team_pick_phase[1]} Team Picking Phase", value="team_pick_phase")
+                            ])])
+                        
             # // SHOW ALL GUILD LOBBIES
             if action in ["show", "list"]:
                 if len(rows) > 0:
@@ -183,60 +214,31 @@ class Settings(commands.Cog):
                     embed.description = embed.description+"\n".join("• "+e[0] for e in maps)
                     return await ctx.send(embed=embed)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-                
-
-        # // DELETE AN EXISTING LOBBY
-        if action in ["delete", "remove", "del"]:
-            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                await SQL_CLASS().execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}")
-                return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)-1}/10]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-        
-        if action in ["settings", "sets", "options", "opts", "setting"]:
-            if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-
-            lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-            team_pick_phase = self._lobby_settings_status("team_pick_phase", lobby_settings)
-            map_pick_phase = self._lobby_settings_status("map_pick_phase", lobby_settings)
-            negative_elo = self._lobby_settings_status("negative_elo", lobby_settings)
-            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's {ctx.channel.mention} Settings Menu**", color=33023),
-                components=[
-                    Select(
-                        placeholder="View Settings",
-                        options=[
-                            SelectOption(emoji=f'🔵', label="Add Map", value="add_map"),
-                            SelectOption(emoji=f'🔵', label="Remove Map", value="remove_map"),
-                            SelectOption(emoji=f'🔵', label="Change Queue Size", value="change_queue_size"),
-                            SelectOption(emoji=f'🔵', label="Change Elo Per Win", value="change_win_elo"),
-                            SelectOption(emoji=f'🔵', label="Change Elo Per Loss", value="change_loss_elo"),
-                            SelectOption(emoji=f'🔵', label="Change Queue Party Size", value="change_queue_party_size"),
-                            SelectOption(emoji=f'{negative_elo[0]}', label=f"{negative_elo[1]} Negative Elo", value="negative_elo"),
-                            SelectOption(emoji=f'{map_pick_phase[0]}', label=f"{map_pick_phase[1]} Map Picking Phase", value="map_pick_phase"),
-                            SelectOption(emoji=f'{team_pick_phase[0]}', label=f"{team_pick_phase[1]} Team Picking Phase", value="team_pick_phase")
-                        ])])
         
     # // ADD MAP COMMAND
     # /////////////////////////////////////////
     @commands.command(name="addmap", description="`=addmap (map name)`")
     async def addmap(self, ctx:commands.Context, map:str):
-        if not ctx.author.bot and await self.check_admin_role(ctx):
-            if len((await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))) < 20:
-                if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                    return await self._add_map(ctx, map, ctx.channel.id)
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of maps reached", color=15158588))
-
+        if not ctx.author.bot:
+            if await self.check_admin_role(ctx):
+                if len((await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))) < 20:
+                    if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                        return await self._add_map(ctx, map, ctx.channel.id)
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of maps reached", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        
     # // DELETE MAP COMMAND
     # /////////////////////////////////////////
     @commands.command(name="delmap", aliases=["removemap", "deletemap"], description="`=delmap (map name)`")
     async def delmap(self, ctx:commands.Context, map:str):
-        if not ctx.author.bot and await self.check_admin_role(ctx):
-            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                return await self._del_map(ctx, map, ctx.channel.id)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-
+        if not ctx.author.bot:
+            if await self.check_admin_role(ctx):
+                if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                    return await self._del_map(ctx, map, ctx.channel.id)
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        
     # // SHOW LIST OF MAPS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="maps", description="`=maps`")
@@ -251,17 +253,21 @@ class Settings(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="regrole", description="`=regrole (@role)`")
     async def regrole(self, ctx:commands.Context, role:discord.Role):
-        if not ctx.author.bot and await self.check_admin_role(ctx):
-            if await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
-                return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
-
+        if not ctx.author.bot:
+            if await self.check_admin_role(ctx):
+                if await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+                    await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
+                    return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        
     # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
     @commands.command(name="settings", aliases=["sets", "options"], description="`=settings`")
     async def settings(self, ctx:commands.Context):
-        if not ctx.author.bot and await self.check_admin_role(ctx):
+        if not ctx.author.bot:
+            if not await self.check_admin_role(ctx):
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             match_category = self._guild_settings_status("match_category", settings)
             match_logging = self._guild_settings_status("match_logging", settings)
@@ -323,6 +329,7 @@ class Settings(commands.Cog):
                             await SQL_CLASS().execute(f"UPDATE lobby_settings SET queue_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the queue size to **{c.content} players**", color=3066992))
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} please respond with a number from **4-20**", color=15158588))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                 
                 # // MAP PICKING PHASE
                 if res.values[0] == 'map_pick_phase':
@@ -334,6 +341,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE lobby_settings SET map_pick_phase = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Map Picking Phase**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // MATCH LOGGING
                 if res.values[0] == "match_logging":
@@ -351,6 +359,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // MATCH CATEGORIES
                 if res.values[0] == 'match_category':
@@ -362,6 +371,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE settings SET match_categories = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Categories**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // TEAM PICKING PHASE
                 if res.values[0] == 'team_pick_phase':
@@ -373,6 +383,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE lobby_settings SET team_pick_phase = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Picking Phase**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // CHANGE THE REGISTER ROLE
                 if res.values[0] == "change_reg_role":
@@ -386,20 +397,23 @@ class Settings(commands.Cog):
                         
                         await SQL_CLASS().execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Role** to **None**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // ADD MAP
                 if res.values[0] == "add_map":
                     if await self.check_admin_role(res):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
-                        await self._add_map(res, c.content, res.channel.id)
+                        return await self._add_map(res, c.content, res.channel.id)
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // REMOVE MAP
                 if res.values[0] == "remove_map":
                     if await self.check_admin_role(res):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the map name", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
-                        await self._del_map(res, c.content, res.channel.id)
+                        return await self._del_map(res, c.content, res.channel.id)
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                 
                 # // NEGATIVE ELO
                 if res.values[0] == "negative_elo":
@@ -411,6 +425,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE lobby_settings SET negative_elo = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Negative Elo**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // CHANGE THE REGISTER CHANNEL
                 if res.values[0] == "change_reg_channel":
@@ -425,6 +440,7 @@ class Settings(commands.Cog):
                         channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
                         await SQL_CLASS().execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to {channel.mention}", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                 
                 # // CHANGE THE ELO PER WIN
                 if res.values[0] == "change_win_elo":
@@ -434,6 +450,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE lobby_settings SET win_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Win Elo** to **{c.content}**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                     
                 # // CHANGE THE ELO PER LOSS
                 if res.values[0] == "change_loss_elo":
@@ -443,6 +460,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE lobby_settings SET loss_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Loss Elo** to **{c.content}**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // QUEUE EMBED
                 if res.values[0] == "queue_embed":
@@ -460,6 +478,7 @@ class Settings(commands.Cog):
                                 Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
                                 Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                                 
                 # // CHANGE THE QUEUE PARTY SIZE
                 if res.values[0] == "change_queue_party_size":
@@ -469,6 +488,7 @@ class Settings(commands.Cog):
 
                         await SQL_CLASS().execute(f"UPDATE lobby_settings SET party_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to **{c.content}**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
             except asyncio.TimeoutError:
                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond in time", color=15158588))
                 

@@ -53,14 +53,8 @@ class Queue(commands.Cog):
             return True
         mod_role = (await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
         if mod_role == 0:
-            if not ctx.author.guild_permissions.manage_messages:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        else:
-            if ctx.guild.get_role(mod_role) not in ctx.author.roles:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        return True
+            return ctx.author.guild_permissions.manage_messages
+        return ctx.guild.get_role(mod_role) in ctx.author.roles
     
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
@@ -69,14 +63,8 @@ class Queue(commands.Cog):
             return True
         admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
         if admin_role == 0:
-            if not ctx.author.guild_permissions.administrator:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        else:
-            if ctx.guild.get_role(admin_role) not in ctx.author.roles:
-                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return False
-        return True
+            return ctx.author.guild_permissions.administrator
+        return ctx.guild.get_role(admin_role) in ctx.author.roles
 
     # // ADD OTHER PARTY MEMBERS TO THE QUEUE
     # ////////////////////////////////////////////
@@ -317,8 +305,8 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         
         if user in self.data[ctx.guild.id][lobby]["queue"]:
-            self.data[ctx.guild.id][lobby]["queue"].remove(user)
             queue_size = (await SQL_CLASS().select(f"SELECT queue_size FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"))[0]
+            self.data[ctx.guild.id][lobby]["queue"].remove(user)
             return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/{queue_size}]** {user.mention} has left the queue", color=33023))
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=15158588))
         
@@ -399,8 +387,10 @@ class Queue(commands.Cog):
     # //////////////////////////////////////////
     @commands.command(name="forcejoin", aliases=["fj"], description='`=forcejoin (@user)`')
     async def forcejoin(self, ctx, user:discord.Member):
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            return await self._join(ctx, user, ctx.channel.id)
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                return await self._join(ctx, user, ctx.channel.id)
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # // LEAVE THE QUEUE COMMAND
     # /////////////////////////////////////////
@@ -413,8 +403,10 @@ class Queue(commands.Cog):
     # ////////////////////////////////////////////////
     @commands.command(name="forceleave", aliases=["fl"], description='`=forceleave (@user)`')
     async def forceleave(self, ctx, user:discord.Member):
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            return await self._leave(ctx, user, ctx.channel.id)
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                return await self._leave(ctx, user, ctx.channel.id)
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # // SHOW THE CURRENT QUEUE COMMAND
     # /////////////////////////////////////////
@@ -429,12 +421,14 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="clear", description='`=clear`')
     async def clear(self, ctx):
-        if not ctx.author.bot and await self.check_mod_role(ctx):
-            if await self._data_check(ctx, ctx.channel.id):
-                self._reset(ctx, ctx.channel.id)
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
-
+        if not ctx.author.bot:
+            if await self.check_mod_role(ctx):
+                if await self._data_check(ctx, ctx.channel.id):
+                    self._reset(ctx, ctx.channel.id)
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        
     # // PARTY COMMAND
     # ////////////////////////////
     @commands.command(name="party", aliases=["team"], description='`=party create`**,** `=party leave)`**,** `=party show`**,** `=party kick (@user)`**,** `=party invite (@user)`')
