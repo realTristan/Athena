@@ -20,8 +20,6 @@ class Bans(commands.Cog):
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
     async def check_admin_role(self, ctx):
-        if ctx.author.guild_permissions.administrator:
-            return True
         admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
         if admin_role == 0:
             return ctx.author.guild_permissions.administrator
