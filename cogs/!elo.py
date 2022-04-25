@@ -560,7 +560,7 @@ class Elo(commands.Cog):
                 user = ctx.guild.get_member(rows[i][1])
                 if user is not None:
                     _count+=1
-                    users += f'**{_count}:** {user.mention} [**{rows[_count][3]}**]\n'
+                    users += f'**{_count}:** {user.mention} [**{rows[i][3]}**]\n'
                 if _count >= 20:
                     break
             return await ctx.send(embed=discord.Embed(title=f"Leaderboard ┃ {ctx.guild.name}", description=users, color=33023))
