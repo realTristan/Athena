@@ -13,7 +13,7 @@ class Queue(commands.Cog):
 
     # // RESET THE GUILD'S VARIABLES FUNCTION
     # /////////////////////////////////////////
-    def _reset(self, ctx, lobby):
+    def _reset(self, ctx:commands.Context, lobby):
         self.data[ctx.guild.id][lobby] = {"queue": [], "blue_cap": "", "blue_team": [], "orange_cap": "", "orange_team": [], "pick_logic": [], "map": "None", "parties": {}, "state": "queue"}
 
     # // CLEAN A PLAYERS NAME TO LOOK CLEANER
@@ -28,7 +28,7 @@ class Queue(commands.Cog):
         
     # // CHECK SELF.DATA FUNCTION
     # /////////////////////////////////////////
-    async def _data_check(self, ctx, lobby):
+    async def _data_check(self, ctx:commands.Context, lobby):
         # // CHECK SETTINGS DATABASE
         if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
             await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs) VALUES ({ctx.guild.id}, 0, 0, 0, 0)")
@@ -66,7 +66,7 @@ class Queue(commands.Cog):
 
     # // ADD OTHER PARTY MEMBERS TO THE QUEUE
     # ////////////////////////////////////////////
-    async def _check_party(self, ctx, user, lobby):
+    async def _check_party(self, ctx:commands.Context, user, lobby):
         for party in self.data[ctx.guild.id][lobby]["parties"]:
             if user.id in self.data[ctx.guild.id][lobby]["parties"][party] and party != user.id:
                 return False
@@ -75,14 +75,16 @@ class Queue(commands.Cog):
             row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
             if len(self.data[ctx.guild.id][lobby]["parties"][user.id]) + len(self.data[ctx.guild.id][lobby]["queue"]) <= row[8]:
                 for player in self.data[ctx.guild.id][lobby]["parties"][user.id][1:]:
-                    await self._join(ctx, ctx.guild.get_member(player), lobby)
+                    member = ctx.guild.get_member(player)
+                    if member is not None:
+                        await self._join(ctx, member, lobby)
                 return True
             return False
         return True
     
     # // SEND MATCH LOGS TO THE GIVEN CHANNEL
     # //////////////////////////////////////////
-    async def _match_log(self, ctx, embed):
+    async def _match_log(self, ctx:commands.Context, embed):
         # // SEND THE MATCH LOGGING EMBED TO THE CHANNEL
         row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         if row[4] != 0:
@@ -97,7 +99,7 @@ class Queue(commands.Cog):
 
     # // CREATE MATCH CATEGORY FUNCTION
     # /////////////////////////////////////////
-    async def _match_category(self, ctx, match_id, lobby):
+    async def _match_category(self, ctx:commands.Context, match_id, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         if row[3] == 1:
             if not get(ctx.guild.categories, name=f'Match #{match_id}'):
@@ -126,7 +128,7 @@ class Queue(commands.Cog):
 
     # // MATCH LOGGING FUNCTION
     # /////////////////////////////////////////
-    async def _match(self, ctx, lobby):
+    async def _match(self, ctx:commands.Context, lobby):
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['orange_team'])
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['blue_team'])
 
@@ -137,7 +139,7 @@ class Queue(commands.Cog):
 
     # CREATE TEAM PICK LOGIC
     # /////////////////////////
-    async def _pick_logic(self, ctx, lobby):
+    async def _pick_logic(self, ctx:commands.Context, lobby):
         for _ in range(round(len(self.data[ctx.guild.id][lobby]["queue"]) / 2)):
             self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["blue_cap"])
             self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["orange_cap"])
@@ -147,7 +149,7 @@ class Queue(commands.Cog):
 
     # // EMBED GENERATOR FUNCTION
     # /////////////////////////////////////////
-    async def _embeds(self, ctx, lobby):
+    async def _embeds(self, ctx:commands.Context, lobby):
         # // QUEUE PHASE EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "queue":
             current_queue = "None"
@@ -211,7 +213,7 @@ class Queue(commands.Cog):
 
     # // WHEN QUEUE REACHES QUEUE SIZE FUNCTION
     # /////////////////////////////////////////
-    async def _start(self, ctx, lobby):
+    async def _start(self, ctx:commands.Context, lobby):
         row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {lobby}")
         # // CREATING TEAM CAPTAINS
         blue_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
@@ -255,7 +257,7 @@ class Queue(commands.Cog):
 
     # // CHECK IF THE USER IS BANNED FUNCTION
     # /////////////////////////////////////////
-    async def _ban_check(self, ctx, user):
+    async def _ban_check(self, ctx:commands.Context, user):
         row = await SQL_CLASS().select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             if row[2] - time.time() > 0:
@@ -266,7 +268,7 @@ class Queue(commands.Cog):
 
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
     # /////////////////////////////////////////
-    async def _join(self, ctx, user, lobby):
+    async def _join(self, ctx:commands.Context, user, lobby):
         if not await self._data_check(ctx, lobby):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
@@ -295,7 +297,7 @@ class Queue(commands.Cog):
 
     # // WHEN AN USER LEAVES THE QUEUE FUNCTION
     # /////////////////////////////////////////
-    async def _leave(self, ctx, user, lobby):
+    async def _leave(self, ctx:commands.Context, user, lobby):
         if not await self._data_check(ctx, lobby):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
@@ -312,7 +314,7 @@ class Queue(commands.Cog):
     # // PICK TEAMMATES (TEAM CAPTAIN) COMMAND
     # /////////////////////////////////////////
     @commands.command(name="pick", aliases=["p"], description='`=pick (@user)`')
-    async def pick(self, ctx, user:discord.Member):
+    async def pick(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if not await self._data_check(ctx, ctx.channel.id):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
@@ -354,7 +356,7 @@ class Queue(commands.Cog):
     # // PICK MAP TO PLAY (BLUE CAPTAIN) COMMAND
     # ///////////////////////////////////////////
     @commands.command(name="pickmap", description='`=pickmap (map name)`')
-    async def pickmap(self, ctx, map:str):
+    async def pickmap(self, ctx:commands.Context, map:str):
         if not ctx.author.bot:
             if not await self._data_check(ctx, ctx.channel.id):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
@@ -384,7 +386,7 @@ class Queue(commands.Cog):
     # // FORCE ADD AN USER TO THE QUEUE COMMAND
     # //////////////////////////////////////////
     @commands.command(name="forcejoin", aliases=["fj"], description='`=forcejoin (@user)`')
-    async def forcejoin(self, ctx, user:discord.Member):
+    async def forcejoin(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
                 return await self._join(ctx, user, ctx.channel.id)
@@ -400,7 +402,7 @@ class Queue(commands.Cog):
     # // FORCE REMOVE A PLAYER FROM THE QUEUE COMMAND
     # ////////////////////////////////////////////////
     @commands.command(name="forceleave", aliases=["fl"], description='`=forceleave (@user)`')
-    async def forceleave(self, ctx, user:discord.Member):
+    async def forceleave(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
                 return await self._leave(ctx, user, ctx.channel.id)
@@ -430,7 +432,7 @@ class Queue(commands.Cog):
     # // PARTY COMMAND
     # ////////////////////////////
     @commands.command(name="party", aliases=["team"], description='`=party create`**,** `=party leave)`**,** `=party show`**,** `=party kick (@user)`**,** `=party invite (@user)`')
-    async def party(self, ctx, action:str, *args):
+    async def party(self, ctx:commands.Context, action:str, *args):
         if not ctx.author.bot:
             if not await self._data_check(ctx, ctx.channel.id):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
@@ -443,30 +445,30 @@ class Queue(commands.Cog):
                 if ctx.author.id in parties:
                     if len(parties[ctx.author.id])+1 <= max_party_size:
                         user = ctx.guild.get_member(self._clean_user(list(args)[0]))
+                        if user is not None:
+                            for party in parties:
+                                if user.id in parties[party]:
+                                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
+                            try:
+                                await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} a party invite has been sent to {user.mention}", color=3066992))
+                                message = await user.send(embed=discord.Embed(description=f"{ctx.author.mention} has invited you to join their party", color=33023),
+                                components=[[
+                                        Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
+                                        Button(style=ButtonStyle.red, label="Decline", custom_id='decline_party')
+                                    ]])
+                                res = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
 
-                        # CHECK IF USER IS IN A PARTY
-                        for party in parties:
-                            if user.id in parties[party]:
-                                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
-                        try:
-                            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} a party invite has been sent to {user.mention}", color=3066992))
-                            message = await user.send(embed=discord.Embed(description=f"{ctx.author.mention} has invited you to join their party", color=33023),
-                            components=[[
-                                    Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
-                                    Button(style=ButtonStyle.red, label="Decline", custom_id='decline_party')
-                                ]])
-                            res = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
+                                if res.component.id == "accept_party":
+                                    parties[ctx.author.id].append(user.id)
+                                    await res.send(embed=discord.Embed(description=f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", color=3066992))
+                                    return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
+                                
+                                await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=15158588))
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
 
-                            if res.component.id == "accept_party":
-                                parties[ctx.author.id].append(user.id)
-                                await res.send(embed=discord.Embed(description=f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", color=3066992))
-                                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
-                            
-                            await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=15158588))
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
-
-                        except asyncio.TimeoutError:
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
+                            except asyncio.TimeoutError:
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader", color=15158588))
 
@@ -489,7 +491,9 @@ class Queue(commands.Cog):
                 if not args:
                     for party in parties:
                         if ctx.author.id in parties[party]:
-                            return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(ctx.guild.get_member(party).name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
+                            member = ctx.guild.get_member(party)
+                            if member is not None:
+                                return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(member.name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
                 
                 # // SHOW ANOTHER PLAYER'S PARTY
@@ -497,7 +501,9 @@ class Queue(commands.Cog):
                     user = ctx.guild.get_member(self._clean_user(list(args)[0]))
                     for party in parties:
                         if user.id in parties[party]:
-                            return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(ctx.guild.get_member(party).name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
+                            member = ctx.guild.get_member(party)
+                            if member is not None:
+                                return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(member.name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in a party", color=15158588))
 
             # // CREATE PARTY
@@ -515,10 +521,12 @@ class Queue(commands.Cog):
             if action in ["kick", "remove"]:
                 if ctx.author.id in parties:
                     user = ctx.guild.get_member(self._clean_user(list(args)[0]))
-                    if user.id in parties[ctx.author.id]:
-                        parties[ctx.author.id].remove(user.id)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from the party", color=3066992))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in your party", color=15158588))
+                    if user is not None:
+                        if user.id in parties[ctx.author.id]:
+                            parties[ctx.author.id].remove(user.id)
+                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from the party", color=3066992))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in your party", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader", color=15158588))
 
     # // BUTTON CLICK LISTENER

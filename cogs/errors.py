@@ -1,11 +1,10 @@
 from discord.ext import commands
-from functools import *
 import discord, datetime
+from functools import *
 
 class ErrorHandling(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.error_channel = self.client.get_channel(938482543227994132)
         self.client_cmds = {}
         for cmd in self.client.commands:
             self.client_cmds[cmd.name] = cmd.description
@@ -90,8 +89,9 @@ class ErrorHandling(commands.Cog):
             return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
         
         else:
+            error_channel = self.client.get_channel(938482543227994132)
             await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
-            await self.error_channel.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
+            await error_channel.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
             raise error
 
 def setup(client):

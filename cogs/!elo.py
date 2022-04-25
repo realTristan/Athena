@@ -6,10 +6,10 @@ import discord
 class Elo(commands.Cog):
     def __init__(self, client):
         self.client = client
-
+        
     # // Check mod role or mod permissions
     # //////////////////////////////////////////
-    async def check_mod_role(self, ctx):
+    async def check_mod_role(self, ctx:commands.Context):
         if await self.check_admin_role(ctx):
             return True
         mod_role = (await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
@@ -19,7 +19,7 @@ class Elo(commands.Cog):
     
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
-    async def check_admin_role(self, ctx):
+    async def check_admin_role(self, ctx:commands.Context):
         admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
         if admin_role == 0:
             return ctx.author.guild_permissions.administrator
@@ -152,7 +152,10 @@ class Elo(commands.Cog):
             _row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
             await SQL_CLASS().execute(f"UPDATE users SET elo = {_row[3]+lobby_settings[5]} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
             await SQL_CLASS().execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
-            await self.edit_elo_role(ctx, ctx.guild.get_member(int(_user_id)), _row[3]+lobby_settings[5], "add")
+            
+            member = ctx.guild.get_member(int(_user_id))
+            if member is not None:
+                await self.edit_elo_role(ctx, member, _row[3]+lobby_settings[5], "add")
         
         # // REMOVE WIN FROM WINNERS
         for user_id in winners:
@@ -162,7 +165,10 @@ class Elo(commands.Cog):
             else:
                 await SQL_CLASS().execute(f"UPDATE users SET elo = {_row[3]-lobby_settings[4]} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
             await SQL_CLASS().execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
-            await self.edit_elo_role(ctx, ctx.guild.get_member(int(user_id)), _row[3]-lobby_settings[4], "remove")
+            
+            member = ctx.guild.get_member(int(user_id))
+            if member is not None:
+                await self.edit_elo_role(ctx, member, _row[3]-lobby_settings[4], "remove")
             
     
     # // ADD / REMOVE A NEW ELO ROLE
@@ -228,17 +234,25 @@ class Elo(commands.Cog):
 
                             if "blue" in list(args)[0]:
                                 for _user in orange_team:
-                                    await self._loss(ctx, ctx.guild.get_member(int(_user)), lobby_settings)
+                                    member = ctx.guild.get_member(int(_user))
+                                    if member is not None:
+                                        await self._loss(ctx, member, lobby_settings)
 
                                 for user in blue_team:
-                                    await self._win(ctx, ctx.guild.get_member(int(user)), lobby_settings)
+                                    member = ctx.guild.get_member(int(user))
+                                    if member is not None:
+                                        await self._win(ctx, member, lobby_settings)
                                     
                             if "orange" in list(args)[0]:
                                 for _user in orange_team:
-                                    await self._win(ctx, ctx.guild.get_member(int(_user)), lobby_settings)
+                                    member = ctx.guild.get_member(int(_user))
+                                    if member is not None:
+                                        await self._win(ctx, member, lobby_settings)
 
                                 for user in blue_team:
-                                    await self._loss(ctx, ctx.guild.get_member(int(user)), lobby_settings)
+                                    member = ctx.guild.get_member(int(user))
+                                    if member is not None:
+                                        await self._loss(ctx, member, lobby_settings)
                             await self._match_show(ctx, match_id)
                             return await self._delete_channels(ctx, match_id)
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
@@ -425,16 +439,18 @@ class Elo(commands.Cog):
                 if len(args) > 0 and "@" in list(args)[0]:
                     if await self.check_mod_role(ctx):
                         user = ctx.guild.get_member(self._clean_user(list(args)[0]))
-                        if not user.bot:
-                            if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                                name = user.name
-                                if len(args) > 1:
-                                    name = list(args)[1]
-                                await self._register_user(ctx, user, name, role)
-                                await self._user_edit(user, nick=f"{name} [0]")
-                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
+                        if user is not None:
+                            if not user.bot:
+                                if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                                    name = user.name
+                                    if len(args) > 1:
+                                        name = list(args)[1]
+                                    await self._register_user(ctx, user, name, role)
+                                    await self._user_edit(user, nick=f"{name} [0]")
+                                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
+                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
                 # // REGISTER THE MESSAGE AUTHOR
@@ -503,6 +519,8 @@ class Elo(commands.Cog):
             user = ctx.author
             if len(args) > 0 and "@" in list(args)[0]:
                 user = ctx.guild.get_member(self._clean_user(list(args)[0]))
+                if user is None:
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
             return await self._stats(ctx, user)
 
     # // RESET AN USERS STATS COMMAND
@@ -536,13 +554,15 @@ class Elo(commands.Cog):
     @commands.command(name="leaderboard", aliases=["lb"], description='`=leaderboard`')
     async def leaderboard(self, ctx:commands.Context):
         if not ctx.author.bot:
-            users = ""
+            users = ""; _count=20
             rows = await SQL_CLASS().select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
             for count in range(len(rows)):
                 user = ctx.guild.get_member(rows[count][1])
-                users += f'**{count+1}:** {user.mention} [**{rows[count][3]}**]\n'
-                if count >= 20:
-                    break
+                if user is not None:
+                    users += f'**{count+1}:** {user.mention} [**{rows[count][3]}**]\n'
+                    if count >= _count:
+                        break
+                else: _count+=1
             return await ctx.send(embed=discord.Embed(title=f"Leaderboard ┃ {ctx.guild.name}", description=users, color=33023))
         
     # // ROLLBACK EVERY MATCH AN USER WAS IN
@@ -615,12 +635,14 @@ class Elo(commands.Cog):
                             # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                             for user in blue_team:
                                 member = res.guild.get_member(self._clean_user(user))
-                                await self._win(res.channel, member, lobby_settings)
+                                if member is not None:
+                                    await self._win(res.channel, member, lobby_settings)
 
                             # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
                             for _user in orange_team:
                                 member = res.guild.get_member(self._clean_user(_user))
-                                await self._loss(res.channel, member, lobby_settings)
+                                if member is not None:
+                                    await self._loss(res.channel, member, lobby_settings)
 
                         if res.component.id == 'orange_report':
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
@@ -630,11 +652,13 @@ class Elo(commands.Cog):
 
                             for user in blue_team:
                                 member = res.guild.get_member(self._clean_user(user))
-                                await self._loss(res.channel, member, lobby_settings)
+                                if member is not None:
+                                    await self._loss(res.channel, member, lobby_settings)
 
                             for _user in orange_team:
                                 member = res.guild.get_member(self._clean_user(_user))
-                                await self._win(res.channel, member, lobby_settings)
+                                if member is not None:
+                                    await self._win(res.channel, member, lobby_settings)
                     else:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} this match has already been reported", color=15158588))
 
