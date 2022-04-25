@@ -554,15 +554,15 @@ class Elo(commands.Cog):
     @commands.command(name="leaderboard", aliases=["lb"], description='`=leaderboard`')
     async def leaderboard(self, ctx:commands.Context):
         if not ctx.author.bot:
-            users = ""; _count=20
+            users = ""; _count=0
             rows = await SQL_CLASS().select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
-            for count in range(len(rows)):
-                user = ctx.guild.get_member(rows[count][1])
+            for i in range(len(rows)):
+                user = ctx.guild.get_member(rows[i][1])
                 if user is not None:
-                    users += f'**{count+1}:** {user.mention} [**{rows[count][3]}**]\n'
-                    if count >= _count:
-                        break
-                else: _count+=1
+                    _count+=1
+                    users += f'**{_count}:** {user.mention} [**{rows[_count][3]}**]\n'
+                if _count >= 20:
+                    break
             return await ctx.send(embed=discord.Embed(title=f"Leaderboard ┃ {ctx.guild.name}", description=users, color=33023))
         
     # // ROLLBACK EVERY MATCH AN USER WAS IN
