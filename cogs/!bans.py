@@ -28,7 +28,7 @@ class Bans(commands.Cog):
     
     # // ADD USER TO BAN DATABASE COMMAND
     # /////////////////////////////////////////
-    @commands.command(name="ban", description='`=ban (@user) (length) (reason)`')
+    @commands.command(name="ban", description='`=ban (@user) (length) (reason)  |  Lengths: [s (seconds), m (minutes), h (hours), d (days)]`')
     async def ban(self, ctx:commands.Context, user:discord.Member, length_str:str, *args):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):

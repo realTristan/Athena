@@ -197,8 +197,13 @@ class Settings(commands.Cog):
                     embed=discord.Embed(title=f"Lobbies ┃ {ctx.guild.name}", color=33023)
                     for i in range(len(rows)):
                         try:
-                            embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(rows[i][0])).name, value=ctx.guild.get_channel(int(rows[i][0])).mention)
-                        except Exception as e: print(e)
+                            channel = ctx.guild.get_channel(int(rows[i][0]))
+                            if channel is not None:
+                                embed.add_field(name= f"{i+1}. " + channel.name, value=channel.mention)
+                            else:
+                                await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {rows[i][0]}")
+                                await SQL_CLASS().execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {rows[i][0]}")
+                        except Exception as e: print(f"Settings 206: {e}")
                     return await ctx.send(embed=embed)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
             

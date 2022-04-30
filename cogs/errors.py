@@ -40,8 +40,8 @@ class ErrorHandling(commands.Cog):
                 for letter in str(list(self.client.commands)[index]):
                     if letter in list(_user_command):
                         _result[str(list(self.client.commands)[index])] += 1.09
-        except Exception as e: 
-            print(e)
+        except Exception as e:
+            print(f"Errors 44: {e}")
         return _result
 
     # // CHECK LETTER POSITIONING
@@ -54,7 +54,7 @@ class ErrorHandling(commands.Cog):
                     if _user_command[index] == str(command)[index]:
                         _result[str(command)] += 1.509
                 except Exception as e: 
-                    print(e)
+                    print(f"Errors 57: {e}")
         return _result
 
     # SORT THE COMMANDS
@@ -70,7 +70,7 @@ class ErrorHandling(commands.Cog):
                     if len(_result) >= 6:
                         return _result
         except Exception as e: 
-            print(e)
+            print(f"Errors 73: {e}")
             return _result
         return _result
     
@@ -83,12 +83,15 @@ class ErrorHandling(commands.Cog):
             return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
             
         elif isinstance(error, commands.MissingPermissions):
+            print(error)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         elif isinstance(error, commands.MemberNotFound):
+            print(error)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
         
         elif isinstance(error, commands.MissingRequiredArgument):
+            print(error)
             return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
         
         else:

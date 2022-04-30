@@ -15,11 +15,11 @@ class Dev(commands.Cog):
     async def _user_edit(self, user:discord.Member, nick=None, role=None):
         if nick is not None:
             try: await user.edit(nick=nick)
-            except Exception as e: print(e)
+            except Exception as e: print(f"Dev 18: {e}")
 
         if role is not None:
             try: await user.add_roles(role)
-            except Exception as e: print(e)
+            except Exception as e: print(f"Dev 22: {e}")
             
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////

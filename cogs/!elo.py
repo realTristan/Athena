@@ -53,15 +53,15 @@ class Elo(commands.Cog):
     async def _user_edit(self, user:discord.Member, nick:str=None, role:discord.Role=None, remove_role:discord.Role=None):
         if nick is not None:
             try: await user.edit(nick=nick)
-            except Exception as e: print(e)
+            except Exception as e: print(f"Elo 56: {e}")
 
         if role is not None:
             try: await user.add_roles(role)
-            except Exception as e: print(e)
+            except Exception as e: print(f"Elo 60: {e}")
             
         if remove_role is not None:
             try: await user.remove_roles(remove_role)
-            except Exception as e: print(e)
+            except Exception as e: print(f"Elo 64: {e}")
 
     # // CLEAN USER/ROLE
     # ////////////////////////
@@ -207,7 +207,7 @@ class Elo(commands.Cog):
             for i in range(len(rows)):
                 role = ctx.guild.get_role(rows[i][1])
                 try: description += f'**{i+1}:** {role.mention} [**{rows[i][2]}**]\n'
-                except Exception as e: print(e)
+                except Exception as e: print(f"Elo 210: {e}")
             return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023))
         
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
