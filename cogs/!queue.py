@@ -25,6 +25,14 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     def _clean_user(self, user):
         return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
+    
+    # // Check if member is still in the server
+    # //////////////////////////////////////////
+    async def _check_member(self, ctx:commands.Context, member:discord.Member):
+        if member is None:
+            if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member.id}"):
+                await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member.id}")
+        return member
         
     # // CHECK SELF.DATA FUNCTION
     # /////////////////////////////////////////
@@ -75,7 +83,7 @@ class Queue(commands.Cog):
             row = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
             if len(self.data[ctx.guild.id][lobby]["parties"][user.id]) + len(self.data[ctx.guild.id][lobby]["queue"]) <= row[8]:
                 for player in self.data[ctx.guild.id][lobby]["parties"][user.id][1:]:
-                    member = ctx.guild.get_member(player)
+                    member = self._check_member(ctx.guild.get_member(player))
                     if member is not None:
                         await self._join(ctx, member, lobby)
                 return True
@@ -491,7 +499,7 @@ class Queue(commands.Cog):
                 if not args:
                     for party in parties:
                         if ctx.author.id in parties[party]:
-                            member = ctx.guild.get_member(party)
+                            member = self._check_member(ctx.guild.get_member(party))
                             if member is not None:
                                 return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(member.name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
@@ -501,7 +509,7 @@ class Queue(commands.Cog):
                     user = ctx.guild.get_member(self._clean_user(list(args)[0]))
                     for party in parties:
                         if user.id in parties[party]:
-                            member = ctx.guild.get_member(party)
+                            member = self._check_member(ctx.guild.get_member(party))
                             if member is not None:
                                 return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(member.name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
                     return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in a party", color=15158588))
