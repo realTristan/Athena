@@ -53,15 +53,15 @@ class Elo(commands.Cog):
     async def _user_edit(self, user:discord.Member, nick:str=None, role:discord.Role=None, remove_role:discord.Role=None):
         if nick is not None:
             try: await user.edit(nick=nick)
-            except Exception: pass
+            except Exception as e: print(e)
 
         if role is not None:
             try: await user.add_roles(role)
-            except Exception: pass
+            except Exception as e: print(e)
             
         if remove_role is not None:
             try: await user.remove_roles(remove_role)
-            except Exception: pass
+            except Exception as e: print(e)
 
     # // CLEAN USER/ROLE
     # ////////////////////////
@@ -207,7 +207,7 @@ class Elo(commands.Cog):
             for i in range(len(rows)):
                 role = ctx.guild.get_role(rows[i][1])
                 try: description += f'**{i+1}:** {role.mention} [**{rows[i][2]}**]\n'
-                except Exception: pass
+                except Exception as e: print(e)
             return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023))
         
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
@@ -400,7 +400,7 @@ class Elo(commands.Cog):
             row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
             if row is not None:
                 await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
-                await self._user_edit(ctx.author, nick=f"{row[2]} [{row[3]}]")
+                await self._user_edit(ctx.author, nick=f"{name} [{row[3]}]")
 
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=15158588))
@@ -414,7 +414,7 @@ class Elo(commands.Cog):
                 row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 if row is not None:
                     await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-                    await self._user_edit(user, nick=f"{row[2]} [{row[3]}]")
+                    await self._user_edit(user, nick=f"{name} [{row[3]}]")
 
                     return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))

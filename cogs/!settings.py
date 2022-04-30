@@ -198,7 +198,7 @@ class Settings(commands.Cog):
                     for i in range(len(rows)):
                         try:
                             embed.add_field(name= f"{i+1}. " + ctx.guild.get_channel(int(rows[i][0])).name, value=ctx.guild.get_channel(int(rows[i][0])).mention)
-                        except Exception: pass
+                        except Exception as e: print(e)
                     return await ctx.send(embed=embed)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
             

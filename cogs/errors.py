@@ -40,7 +40,8 @@ class ErrorHandling(commands.Cog):
                 for letter in str(list(self.client.commands)[index]):
                     if letter in list(_user_command):
                         _result[str(list(self.client.commands)[index])] += 1.09
-        except Exception: pass
+        except Exception as e: 
+            print(e)
         return _result
 
     # // CHECK LETTER POSITIONING
@@ -52,7 +53,8 @@ class ErrorHandling(commands.Cog):
                 try:
                     if _user_command[index] == str(command)[index]:
                         _result[str(command)] += 1.509
-                except Exception: pass
+                except Exception as e: 
+                    print(e)
         return _result
 
     # SORT THE COMMANDS
@@ -67,7 +69,8 @@ class ErrorHandling(commands.Cog):
                     _result.append(command)
                     if len(_result) >= 6:
                         return _result
-        except Exception:
+        except Exception as e: 
+            print(e)
             return _result
         return _result
     
