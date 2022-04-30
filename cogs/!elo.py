@@ -9,10 +9,11 @@ class Elo(commands.Cog):
         
     # // Check if member is still in the server
     # //////////////////////////////////////////
-    async def _check_member(self, ctx:commands.Context, member:discord.Member):
+    async def _check_member(self, ctx:commands.Context, member_id:int):
+        member = ctx.guild.get_member(member_id)
         if member is None:
-            if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member.id}"):
-                await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member.id}")
+            if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"):
+                await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}")
         return member
         
     # // Check mod role or mod permissions
@@ -162,7 +163,7 @@ class Elo(commands.Cog):
             await SQL_CLASS().execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
             
             
-            member = self._check_member(ctx.guild.get_member(int(_user_id)))
+            member = await self._check_member(ctx, int(_user_id))
             if member is not None:
                 await self.edit_elo_role(ctx, member, _row[3]+lobby_settings[5], "add")
         
@@ -175,7 +176,7 @@ class Elo(commands.Cog):
                 await SQL_CLASS().execute(f"UPDATE users SET elo = {_row[3]-lobby_settings[4]} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
             await SQL_CLASS().execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
             
-            member = self._check_member(ctx.guild.get_member(int(user_id)))
+            member = await self._check_member(ctx, int(user_id))
             if member is not None:
                 await self.edit_elo_role(ctx, member, _row[3]-lobby_settings[4], "remove")
             
@@ -245,23 +246,23 @@ class Elo(commands.Cog):
 
                             if "blue" in list(args)[0]:
                                 for _user in orange_team:
-                                    member = self._check_member(ctx.guild.get_member(int(_user)))
+                                    member = await self._check_member(ctx, int(_user))
                                     if member is not None:
                                         await self._loss(ctx, member, lobby_settings)
 
                                 for user in blue_team:
-                                    member = self._check_member(ctx.guild.get_member(int(user)))
+                                    member = await self._check_member(ctx, int(user))
                                     if member is not None:
                                         await self._win(ctx, member, lobby_settings)
                                     
                             if "orange" in list(args)[0]:
                                 for _user in orange_team:
-                                    member = self._check_member(ctx.guild.get_member(int(_user)))
+                                    member = await self._check_member(ctx, int(_user))
                                     if member is not None:
                                         await self._win(ctx, member, lobby_settings)
 
                                 for user in blue_team:
-                                    member = self._check_member(ctx.guild.get_member(int(user)))
+                                    member = await self._check_member(ctx, int(user))
                                     if member is not None:
                                         await self._loss(ctx, member, lobby_settings)
                             await self._match_show(ctx, match_id)
@@ -570,7 +571,7 @@ class Elo(commands.Cog):
             users = ""; _count=0
             rows = await SQL_CLASS().select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
             for i in range(len(rows)):
-                member = self._check_member(ctx.guild.get_member(rows[i][1]))
+                member = await self._check_member(ctx, rows[i][1])
                 if member is not None:
                     _count+=1
                     users += f'**{_count}:** {member.mention} [**{rows[i][3]}**]\n'
@@ -647,13 +648,15 @@ class Elo(commands.Cog):
 
                             # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                             for user in blue_team:
-                                member = self._check_member(res.guild.get_member(self._clean_user(user)))
+                                user_id = self._clean_user(user)
+                                member = await self._check_member(res, user_id)
                                 if member is not None:
                                     await self._win(res.channel, member, lobby_settings)
 
                             # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
                             for _user in orange_team:
-                                member = self._check_member(res.guild.get_member(self._clean_user(_user)))
+                                user_id = self._clean_user(_user)
+                                member = await self._check_member(res, user_id)
                                 if member is not None:
                                     await self._loss(res.channel, member, lobby_settings)
 
@@ -664,12 +667,14 @@ class Elo(commands.Cog):
                             await SQL_CLASS().execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                             for user in blue_team:
-                                member = self._check_member(res.guild.get_member(self._clean_user(user)))
+                                user_id = self._clean_user(user)
+                                member = await self._check_member(res, user_id)
                                 if member is not None:
                                     await self._loss(res.channel, member, lobby_settings)
 
                             for _user in orange_team:
-                                member = self._check_member(res.guild.get_member(self._clean_user(_user)))
+                                user_id = self._clean_user(_user)
+                                member = await self._check_member(res, user_id)
                                 if member is not None:
                                     await self._win(res.channel, member, lobby_settings)
                     else:

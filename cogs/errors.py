@@ -84,7 +84,7 @@ class ErrorHandling(commands.Cog):
             
         elif isinstance(error, commands.MissingPermissions):
             print(error)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions (or Athena)", color=15158588))
         
         elif isinstance(error, commands.MemberNotFound):
             print(error)
