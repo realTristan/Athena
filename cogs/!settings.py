@@ -1,6 +1,6 @@
 from discord_components import *
 from discord.ext import commands
-import discord, asyncio
+import discord, asyncio, re
 from functools import *
 from _sql import *
 
@@ -20,9 +20,16 @@ class Settings(commands.Cog):
 
         # // MATCH LOGGING
         if option == "match_logging":
-            if row[4] != 0: # false
+            if row[4] == 1: # false
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
+        
+        # // SELF RENAME
+        if option == "self_rename":
+            if row[7] == 1:
+                return ["🟢", "Disable"]
+            return ["🔴", "Enable"]
+
 
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
@@ -78,18 +85,13 @@ class Settings(commands.Cog):
             return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)-1}/20]** {ctx.author.mention} removed **{map}** from the map pool", color=3066992))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
     
-    # // CLEAN ROLE
-    # ////////////////////////
-    def _clean_role(self, role:str):
-        return int(role.strip("<").strip(">").replace("@&", "").replace("!", ""))
-    
     # // SET THE MOD ROLE
     # ////////////////////////
     @commands.command(name="modrole", description="`=modrole set @role, =modrole show, =modrole delete`")
     @commands.has_permissions(administrator=True)
     async def modrole(self, ctx:commands.Context, *args):
         if args[0] in ["set", "create"]:
-            role = ctx.guild.get_role(self._clean_role(args[1]))
+            role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
             if role is not None:
                 await SQL_CLASS().execute(f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {ctx.guild.id}")
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully set the mod role to {role.mention}", color=3066992))
@@ -114,7 +116,7 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def adminrole(self, ctx:commands.Context, *args):
         if args[0] in ["set", "create"]:
-            role = ctx.guild.get_role(int(self._clean_role(args[1])))
+            role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
             print(role)
             if role is not None:
                 await SQL_CLASS().execute(f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {ctx.guild.id}")
@@ -203,7 +205,7 @@ class Settings(commands.Cog):
                             else:
                                 await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {rows[i][0]}")
                                 await SQL_CLASS().execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {rows[i][0]}")
-                        except Exception as e: print(f"Settings 206: {e}")
+                        except Exception as e: print(f"Settings 208: {e}")
                     return await ctx.send(embed=embed)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
             
@@ -271,9 +273,14 @@ class Settings(commands.Cog):
         if not ctx.author.bot:
             if not await self.check_admin_role(ctx):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            
+            if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+                await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({ctx.guild.id}, 0, 0, 0, 0, 0, 0, 0)")
+        
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             match_category = self._guild_settings_status("match_category", settings)
             match_logging = self._guild_settings_status("match_logging", settings)
+            self_rename = self._guild_settings_status("self_rename", settings)
 
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ┃ **Ten Man's Server Settings Menu**", color=33023),
                 components=[
@@ -285,6 +292,7 @@ class Settings(commands.Cog):
                             SelectOption(emoji=f'🔵', label="Create Queue Embed", value="queue_embed"),
                             SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                             SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
+                            SelectOption(emoji=f'{self_rename[0]}', label=f"{self_rename[1]} Self Rename", value="self_rename"),
                             SelectOption(emoji=f'{match_logging[0]}', label=f"{match_logging[1]} Match Logging", value="match_logging"),
                             SelectOption(emoji=f'{match_category[0]}', label=f"{match_category[1]} Match Categories", value="match_category")
                         ])])
@@ -295,13 +303,25 @@ class Settings(commands.Cog):
     async def on_select_option(self, res):
         if not res.author.bot:
             try:
+                # // SELF RENAME
+                if res.values[0] == "self_rename":
+                    if await self.check_admin_role(res):
+                        row = (await SQL_CLASS().select(f"SELECT self_rename FROM settings WHERE guild_id = {res.guild.id}"))[0]
+                        if row == 0:
+                            await SQL_CLASS().execute(f"UPDATE settings SET self_rename = 1 WHERE guild_id = {res.guild.id}")
+                            return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Self Rename**", color=3066992))
+
+                        await SQL_CLASS().execute(f"UPDATE settings SET self_rename = 0 WHERE guild_id = {res.guild.id}")
+                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Self Rename**", color=3066992))
+                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
+                
                 # // CHANGE MOD ROLE
                 if res.values[0] == "change_admin_role":
                     if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):
-                            role = res.guild.get_role(int(self._clean_role(c.content)))
+                            role = res.guild.get_role(int(re.sub("\D","", c.content)))
                             await SQL_CLASS().execute(f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the admin role to {role.mention}", color=3066992))
                         
@@ -314,7 +334,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):
-                            role = res.guild.get_role(int(self._clean_role(c.content)))
+                            role = res.guild.get_role(int(re.sub("\D","", c.content)))
                             await SQL_CLASS().execute(f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the mod role to {role.mention}", color=3066992))
                         
@@ -355,7 +375,7 @@ class Settings(commands.Cog):
                             c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
                             if "#" in c.content:
-                                channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                                channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
                                 await SQL_CLASS().execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
                                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} invalid channel (please mention the channel)", color=15158588))
@@ -394,7 +414,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):
-                            role = res.guild.get_role(int(self._clean_role(c.content)))
+                            role = res.guild.get_role(int(re.sub("\D","", c.content)))
                             await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Role** to {role.mention}", color=3066992))
                         
@@ -440,7 +460,7 @@ class Settings(commands.Cog):
                             await SQL_CLASS().execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to **None**", color=3066992))
 
-                        channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                        channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
                         await SQL_CLASS().execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to {channel.mention}", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
@@ -471,7 +491,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond which lobby you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         
-                        channel = res.guild.get_channel(int(str(c.content).strip("<").strip(">").strip("#")))
+                        channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
                         if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id} AND lobby = {channel.id}"):
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
                             embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)

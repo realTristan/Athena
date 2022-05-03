@@ -1,6 +1,6 @@
 from discord.ext import commands
 import datetime as datetime
-import discord, time
+import discord, time, re
 from _sql import *
 
 class Bans(commands.Cog):
@@ -33,13 +33,13 @@ class Bans(commands.Cog):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
                 if "s" in length_str:
-                    length = int(length_str.strip("s"))
+                    length = int(re.sub("\D","", length_str))
                 if "m" in length_str:
-                    length = int(length_str.strip("m")) * 60
+                    length = int(re.sub("\D","", length_str)) * 60
                 if "h" in length_str:
-                    length = int(length_str.strip("h")) * 3600
+                    length = int(re.sub("\D","", length_str)) * 3600
                 if "d" in length_str:
-                    length = int(length_str.strip("d")) * 86400
+                    length = int(re.sub("\D","", length_str)) * 86400
                 
                 rows = await SQL_CLASS().select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 if rows is not None:

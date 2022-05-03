@@ -1,7 +1,7 @@
 from discord.ext import commands
 from functools import *
 from _sql import *
-import discord
+import discord, re
 
 class Elo(commands.Cog):
     def __init__(self, client):
@@ -62,24 +62,16 @@ class Elo(commands.Cog):
     async def _user_edit(self, user:discord.Member, nick:str=None, role:discord.Role=None, remove_role:discord.Role=None):
         if nick is not None:
             try: await user.edit(nick=nick)
-            except Exception as e: print(f"Elo 56: {e}")
+            except Exception as e: print(f"Elo 65: {e}")
 
         if role is not None:
             try: await user.add_roles(role)
-            except Exception as e: print(f"Elo 60: {e}")
+            except Exception as e: print(f"Elo 69: {e}")
             
         if remove_role is not None:
             try: await user.remove_roles(remove_role)
-            except Exception as e: print(f"Elo 64: {e}")
+            except Exception as e: print(f"Elo 73: {e}")
 
-    # // CLEAN USER/ROLE
-    # ////////////////////////
-    def _clean_user(self, user:str):
-        return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
-    
-    def _clean_role(self, role:str):
-        return role.strip("<").strip(">").replace("@&", "").replace("!", "")
-    
     # // EDIT AN USERS ELO ROLE
     # /////////////////////////////////////////
     async def edit_elo_role(self, ctx:commands.Context, user:discord.Member, elo_amount:int, option:str):
@@ -186,8 +178,7 @@ class Elo(commands.Cog):
     @commands.command(name="elorole", description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`')
     async def elorole(self, ctx:commands.Context, option:str, *args):
         if option in ["add", "create", "new", "remove", "delete", "del"]:
-            role_id = self._clean_role(list(args)[0])
-            role = ctx.guild.get_role(int(role_id))
+            role = ctx.guild.get_role(int(re.sub("\D","", args[0])))
             
         if option in ["add", "create", "new"]:
             if await self.check_admin_role(ctx):
@@ -406,9 +397,13 @@ class Elo(commands.Cog):
     # // CHANGE YOUR USERNAME COMMAND
     # /////////////////////////////////////////
     @commands.command(name="rename", description='`=rename (name)`')
-    @commands.has_permissions(change_nickname=True)
     async def rename(self, ctx:commands.Context, name:str):
         if not ctx.author.bot:
+            if not await self.check_admin_role(ctx) and not await self.check_mod_role(ctx):
+                self_rename = (await SQL_CLASS().select(f"SELECT self_rename FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
+                if self_rename == 0:
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} self renaming is not enabled", color=15158588))
+                
             row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
             if row is not None:
                 await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
@@ -416,6 +411,7 @@ class Elo(commands.Cog):
 
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is not registered", color=15158588))
+            
 
     # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
     # ////////////////////////////////////////////
@@ -452,7 +448,7 @@ class Elo(commands.Cog):
                 # // REGISTER THE MENTIONED USER
                 if len(args) > 0 and "@" in list(args)[0]:
                     if await self.check_mod_role(ctx):
-                        user = ctx.guild.get_member(self._clean_user(list(args)[0]))
+                        user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                         if user is not None:
                             if not user.bot:
                                 if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
@@ -532,7 +528,7 @@ class Elo(commands.Cog):
         if not ctx.author.bot:
             user = ctx.author
             if len(args) > 0 and "@" in list(args)[0]:
-                user = ctx.guild.get_member(self._clean_user(list(args)[0]))
+                user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                 if user is None:
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
             return await self._stats(ctx, user)
@@ -553,7 +549,7 @@ class Elo(commands.Cog):
             
                 # // RESET THE MENTIONED USERS STATS
                 if "<@" in args:
-                    user = ctx.guild.get_member(self._clean_user(args))
+                    user = ctx.guild.get_member(int(re.sub("\D","", args)))
                     user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
                     if user_name is not None:
                         await self._reset_stats(ctx, user)
@@ -629,11 +625,11 @@ class Elo(commands.Cog):
                     if status in ["ongoing"]:
                         # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
                         blue_team=res.message.embeds[0].fields[5].value.split("\n")
-                        blue_team.append(self._clean_user(res.message.embeds[0].fields[2].value))
+                        blue_team.append(int(re.sub("\D","", res.message.embeds[0].fields[2].value)))
 
                         # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
                         orange_team=res.message.embeds[0].fields[3].value.split("\n")
-                        orange_team.append(self._clean_user(res.message.embeds[0].fields[0].value))
+                        orange_team.append(int(re.sub("\D","", res.message.embeds[0].fields[0].value)))
 
                         if res.component.id == "match_cancel":
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has cancelled **Match #{match_id}**", color=3066992))
@@ -648,15 +644,13 @@ class Elo(commands.Cog):
 
                             # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                             for user in blue_team:
-                                user_id = self._clean_user(user)
-                                member = await self._check_member(res, user_id)
+                                member = await self._check_member(res, int(re.sub("\D","", user)))
                                 if member is not None:
                                     await self._win(res.channel, member, lobby_settings)
 
                             # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
                             for _user in orange_team:
-                                user_id = self._clean_user(_user)
-                                member = await self._check_member(res, user_id)
+                                member = await self._check_member(res, int(re.sub("\D","", _user)))
                                 if member is not None:
                                     await self._loss(res.channel, member, lobby_settings)
 
@@ -667,14 +661,12 @@ class Elo(commands.Cog):
                             await SQL_CLASS().execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                             for user in blue_team:
-                                user_id = self._clean_user(user)
-                                member = await self._check_member(res, user_id)
+                                member = await self._check_member(res, int(re.sub("\D","", user)))
                                 if member is not None:
                                     await self._loss(res.channel, member, lobby_settings)
 
                             for _user in orange_team:
-                                user_id = self._clean_user(_user)
-                                member = await self._check_member(res, user_id)
+                                member = await self._check_member(res, int(re.sub("\D","", _user)))
                                 if member is not None:
                                     await self._win(res.channel, member, lobby_settings)
                     else:

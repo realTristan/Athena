@@ -1,4 +1,4 @@
-import discord, random, time, asyncio
+import discord, random, time, asyncio, re
 from discord_components import *
 from discord.ext import commands
 from discord.utils import get
@@ -20,11 +20,6 @@ class Queue(commands.Cog):
     # ////////////////////////////////////////////
     def _clean_name(self, name):
         return str(name[0]).upper() + str(name[1:]).lower()
-
-    # // GET THE USERS ID FROM A STRING
-    # /////////////////////////////////////////
-    def _clean_user(self, user):
-        return int(str(user).strip("<").strip(">").strip("@").replace("!", ""))
     
     # // Check if member is still in the server
     # //////////////////////////////////////////
@@ -38,10 +33,6 @@ class Queue(commands.Cog):
     # // CHECK SELF.DATA FUNCTION
     # /////////////////////////////////////////
     async def _data_check(self, ctx:commands.Context, lobby):
-        # // CHECK SETTINGS DATABASE
-        if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-            await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs) VALUES ({ctx.guild.id}, 0, 0, 0, 0)")
-        
         # // CHECK IF GUILD IS IN SELF.DATA
         if not ctx.guild.id in self.data:
             self.data[ctx.guild.id] = {}
@@ -453,7 +444,7 @@ class Queue(commands.Cog):
             if action in ["invite", "inv"]:
                 if ctx.author.id in parties:
                     if len(parties[ctx.author.id])+1 <= max_party_size:
-                        user = ctx.guild.get_member(self._clean_user(list(args)[0]))
+                        user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                         if user is not None:
                             for party in parties:
                                 if user.id in parties[party]:
@@ -507,7 +498,7 @@ class Queue(commands.Cog):
                 
                 # // SHOW ANOTHER PLAYER'S PARTY
                 if "@" in list(args)[0]:
-                    user = ctx.guild.get_member(self._clean_user(list(args)[0]))
+                    user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                     for party in parties:
                         if user.id in parties[party]:
                             member = await self._check_member(ctx, party)
@@ -529,7 +520,7 @@ class Queue(commands.Cog):
             # // KICK AN USER FROM YOUR PARTY
             if action in ["kick", "remove"]:
                 if ctx.author.id in parties:
-                    user = ctx.guild.get_member(self._clean_user(list(args)[0]))
+                    user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                     if user is not None:
                         if user.id in parties[ctx.author.id]:
                             parties[ctx.author.id].remove(user.id)

@@ -53,8 +53,8 @@ class ErrorHandling(commands.Cog):
                 try:
                     if _user_command[index] == str(command)[index]:
                         _result[str(command)] += 1.509
-                except Exception as e: 
-                    print(f"Errors 57: {e}")
+                except Exception: 
+                    pass
         return _result
 
     # SORT THE COMMANDS

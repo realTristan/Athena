@@ -19,7 +19,7 @@ async def on_member_remove(member):
 @client.event
 async def on_guild_join(guild):
     if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {guild.id}"):
-        await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role) VALUES ({guild.id}, 0, 0, 0, 0, 0, 0)")
+        await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({guild.id}, 0, 0, 0, 0, 0, 0, 0)")
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{len(client.guilds)} Servers"))
    
 # // ON BOT LAUNCH
