@@ -92,6 +92,7 @@ class Settings(commands.Cog):
     # ////////////////////////
     @commands.command(name="modrole", description="`=modrole set @role, =modrole show, =modrole delete`")
     @commands.has_permissions(administrator=True)
+    @commands.cooldown(1, 1, commands.BucketType.guild)
     async def modrole(self, ctx:commands.Context, *args):
         if args[0] in ["set", "create"]:
             role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
@@ -119,6 +120,7 @@ class Settings(commands.Cog):
     # ////////////////////////
     @commands.command(name="adminrole", description="`=adminrole set @role, =adminrole show, =adminrole delete`")
     @commands.has_permissions(administrator=True)
+    @commands.cooldown(1, 1, commands.BucketType.guild)
     async def adminrole(self, ctx:commands.Context, *args):
         if args[0] in ["set", "create"]:
             role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
@@ -146,6 +148,7 @@ class Settings(commands.Cog):
     # // GUILD LOBBIES COMMAND
     # /////////////////////////////
     @commands.command(name="lobby", description="`=lobby add`**,** `=lobby delete`**,** `=lobby list`**,** `=lobby settings`")
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def lobby(self, ctx:commands.Context, action:str):
         if not ctx.author.bot:
             rows = await SQL_CLASS().select_all(f"SELECT lobby FROM lobbies WHERE guild_id = {ctx.guild.id}")
@@ -229,6 +232,7 @@ class Settings(commands.Cog):
     # // ADD MAP COMMAND
     # /////////////////////////////////////////
     @commands.command(name="addmap", description="`=addmap (map name)`")
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def addmap(self, ctx:commands.Context, map:str):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
@@ -242,6 +246,7 @@ class Settings(commands.Cog):
     # // DELETE MAP COMMAND
     # /////////////////////////////////////////
     @commands.command(name="delmap", aliases=["removemap", "deletemap"], description="`=delmap (map name)`")
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def delmap(self, ctx:commands.Context, map:str):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
@@ -253,6 +258,7 @@ class Settings(commands.Cog):
     # // SHOW LIST OF MAPS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="maps", description="`=maps`")
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def maps(self, ctx:commands.Context):
         if not ctx.author.bot:
             if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
@@ -263,6 +269,7 @@ class Settings(commands.Cog):
     # // SET THE REGISTER ROLE COMMAND
     # /////////////////////////////////////////
     @commands.command(name="regrole", description="`=regrole (@role)`")
+    @commands.cooldown(1, 1, commands.BucketType.guild)
     async def regrole(self, ctx:commands.Context, role:discord.Role):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
@@ -275,6 +282,7 @@ class Settings(commands.Cog):
     # // SHOW SETTINGS MENU COMMAND
     # /////////////////////////////////////////
     @commands.command(name="settings", aliases=["sets", "options"], description="`=settings`")
+    @commands.cooldown(1, 1, commands.BucketType.guild)
     async def settings(self, ctx:commands.Context):
         if not ctx.author.bot:
             if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):

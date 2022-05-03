@@ -182,6 +182,7 @@ class Elo(commands.Cog):
     # // ADD / REMOVE A NEW ELO ROLE
     # /////////////////////////////////
     @commands.command(name="elorole", description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def elorole(self, ctx:commands.Context, option:str, *args):
         if option in ["add", "create", "new", "remove", "delete", "del"]:
             role = ctx.guild.get_role(int(re.sub("\D","", args[0])))
@@ -222,6 +223,7 @@ class Elo(commands.Cog):
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
     # /////////////////////////////////////////
     @commands.command(name="match", description='`=match report (match id) [blue/orange]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def match(self, ctx:commands.Context, action:str, match_id:int, *args):
         if not ctx.author.bot:
             # // REPORTING AN ONGOING MATCH
@@ -320,6 +322,7 @@ class Elo(commands.Cog):
     # // SET PLAYERS STATS COMMAND
     # /////////////////////////////////
     @commands.command(name="set", description='`=set elo (@user) (amount)`**,** `=set wins (@user) (amount)`**,** `=set losses (@user) (amount)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def set(self, ctx:commands.Context, action:str, user:discord.Member, amount:int):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
@@ -346,6 +349,7 @@ class Elo(commands.Cog):
     # // SHOW THE LAST MATCH PLAYED COMMAND
     # /////////////////////////////////////////
     @commands.command(name="lastmatch", aliases=["lm"], description='`=lastmatch`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def lastmatch(self, ctx:commands.Context):
         if not ctx.author.bot:
             count = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
@@ -354,6 +358,7 @@ class Elo(commands.Cog):
     # // REPLACE / SUB TWO PLAYERS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="replace", aliases=["sub", "swap"], description='`=replace (@user to be replaced) (@user replacing) (match id)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def replace(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, match_id:int):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
@@ -388,6 +393,7 @@ class Elo(commands.Cog):
     # SHOW THE PAST 10 MATCHES PLAYED
     # /////////////////////////////////
     @commands.command(name="recent", description='`=recent`**,** `=recent (amount)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def recent(self, ctx:commands.Context, *args):
         if not ctx.author.bot:
             row = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
@@ -403,6 +409,7 @@ class Elo(commands.Cog):
     # // CHANGE YOUR USERNAME COMMAND
     # /////////////////////////////////////////
     @commands.command(name="rename", description='`=rename (name)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def rename(self, ctx:commands.Context, name:str):
         if not ctx.author.bot:
             if not await self.check_admin_role(ctx) and not await self.check_mod_role(ctx):
@@ -424,6 +431,7 @@ class Elo(commands.Cog):
     # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
     # ////////////////////////////////////////////
     @commands.command(name="forcerename", aliases=["fr"], description='`=forcerename (@user) (name)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def forcerename(self, ctx:commands.Context, user:discord.Member, name:str):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
@@ -439,6 +447,7 @@ class Elo(commands.Cog):
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
     @commands.command(name="register", aliases=["reg"], description='`=register (name)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def register(self, ctx:commands.Context, *args):
         if not ctx.author.bot:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
@@ -486,6 +495,7 @@ class Elo(commands.Cog):
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////
     @commands.command(name="unregister", aliases=["unreg"], description='`=unreg (@user)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def unregister(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
@@ -498,6 +508,7 @@ class Elo(commands.Cog):
     # // GIVES AN USER A WIN COMMAND
     # /////////////////////////////////////////
     @commands.command(name="win", description='`=win (@users)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def win(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
@@ -515,6 +526,7 @@ class Elo(commands.Cog):
     # // GIVES AN USER A LOSS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="lose", description='`=lose (@users)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def lose(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
@@ -532,6 +544,7 @@ class Elo(commands.Cog):
     # // SHOW YOUR OR ANOTHER PLAYER'S STATS COMMAND
     # ////////////////////////////////////////////////
     @commands.command(name="stats", description='`=stats`**,** `=stats (@user)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def stats(self, ctx:commands.Context, *args):
         if not ctx.author.bot:
             user = ctx.author
@@ -544,6 +557,7 @@ class Elo(commands.Cog):
     # // RESET AN USERS STATS COMMAND
     # /////////////////////////////////////////
     @commands.command(name="reset", description='`=reset all`**,** `=reset (@user)`')
+    @commands.cooldown(1, 300, commands.BucketType.guild)
     async def reset(self, ctx:commands.Context, args:str):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
@@ -570,6 +584,7 @@ class Elo(commands.Cog):
     # // SHOW YOUR GUILD'S LEADERBOARD COMMAND
     # /////////////////////////////////////////
     @commands.command(name="leaderboard", aliases=["lb"], description='`=leaderboard`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def leaderboard(self, ctx:commands.Context):
         if not ctx.author.bot:
             users = ""; _count=0
@@ -586,6 +601,7 @@ class Elo(commands.Cog):
     # // ROLLBACK EVERY MATCH AN USER WAS IN
     # //////////////////////////////////////////
     @commands.command(name="rollback", aliases=["rb"], description='`=rollback (user id)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def rollback(self, ctx:commands.Context, user:str):
         '''
         REMOVE THE WIN IF CHEATER IS ON THE WINNING TEAM THEN REMOVE LOSS FOR OPPOSITE TEAM

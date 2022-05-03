@@ -35,6 +35,7 @@ class Bans(commands.Cog):
     # // ADD USER TO BAN DATABASE COMMAND
     # /////////////////////////////////////////
     @commands.command(name="ban", description='`=ban (@user) (length) (reason)  |  Lengths: [s (seconds), m (minutes), h (hours), d (days)]`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def ban(self, ctx:commands.Context, user:discord.Member, length_str:str, *args):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
@@ -59,6 +60,7 @@ class Bans(commands.Cog):
     # // REMOVE USER FROM BAN DATABASE COMMAND
     # /////////////////////////////////////////
     @commands.command(name="unban", description='`=unban (@user)`')
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def unban(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
