@@ -18,21 +18,27 @@ class Elo(commands.Cog):
         
     # // Check mod role or mod permissions
     # //////////////////////////////////////////
-    async def check_mod_role(self, ctx:commands.Context):
+    async def check_mod_role(self, ctx):
         if await self.check_admin_role(ctx):
             return True
-        mod_role = (await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
-        if mod_role == 0:
+        mod_role = await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
+        if mod_role is None:
+            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
+            return False
+        if mod_role[0] == 0:
             return ctx.author.guild_permissions.manage_messages
-        return ctx.guild.get_role(mod_role) in ctx.author.roles
+        return ctx.guild.get_role(mod_role[0]) in ctx.author.roles
     
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
     async def check_admin_role(self, ctx):
-        admin_role = (await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
-        if admin_role == 0 or ctx.author.guild_permissions.administrator:
+        admin_role = await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
+        if admin_role is None:
+            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
+            return False
+        if admin_role[0] == 0 or ctx.author.guild_permissions.administrator:
             return ctx.author.guild_permissions.administrator
-        return ctx.guild.get_role(admin_role) in ctx.author.roles
+        return ctx.guild.get_role(admin_role[0]) in ctx.author.roles
     
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
@@ -400,8 +406,10 @@ class Elo(commands.Cog):
     async def rename(self, ctx:commands.Context, name:str):
         if not ctx.author.bot:
             if not await self.check_admin_role(ctx) and not await self.check_mod_role(ctx):
-                self_rename = (await SQL_CLASS().select(f"SELECT self_rename FROM settings WHERE guild_id = {ctx.guild.id}"))[0]
-                if self_rename == 0:
+                self_rename = await SQL_CLASS().select(f"SELECT self_rename FROM settings WHERE guild_id = {ctx.guild.id}")
+                if self_rename is None:
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
+                if self_rename[0] == 0:
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} self renaming is not enabled", color=15158588))
                 
             row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
@@ -435,7 +443,7 @@ class Elo(commands.Cog):
         if not ctx.author.bot:
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if settings is None:
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please reinvite the bot to the server", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
 
             # // GETTING THE REGISTER ROLE FROM SETTINGS
             if settings[3] in [0, ctx.channel.id]:
