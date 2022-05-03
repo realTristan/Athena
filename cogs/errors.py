@@ -79,7 +79,7 @@ class ErrorHandling(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx:commands.Context, error):
         if isinstance(error, commands.CommandOnCooldown):
-            return await ctx.send(embed=discord.Embed(title=f"Slow it down!", description=f"Try again in {error.retry_after:.2f}s", color=15158588))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Slow it down! Try again in **{error.retry_after:.2f}s**", color=15158588))
             
         elif isinstance(error, commands.CommandNotFound):
             return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
