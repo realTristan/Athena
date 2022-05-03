@@ -271,12 +271,12 @@ class Settings(commands.Cog):
     @commands.command(name="settings", aliases=["sets", "options"], description="`=settings`")
     async def settings(self, ctx:commands.Context):
         if not ctx.author.bot:
-            if not await self.check_admin_role(ctx):
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-            
             if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
                 await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({ctx.guild.id}, 0, 0, 0, 0, 0, 0, 0)")
         
+            if not await self.check_admin_role(ctx):
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            
             settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             match_category = self._guild_settings_status("match_category", settings)
             match_logging = self._guild_settings_status("match_logging", settings)

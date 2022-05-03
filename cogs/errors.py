@@ -1,6 +1,5 @@
 from discord.ext import commands
 import discord, datetime
-from functools import *
 
 class ErrorHandling(commands.Cog):
     def __init__(self, client):
