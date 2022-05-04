@@ -61,7 +61,7 @@ class Settings(commands.Cog):
 
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
-    async def check_admin_role(self, ctx):
+    async def check_admin_role(self, ctx:commands.Context):
         admin_role = await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
         if admin_role is None:
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
@@ -273,10 +273,12 @@ class Settings(commands.Cog):
     async def regrole(self, ctx:commands.Context, role:discord.Role):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
-                if await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                    await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
-                    return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
+                if role < ctx.author.top_role or ctx.author.guild_permissions.administrator:
+                    if await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+                        await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
+                        return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please choose a role lower than {ctx.author.top_role.mention}", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
     # // SHOW SETTINGS MENU COMMAND
@@ -314,7 +316,7 @@ class Settings(commands.Cog):
     # // SELECT MENU LISTENER
     # /////////////////////////////////////////
     @commands.Cog.listener()
-    async def on_select_option(self, res):
+    async def on_select_option(self, res:Interaction):
         if not res.author.bot:
             try:
                 # // SELF RENAME
@@ -424,7 +426,7 @@ class Settings(commands.Cog):
 
                 # // CHANGE THE REGISTER ROLE
                 if res.values[0] == "change_reg_role":
-                    if await self.check_admin_role(res):
+                    if res.author.guild_permissions.administrator:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the role you want to use", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):

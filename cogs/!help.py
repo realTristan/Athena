@@ -94,7 +94,7 @@ class Help(commands.Cog):
     # // SELECT MENU LISTENER
     # //////////////////////////////////////
     @commands.Cog.listener()
-    async def on_select_option(self, res):
+    async def on_select_option(self, res:Interaction):
         if not res.author.bot:
             if res.values[0] == "player":
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))

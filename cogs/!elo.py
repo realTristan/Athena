@@ -1,3 +1,4 @@
+from discord_components import *
 from discord.ext import commands
 from functools import *
 from _sql import *
@@ -189,14 +190,16 @@ class Elo(commands.Cog):
             
         if option in ["add", "create", "new"]:
             if await self.check_admin_role(ctx):
-                elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
-                if len(elo_roles) < 20:
-                    elo_amount = int(list(args)[1])
-                    if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
-                        await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {elo_amount}, 5, 2)")
-                        return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
+                if role < ctx.author.top_role or ctx.author.guild_permissions.administrator:
+                    elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
+                    if len(elo_roles) < 20:
+                        elo_amount = int(list(args)[1])
+                        if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
+                            await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {elo_amount}, 5, 2)")
+                            return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please choose a role lower than {ctx.author.top_role.mention}", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         if option in ["remove", "delete", "del"]:
@@ -325,7 +328,7 @@ class Elo(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def set(self, ctx:commands.Context, action:str, user:discord.Member, amount:int):
         if not ctx.author.bot:
-            if await self.check_admin_role(ctx):
+            if await self.check_mod_role(ctx):
                 user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
                 if user_name is not None:
                     # // SET A PLAYERS ELO
@@ -634,7 +637,7 @@ class Elo(commands.Cog):
     # // BUTTON CLICK LISTENER
     # /////////////////////////////////////////
     @commands.Cog.listener()
-    async def on_button_click(self, res):
+    async def on_button_click(self, res:Interaction):
         if not res.author.bot:
             if res.component.id in ['blue_report', 'orange_report', 'match_cancel']:
                 if await self.check_mod_role(res):

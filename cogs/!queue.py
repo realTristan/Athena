@@ -547,7 +547,7 @@ class Queue(commands.Cog):
     # // BUTTON CLICK LISTENER
     # /////////////////////////////////////////
     @commands.Cog.listener()
-    async def on_button_click(self, res):
+    async def on_button_click(self, res:Interaction):
         if not res.author.bot:
             if res.component.id in ["join_queue", "leave_queue"]:
                 lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
