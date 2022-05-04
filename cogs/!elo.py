@@ -19,7 +19,7 @@ class Elo(commands.Cog):
         
     # // Check mod role or mod permissions
     # //////////////////////////////////////////
-    async def check_mod_role(self, ctx):
+    async def check_mod_role(self, ctx:commands.Context):
         if await self.check_admin_role(ctx):
             return True
         mod_role = await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
@@ -32,7 +32,7 @@ class Elo(commands.Cog):
     
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
-    async def check_admin_role(self, ctx):
+    async def check_admin_role(self, ctx:commands.Context):
         admin_role = await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
         if admin_role is None:
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))

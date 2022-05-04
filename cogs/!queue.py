@@ -48,7 +48,7 @@ class Queue(commands.Cog):
     
     # // Check mod role or mod permissions
     # //////////////////////////////////////////
-    async def check_mod_role(self, ctx):
+    async def check_mod_role(self, ctx:commands.Context):
         if await self.check_admin_role(ctx):
             return True
         mod_role = await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
@@ -61,7 +61,7 @@ class Queue(commands.Cog):
     
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
-    async def check_admin_role(self, ctx):
+    async def check_admin_role(self, ctx:commands.Context):
         admin_role = await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
         if admin_role is None:
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
@@ -388,7 +388,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="join", aliases=["j"], description='`=join`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def join(self, ctx):
+    async def join(self, ctx:commands.Context):
         if not ctx.author.bot:
             return await self._join(ctx, ctx.author, ctx.channel.id)
 
@@ -406,7 +406,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="leave", aliases=["l"], description='`=leave`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def leave(self, ctx):
+    async def leave(self, ctx:commands.Context):
         if not ctx.author.bot:
             return await self._leave(ctx, ctx.author, ctx.channel.id)
 
@@ -424,7 +424,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="queue", aliases=["q"], description='`=queue`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def queue(self, ctx):
+    async def queue(self, ctx:commands.Context):
         if not ctx.author.bot:
             if await self._data_check(ctx, ctx.channel.id):
                 return await self._embeds(ctx, ctx.channel.id)
@@ -434,7 +434,7 @@ class Queue(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="clear", description='`=clear`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def clear(self, ctx):
+    async def clear(self, ctx:commands.Context):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
                 if await self._data_check(ctx, ctx.channel.id):
