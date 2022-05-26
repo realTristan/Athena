@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord, datetime
 
 class ErrorHandling(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
         self.client_cmds = {}
         for cmd in self.client.commands:
@@ -102,5 +102,5 @@ class ErrorHandling(commands.Cog):
             await error_channel.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
             raise error
 
-def setup(client):
+def setup(client: commands.Bot):
     client.add_cog(ErrorHandling(client))

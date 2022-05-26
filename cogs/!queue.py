@@ -7,7 +7,7 @@ from functools import *
 from _sql import *
 
 class Queue(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
         self.data = {}
 
@@ -558,7 +558,7 @@ class Queue(commands.Cog):
             if res.component.id in ["join_queue", "leave_queue"]:
                 lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
                 if lobby is None:
-                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} error, unknown lobby", color=15158588))
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} unknown lobby", color=3066992))
                     return await res.message.delete()
                 if await self._data_check(res, lobby.id):
                     if res.component.id == "join_queue":
@@ -574,5 +574,5 @@ class Queue(commands.Cog):
                 
 
 
-def setup(client):
+def setup(client: commands.Bot):
     client.add_cog(Queue(client))

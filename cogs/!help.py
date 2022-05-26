@@ -4,7 +4,7 @@ from datetime import datetime
 import discord
 
 class Help(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
 
     # // CREATING EMBED OBJECTS
@@ -111,5 +111,5 @@ class Help(commands.Cog):
 
 
 
-def setup(client):
+def setup(client: commands.Bot):
     client.add_cog(Help(client))

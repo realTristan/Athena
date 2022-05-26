@@ -5,7 +5,7 @@ from functools import *
 from _sql import *
 
 class Settings(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
         # 1 == true, 0 == false
     
@@ -392,8 +392,10 @@ class Settings(commands.Cog):
 
                             if "#" in c.content:
                                 channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
-                                await SQL_CLASS().execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
-                                return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
+                                if channel is not None:
+                                    await SQL_CLASS().execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
+                                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
+                                return await res.send(embed=discord.Embed(description=f"{res.author.mention} we could not find the given channel", color=3066992))
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} invalid channel (please mention the channel)", color=15158588))
 
                         await SQL_CLASS().execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
@@ -477,8 +479,10 @@ class Settings(commands.Cog):
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to **None**", color=3066992))
 
                         channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
-                        await SQL_CLASS().execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
-                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to {channel.mention}", color=3066992))
+                        if channel is not None:
+                            await SQL_CLASS().execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
+                            return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to {channel.mention}", color=3066992))
+                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} we could not find the given channel", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                 
                 # // CHANGE THE ELO PER WIN
@@ -508,15 +512,17 @@ class Settings(commands.Cog):
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         
                         channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
-                        if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id} AND lobby = {channel.id}"):
-                            await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
-                            embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)
-                            embed.set_footer(text=str(channel.id))
+                        if channel is not None:
+                            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id} AND lobby = {channel.id}"):
+                                await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
+                                embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)
+                                embed.set_footer(text=str(channel.id))
 
-                            return await res.channel.send(embed=embed, components=[[
-                                Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
-                                Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
-                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
+                                return await res.channel.send(embed=embed, components=[[
+                                    Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
+                                    Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
+                            return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
+                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} we could not find the given channel", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                                 
                 # // CHANGE THE QUEUE PARTY SIZE
@@ -531,5 +537,5 @@ class Settings(commands.Cog):
             except asyncio.TimeoutError:
                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond in time", color=15158588))
                 
-def setup(client):
+def setup(client: commands.Bot):
     client.add_cog(Settings(client))

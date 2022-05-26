@@ -4,7 +4,7 @@ from _sql import *
 import discord
 
 class Dev(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
         self.dev_users = [
             395645581067943936
@@ -58,5 +58,5 @@ class Dev(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unregistered every member", color=3066992))
         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
-def setup(client):
+def setup(client: commands.Bot):
     client.add_cog(Dev(client))

@@ -5,7 +5,7 @@ from _sql import *
 import discord, re
 
 class Elo(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
         
     # // Check if member is still in the server
@@ -706,5 +706,5 @@ class Elo(commands.Cog):
                     return await self._delete_channels(res.channel, match_id)
                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
-def setup(client):
+def setup(client: commands.Bot):
     client.add_cog(Elo(client))
