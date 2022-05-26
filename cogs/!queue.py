@@ -95,13 +95,16 @@ class Queue(commands.Cog):
         row = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
         if row[4] != 0:
             channel = ctx.guild.get_channel(int(row[4]))
-            await channel.send(
+            if channel is None:
+                return await SQL_CLASS().execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {ctx.guild.id}")
+            return await channel.send(
                 embed=embed,
                 components=[[
                     Button(style=ButtonStyle.blue, label="Blue", custom_id='blue_report'),
                     Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
                     Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
                 ]])
+                
 
     # // CREATE MATCH CATEGORY FUNCTION
     # /////////////////////////////////////////
@@ -289,7 +292,10 @@ class Queue(commands.Cog):
         
         for l in self.data[ctx.guild.id]:
             if user in self.data[ctx.guild.id][l]["queue"]:
-                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already queued in {ctx.guild.get_channel(int(l)).mention}", color=15158588))
+                channel = ctx.guild.get_channel(int(l))
+                if channel is not None:
+                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already queued in {channel.mention}", color=15158588))
+                else: del self.data[ctx.guild.id][l]
 
         if await self._ban_check(ctx, user):
             queue_size = (await SQL_CLASS().select(f"SELECT queue_size FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"))[0]
@@ -512,7 +518,7 @@ class Queue(commands.Cog):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
                 
                 # // SHOW ANOTHER PLAYER'S PARTY
-                if "@" in list(args)[0]:
+                if "@" in args[0]:
                     user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                     for party in parties:
                         if user.id in parties[party]:
@@ -551,6 +557,9 @@ class Queue(commands.Cog):
         if not res.author.bot:
             if res.component.id in ["join_queue", "leave_queue"]:
                 lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
+                if lobby is None:
+                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} error, unknown lobby", color=15158588))
+                    return await res.message.delete()
                 if await self._data_check(res, lobby.id):
                     if res.component.id == "join_queue":
                         await self._join(res, res.author, lobby.id)

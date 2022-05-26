@@ -190,10 +190,10 @@ class Elo(commands.Cog):
             
         if option in ["add", "create", "new"]:
             if await self.check_admin_role(ctx):
-                if role < ctx.author.top_role or ctx.author.guild_permissions.administrator:
+                if role.position < ctx.author.top_role.position or ctx.author.guild_permissions.administrator:
                     elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                     if len(elo_roles) < 20:
-                        elo_amount = int(list(args)[1])
+                        elo_amount = int(args[1])
                         if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
                             await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {elo_amount}, 5, 2)")
                             return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
@@ -238,7 +238,7 @@ class Elo(commands.Cog):
 
                         if len(args) > 0 and match[8] in ["ongoing"]:
                             await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                            await SQL_CLASS().execute(f"UPDATE matches SET winners = '{list(args)[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SQL_CLASS().execute(f"UPDATE matches SET winners = '{args[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                             orange_team = match[5].split(",")
                             orange_team.append(int(match[4]))
@@ -246,7 +246,7 @@ class Elo(commands.Cog):
                             blue_team = match[7].split(",")
                             blue_team.append(int(match[6]))
 
-                            if "blue" in list(args)[0]:
+                            if "blue" in args[0]:
                                 for _user in orange_team:
                                     member = await self._check_member(ctx, int(_user))
                                     if member is not None:
@@ -257,7 +257,7 @@ class Elo(commands.Cog):
                                     if member is not None:
                                         await self._win(ctx, member, lobby_settings)
                                     
-                            if "orange" in list(args)[0]:
+                            if "orange" in args[0]:
                                 for _user in orange_team:
                                     member = await self._check_member(ctx, int(_user))
                                     if member is not None:
@@ -402,7 +402,7 @@ class Elo(commands.Cog):
             row = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             amount = len(row)
             if len(args) > 0:
-                amount = int(list(args)[0])
+                amount = int(args[0])
             
             embed=discord.Embed(title=f"Recent Matches ┃ {ctx.guild.name}", color=33023)
             for i in range(amount):
@@ -458,43 +458,45 @@ class Elo(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
 
             # // GETTING THE REGISTER ROLE FROM SETTINGS
-            if settings[3] in [0, ctx.channel.id]:
-                role = None
-                if settings[1] != 0:
-                    role = ctx.guild.get_role(settings[1])
-                    if role is None:
-                        await SQL_CLASS().execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {ctx.guild.id}")
-            
-                # // REGISTER THE MENTIONED USER
-                if len(args) > 0 and "@" in list(args)[0]:
-                    if await self.check_mod_role(ctx):
-                        user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
-                        if user is not None:
-                            if not user.bot:
-                                if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                                    name = user.name
-                                    if len(args) > 1:
-                                        name = list(args)[1]
-                                    await self._register_user(ctx, user, name, role)
-                                    await self._user_edit(user, nick=f"{name} [0]")
-                                    return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
-                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
-                            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-
-                # // REGISTER THE MESSAGE AUTHOR
-                else:
-                    name = ctx.author.name
-                    if len(args) > 0:
-                        name = list(args)[0]
-                    if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
-                        await self._register_user(ctx, ctx.author, name, role)
-                        await self._user_edit(ctx.author, nick=f"{name} [0]")
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {ctx.guild.get_channel(settings[3]).mention}", color=33023))
+            if settings[3] not in [0, ctx.channel.id]:
+                channel = ctx.guild.get_channel(settings[3])
+                if channel is not None:
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {channel.mention}", color=33023))
+            role = None
+            if settings[1] != 0:
+                role = ctx.guild.get_role(settings[1])
+                if role is None:
+                    await SQL_CLASS().execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {ctx.guild.id}")
         
+            # // REGISTER THE MENTIONED USER
+            if len(args) > 0 and "@" in args[0]:
+                if await self.check_mod_role(ctx):
+                    user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+                    if user is not None:
+                        if not user.bot:
+                            if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                                name = user.name
+                                if len(args) > 1:
+                                    name = args[1]
+                                await self._register_user(ctx, user, name, role)
+                                await self._user_edit(user, nick=f"{name} [0]")
+                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
+                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+
+            # // REGISTER THE MESSAGE AUTHOR
+            else:
+                name = ctx.author.name
+                if len(args) > 0:
+                    name = args[0]
+                if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                    await self._register_user(ctx, ctx.author, name, role)
+                    await self._user_edit(ctx.author, nick=f"{name} [0]")
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
+    
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////
     @commands.command(name="unregister", aliases=["unreg"], description='`=unreg (@user)`')
@@ -551,7 +553,7 @@ class Elo(commands.Cog):
     async def stats(self, ctx:commands.Context, *args):
         if not ctx.author.bot:
             user = ctx.author
-            if len(args) > 0 and "@" in list(args)[0]:
+            if len(args) > 0 and "@" in args[0]:
                 user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                 if user is None:
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
