@@ -88,6 +88,7 @@ class Cache:
 if __name__ == "__main__":
     asyncio.run(Cache.map_data())
 
+    # This removes the map kafe, adds oregon, then updates database [pt 1]
     _data:list = Cache.fetch(
         table="maps", # table
         column=883006609280864257, # guild id
@@ -96,6 +97,7 @@ if __name__ == "__main__":
     _data.remove("kafe")
     _data.append("oregon")
 
+    # This removes the map kafe, adds oregon, then updates database [pt 2]
     asyncio.run(Cache.update(
         table="maps", # table
         column=883006609280864257, # guild id
@@ -104,11 +106,12 @@ if __name__ == "__main__":
         sqlcmd="" # sql command to edit database
     ))
 
+    # This removes the lobby id from the cache
     asyncio.run(Cache.delete(
-        table="maps",
-        column=883006609280864257, 
-        opt=883006609280864251,
-        sqlcmd=""
+        table="maps", # table
+        column=883006609280864257, # guild id
+        opt=883006609280864251, # lobby id
+        sqlcmd="" # sql command to edit database
     ))
 
     print(cache)
