@@ -161,11 +161,13 @@ class Cache:
         return cache[table][key]
     
     # Check if a value exists in the cache
-    
     @staticmethod
     def exists(table: str, guild: str, key: str=None):
         if key is None:
             return guild in cache[table]
+        
+        if guild not in cache[table]: # this might not work with maps table cuz it's a list not a dict
+            cache[table][guild] = {} # <--- ^
         return key in cache[table][guild]
     
     # Update a value in the cache
@@ -174,8 +176,8 @@ class Cache:
         if sqlcmd is not None:
             await SqlData.execute(sqlcmd)
         if key is None:
-            cache[table][guild] = data; return
-        cache[table][guild][key] = data; return
+            cache[table][guild] = data; print(cache[table][guild]); return
+        cache[table][guild][key] = data; print(cache[table][guild]); return
         
     
     # Delete a value in the cache
@@ -186,3 +188,4 @@ class Cache:
         if key is None:
             return cache[table].pop(guild)
         return cache[table][guild].pop(key)
+

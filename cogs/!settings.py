@@ -59,16 +59,12 @@ class Settings(commands.Cog):
             return 'ENABLED'
         return 'DISABLED'
 
-    # // Check admin role or admin permissions
-    # //////////////////////////////////////////
-    async def check_admin_role(self, ctx:commands.Context):
-        admin_role = await SqlData.select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
-        if admin_role is None:
-            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
-            return False
-        if admin_role[0] == 0 or ctx.author.guild_permissions.administrator:
+    # Check admin role or admin permissions
+    async def check_admin_role(self, ctx: commands.Context):
+        admin_role = Cache.fetch(table="settings", guild=ctx.guild.id)[5]
+        if admin_role == 0 or ctx.author.guild_permissions.administrator:
             return ctx.author.guild_permissions.administrator
-        return ctx.guild.get_role(admin_role[0]) in ctx.author.roles
+        return ctx.guild.get_role(admin_role) in ctx.author.roles
         
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////

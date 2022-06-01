@@ -17,29 +17,19 @@ class Elo(commands.Cog):
                 await SqlData.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}")
         return member
         
-    # // Check mod role or mod permissions
-    # //////////////////////////////////////////
-    async def check_mod_role(self, ctx:commands.Context):
+    # Check mod role or mod permissions
+    async def check_mod_role(self, ctx: commands.Context):
         if await self.check_admin_role(ctx):
             return True
-        mod_role = await SqlData.select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
-        if mod_role is None:
-            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
-            return False
-        if mod_role[0] == 0:
-            return ctx.author.guild_permissions.manage_messages
-        return ctx.guild.get_role(mod_role[0]) in ctx.author.roles
+        mod_role = Cache.fetch(table="settings", guild=ctx.guild.id)[4]
+        return ctx.guild.get_role(mod_role) in ctx.author.roles
     
-    # // Check admin role or admin permissions
-    # //////////////////////////////////////////
-    async def check_admin_role(self, ctx:commands.Context):
-        admin_role = await SqlData.select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
-        if admin_role is None:
-            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
-            return False
-        if admin_role[0] == 0 or ctx.author.guild_permissions.administrator:
+    # Check admin role or admin permissions
+    async def check_admin_role(self, ctx: commands.Context):
+        admin_role = Cache.fetch(table="settings", guild=ctx.guild.id)[5]
+        if admin_role == 0 or ctx.author.guild_permissions.administrator:
             return ctx.author.guild_permissions.administrator
-        return ctx.guild.get_role(admin_role[0]) in ctx.author.roles
+        return ctx.guild.get_role(admin_role) in ctx.author.roles
     
     # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
     # ///////////////////////////////////////////////
