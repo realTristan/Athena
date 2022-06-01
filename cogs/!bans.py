@@ -42,7 +42,12 @@ class Bans(commands.Cog):
                     ban_data:list = Cache.fetch(table="bans", guild=ctx.guild.id, key=user.id)
                     if ban_data[0] - time.time() > 0:
                         return await ctx.send(embed=discord.Embed(title=f"{user.name} already banned", description=f"**Length:** {datetime.timedelta(seconds=ban_data[0])}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", color=15158588))
-                
+                    else:
+                        await Cache.delete(
+                            table="bans", guild=ctx.guild.id, key=user.id,
+                            sqlcmd=f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"
+                        )
+                        
                 # Ban the user
                 ban_time = int(length+time.time())
                 ban_reason = ' '.join(str(e) for e in args)
