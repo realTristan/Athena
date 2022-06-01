@@ -39,8 +39,9 @@ class Bans(commands.Cog):
                 
                 # If the user is already banned
                 if Cache.exists(table="bans", guild=ctx.guild.id, key=user.id):
-                    data:list = Cache.fetch(table="bans", guild=ctx.guild.id, key=user.id)
-                    return await ctx.send(embed=discord.Embed(title=f"{user.name} already banned", description=f"**Length:** {datetime.timedelta(seconds=data[0])}\n**Reason:** {data[1]}\n**Banned by:** {data[2]}", color=15158588))
+                    ban_data:list = Cache.fetch(table="bans", guild=ctx.guild.id, key=user.id)
+                    if ban_data[0] - time.time() > 0:
+                        return await ctx.send(embed=discord.Embed(title=f"{user.name} already banned", description=f"**Length:** {datetime.timedelta(seconds=ban_data[0])}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", color=15158588))
                 
                 # Ban the user
                 ban_time = int(length+time.time())
