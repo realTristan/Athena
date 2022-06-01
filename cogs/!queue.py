@@ -126,8 +126,15 @@ class Queue(commands.Cog):
     async def _match(self, ctx:commands.Context, lobby):
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['orange_team'])
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['blue_team'])
-        count = len(Cache.fetch(table="matches", guild=ctx.guild.id))
-        await SqlData.execute(f"INSERT INTO matches (guild_id, match_id, lobby_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {len(count)+1}, {lobby}, '{self.data[ctx.guild.id][lobby]['map']}', '{self.data[ctx.guild.id][lobby]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id][lobby]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')")
+        count = len(Cache.fetch(table="matches", guild=ctx.guild.id))+1
+        await Cache.update(
+            sqlcmd=f"INSERT INTO matches (guild_id, match_id, lobby_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {count}, {lobby}, '{self.data[ctx.guild.id][lobby]['map']}', '{self.data[ctx.guild.id][lobby]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id][lobby]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')",
+            table="matches", guild=ctx.guild.id, key=count, 
+            data=[
+                lobby, self.data[ctx.guild.id][lobby]['map'], self.data[ctx.guild.id][lobby]['orange_cap'].id, 
+                orange_team, self.data[ctx.guild.id][lobby]['blue_cap'].id, blue_team, 'ongoing', 'none'
+            ]
+        )
 
     # CREATE TEAM PICK LOGIC
     # /////////////////////////
@@ -147,8 +154,8 @@ class Queue(commands.Cog):
             current_queue = "None"
             if len(self.data[ctx.guild.id][lobby]["queue"]) != 0:
                 current_queue = '\n'.join(str(e.mention) for e in self.data[ctx.guild.id][lobby]["queue"])
-            row = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
-            return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id][lobby]['queue'])}/{row[8]}] {ctx.channel.name}", description=current_queue, color=33023))
+            settings = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=lobby)
+            return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id][lobby]['queue'])}/{settings[6]}] {ctx.channel.name}", description=current_queue, color=33023))
 
         # // TEAM PICKING PHASE EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "pick":
@@ -173,21 +180,21 @@ class Queue(commands.Cog):
 
         # // MAP PICKING PHASE EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "maps":
-            rows = await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
+            maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=lobby)
             embed=discord.Embed(title="Map Picking Phase", color=33023)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id][lobby]["orange_cap"].mention)
             embed.add_field(name="\u200b", value="\u200b")
             embed.add_field(name="Blue Captain", value=self.data[ctx.guild.id][lobby]["blue_cap"].mention)
-            embed.add_field(name="Orange Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id][lobby]["orange_team"]))
+            embed.add_field(name="Orange Team", value='\n'.join(str(p.mention) for p in self.data[ctx.guild.id][lobby]["orange_team"]))
             embed.add_field(name="\u200b", value="\u200b")
-            embed.add_field(name="Blue Team", value='\n'.join(str(e.mention) for e in self.data[ctx.guild.id][lobby]["blue_team"]))
-            embed.add_field(name="Available Maps", value="\n".join(e[0] for e in rows))
+            embed.add_field(name="Blue Team", value='\n'.join(str(p.mention) for p in self.data[ctx.guild.id][lobby]["blue_team"]))
+            embed.add_field(name="Available Maps", value="\n".join(m for m in maps))
             await ctx.send(embed=embed)
             return await ctx.send(f"**{self.data[ctx.guild.id][lobby]['blue_cap'].mention} select a map to play (=pickmap [map])**")
 
         # // FINAL MATCH UP EMBED
         if self.data[ctx.guild.id][lobby]["state"] == "final":
-            count = await SqlData.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+            count = len(Cache.fetch(table="matches", guild=ctx.guild.id))
             embed=discord.Embed(title=f"Match #{len(count)+1}", description=f"**Map:** {self.data[ctx.guild.id][lobby]['map']}", color=33023)
             embed.add_field(name="Orange Captain", value=self.data[ctx.guild.id][lobby]["orange_cap"].mention)
             embed.add_field(name="\u200b", value="\u200b")
@@ -203,28 +210,27 @@ class Queue(commands.Cog):
             await self._match_category(ctx, len(count)+1, lobby)
             self._reset(ctx, lobby)
 
-    # // WHEN QUEUE REACHES QUEUE SIZE FUNCTION
-    # /////////////////////////////////////////
+    # When the queue reaches max capacity function
     async def _start(self, ctx:commands.Context, lobby):
-        row = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id}  AND lobby_id = {lobby}")
-        # // CREATING TEAM CAPTAINS
+        settings = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=lobby)
+        
+        # Create team captains (blue)
         blue_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
         self.data[ctx.guild.id][lobby]["blue_cap"] = blue_cap
         self.data[ctx.guild.id][lobby]["queue"].remove(blue_cap)
         
+        # Create team captains (orange)
         orange_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
         self.data[ctx.guild.id][lobby]["orange_cap"] = orange_cap
         self.data[ctx.guild.id][lobby]["queue"].remove(orange_cap)
 
-        if row[3] == 1:
-            # // PICK PHASE ENABLED
-            # // CREATING LOGIC AND CHANGING STATE
+        # Pick phase enabled
+        if settings[1] == 1:
             self.data[ctx.guild.id][lobby]["state"] = "pick"
             await self._pick_logic(ctx, lobby)
             return await self._embeds(ctx, lobby)
         
-        # // PICK PHASE DISABLED
-        # // CREATING THE RANDOM TEAMS
+        # Pick phase disabled (create random teams)
         for _ in range(len(self.data[ctx.guild.id][lobby]["queue"]) // 2):
             _user = random.choice(self.data[ctx.guild.id][lobby]["queue"])
             self.data[ctx.guild.id][lobby]['orange_team'].append(_user)
@@ -235,39 +241,41 @@ class Queue(commands.Cog):
             self.data[ctx.guild.id][lobby]['blue_team'].append(_user)
             self.data[ctx.guild.id][lobby]["queue"].remove(_user)
         
-        # // CHECKING IF MAP PHASE IS DISABLED/ENABLED
-        if row[2] == 1:
+        # Check if maps is enabled/disabled
+        if settings[0] == 1:
             self.data[ctx.guild.id][lobby]["state"] = "maps"
         else:
-            maps = (await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"))[0]
+            maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=lobby)
             self.data[ctx.guild.id][lobby]["map"] = "None"
             
             if len(maps) > 0:
-                self.data[ctx.guild.id][lobby]["map"] = random.choice(maps)[0]
+                self.data[ctx.guild.id][lobby]["map"] = random.choice(maps)
             self.data[ctx.guild.id][lobby]["state"] = "final"
         return await self._embeds(ctx, lobby)
 
-    # // CHECK IF THE USER IS BANNED FUNCTION
-    # /////////////////////////////////////////
+    # Check if user is banned function
     async def _ban_check(self, ctx:commands.Context, user):
-        row = await SqlData.select(f"SELECT * FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        if row is not None:
-            if row[2] - time.time() > 0:
-                await ctx.channel.send(embed=discord.Embed(title=f"{self._clean_name(user.name)} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(row[2] - time.time()))}\n**Reason:** {row[3]}\n**Banned by:** {row[4]}", color=15158588))
+        if Cache.exists(table="bans", guild=ctx.guild.id, key=user.id):
+            ban_data = Cache.fetch(table="bans", guild=ctx.guild.id, key=ctx.author.id)
+            if ban_data[0] - time.time() > 0:
+                await ctx.channel.send(embed=discord.Embed(title=f"{self._clean_name(user.name)} is banned", description=f"**Length:** {datetime.timedelta(seconds=int(ban_data[0] - time.time()))}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", color=15158588))
                 return False
-            await SqlData.execute(f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await Cache.delete(
+                table="bans", guild=ctx.guild.id, key=user.id,
+                sqlcmd=f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"
+            )
         return True
 
     # // WHEN AN USER JOINS THE QUEUE FUNCTION
     # /////////////////////////////////////////
     async def _join(self, ctx:commands.Context, user, lobby):
-        if not await self.data_check(ctx, lobby):
+        if not await self.is_valid_lobby(ctx, lobby):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
         if not self.data[ctx.guild.id][lobby]["state"] == "queue":
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         
-        if not await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+        if not Cache.exists(table="users", guild=ctx.guild.id, key=user.id):
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
         
         if not await self._check_party(ctx, user, lobby):
@@ -281,7 +289,7 @@ class Queue(commands.Cog):
                 else: del self.data[ctx.guild.id][l]
 
         if await self._ban_check(ctx, user):
-            queue_size = (await SqlData.select(f"SELECT queue_size FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"))[0]
+            queue_size = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=lobby)[6]
             self.data[ctx.guild.id][lobby]["queue"].append(user)
             if len(self.data[ctx.guild.id][lobby]["queue"]) == queue_size:
                 return await self._start(ctx, lobby)
@@ -300,7 +308,7 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         
         if user in self.data[ctx.guild.id][lobby]["queue"]:
-            queue_size = (await SqlData.select(f"SELECT queue_size FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby}"))[0]
+            queue_size = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=lobby)[6]
             self.data[ctx.guild.id][lobby]["queue"].remove(user)
             return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/{queue_size}]** {user.mention} has left the queue", color=33023))
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=15158588))
@@ -332,14 +340,14 @@ class Queue(commands.Cog):
                 await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
 
                 if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 1:
-                    map_pick_phase = (await SqlData.select(f"SELECT map_pick_phase FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))[0]
+                    map_pick_phase = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=ctx.channel.id)[0]
                     self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
                     self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
 
                     if map_pick_phase == 1:
                         self.data[ctx.guild.id][ctx.channel.id]["state"] = "maps"
                     else:
-                        maps = await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                        maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=ctx.channel.id)
                         if len(maps) > 0:
                             self.data[ctx.guild.id][ctx.channel.id]["map"] = random.choice(maps)[0]
                         self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
@@ -362,9 +370,9 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
             
             if ctx.author == self.data[ctx.guild.id][ctx.channel.id]["blue_cap"]:
-                _maps = await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                for i in _maps:
-                    if map.lower() in i[0].lower():
+                maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=ctx.channel.id)
+                for m in maps:
+                    if map.lower() in m[0].lower():
                         self.data[ctx.guild.id][ctx.channel.id]["map"] = self._clean_name(map)
                         self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
                         return await self._embeds(ctx, ctx.channel.id)
