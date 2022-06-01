@@ -62,7 +62,7 @@ class Settings(commands.Cog):
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
     async def check_admin_role(self, ctx:commands.Context):
-        admin_role = await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
+        admin_role = await SqlData.select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
         if admin_role is None:
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
             return False
@@ -73,18 +73,18 @@ class Settings(commands.Cog):
     # // ADD MAP TO THE DATABASE
     # /////////////////////////////////////////
     async def _add_map(self, ctx:commands.Context, map:str, lobby:int):
-        maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-        if not await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
-            await SQL_CLASS().execute(f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
+        maps = await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+        if not await SqlData.exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
+            await SqlData.execute(f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({ctx.guild.id}, {lobby}, '{map}')")
             return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)+1}/20]** {ctx.author.mention} added **{map}** to the map pool", color=3066992))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** already exists", color=15158588))
 
     # // REMOVE MAP FROM THE DATABASE
     # /////////////////////////////////////////
     async def _del_map(self, ctx:commands.Context, map:str, lobby:int):
-        if await SQL_CLASS().exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
-            maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-            await SQL_CLASS().execute(f"DELETE FROM maps WHERE map = '{map}' AND guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
+        if await SqlData.exists(f"SELECT * FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby} AND map = '{map}'"):
+            maps = await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+            await SqlData.execute(f"DELETE FROM maps WHERE map = '{map}' AND guild_id = {ctx.guild.id} AND lobby_id = {lobby}")
             return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)-1}/20]** {ctx.author.mention} removed **{map}** from the map pool", color=3066992))
         return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
     
@@ -97,12 +97,12 @@ class Settings(commands.Cog):
         if args[0] in ["set", "create"]:
             role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
             if role is not None:
-                await SQL_CLASS().execute(f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {ctx.guild.id}")
+                await SqlData.execute(f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {ctx.guild.id}")
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully set the mod role to {role.mention}", color=3066992))
             else: raise Exception("Invalid role")
         
         elif args[0] in ["info", "show"]:
-            role_id = await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
+            role_id = await SqlData.select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
             if role_id is None:
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
             if role_id[0] != 0:
@@ -111,7 +111,7 @@ class Settings(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"**Mod Role:** None", color=33023))
         
         elif args[0] in ["delete", "del", "reset", "remove"]:
-            await SQL_CLASS().execute(f"UPDATE settings SET mod_role = 0 WHERE guild_id = {ctx.guild.id}")
+            await SqlData.execute(f"UPDATE settings SET mod_role = 0 WHERE guild_id = {ctx.guild.id}")
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully removed the mod role", color=3066992))
         else:
             raise Exception("Invalid option")
@@ -125,12 +125,12 @@ class Settings(commands.Cog):
         if args[0] in ["set", "create"]:
             role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
             if role is not None:
-                await SQL_CLASS().execute(f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {ctx.guild.id}")
+                await SqlData.execute(f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {ctx.guild.id}")
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully set the admin role to {role.mention}", color=3066992))
             else: raise Exception("Invalid role")
         
         elif args[0] in ["info", "show"]:
-            role_id = await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
+            role_id = await SqlData.select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
             if role_id is None:
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
             if role_id[0] != 0:
@@ -139,7 +139,7 @@ class Settings(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"**Admin Role:** None", color=33023))
         
         elif args[0] in ["delete", "del", "reset", "remove"]:
-            await SQL_CLASS().execute(f"UPDATE settings SET admin_role = 0 WHERE guild_id = {ctx.guild.id}")
+            await SqlData.execute(f"UPDATE settings SET admin_role = 0 WHERE guild_id = {ctx.guild.id}")
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully removed the admin role", color=3066992))
         else:
             raise Exception("Invalid option")
@@ -151,15 +151,15 @@ class Settings(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def lobby(self, ctx:commands.Context, action:str):
         if not ctx.author.bot:
-            rows = await SQL_CLASS().select_all(f"SELECT lobby FROM lobbies WHERE guild_id = {ctx.guild.id}")
+            rows = await SqlData.select_all(f"SELECT lobby FROM lobbies WHERE guild_id = {ctx.guild.id}")
             if action in ["add", "create"]:
                 if await self.check_admin_role(ctx):
                     if len(rows) < 10:
-                        if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                            await SQL_CLASS().execute(f"INSERT INTO lobbies (guild_id, lobby) VALUES ({ctx.guild.id}, {ctx.channel.id})")
+                        if not await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                            await SqlData.execute(f"INSERT INTO lobbies (guild_id, lobby) VALUES ({ctx.guild.id}, {ctx.channel.id})")
                             
-                            if not await SQL_CLASS().exists(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
-                                await SQL_CLASS().execute(f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10)")
+                            if not await SqlData.exists(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"):
+                                await SqlData.execute(f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10)")
                             return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)+1}/10]** {ctx.author.mention} has created a new lobby **{ctx.channel.name}**", color=3066992))
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is already a lobby", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"**[10/10]** {ctx.author.mention} maximum amount of lobbies created", color=15158588))
@@ -168,9 +168,9 @@ class Settings(commands.Cog):
             # // DELETE AN EXISTING LOBBY
             if action in ["delete", "remove", "del"]:
                 if await self.check_admin_role(ctx):
-                    if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                        await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                        await SQL_CLASS().execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}")
+                    if await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                        await SqlData.execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                        await SqlData.execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}")
                         return await ctx.send(embed=discord.Embed(description=f"**[{len(rows)-1}/10]** {ctx.author.mention} has removed the lobby **{ctx.channel.name}**", color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
@@ -179,10 +179,10 @@ class Settings(commands.Cog):
                 if not await self.check_admin_role(ctx):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
                 
-                if not await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                if not await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
-                lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                lobby_settings = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 team_pick_phase = self._lobby_settings_status("team_pick_phase", lobby_settings)
                 map_pick_phase = self._lobby_settings_status("map_pick_phase", lobby_settings)
                 negative_elo = self._lobby_settings_status("negative_elo", lobby_settings)
@@ -212,17 +212,17 @@ class Settings(commands.Cog):
                             if channel is not None:
                                 embed.add_field(name= f"{i+1}. " + channel.name, value=channel.mention)
                             else:
-                                await SQL_CLASS().execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {rows[i][0]}")
-                                await SQL_CLASS().execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {rows[i][0]}")
+                                await SqlData.execute(f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {rows[i][0]}")
+                                await SqlData.execute(f"DELETE FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {rows[i][0]}")
                         except Exception as e: print(f"Settings 208: {e}")
                     return await ctx.send(embed=embed)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this server has no lobbies", color=15158588))
             
             # // SHOWS LOBBY INFO
             if action in ["info", "information", "about", "help"]:
-                if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                    rows = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
-                    maps = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                if await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                    rows = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                    maps = await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                     embed=discord.Embed(title=f"About #{ctx.channel.name}", color=33023)
                     embed.description = f"**Settings:**\n• Team Pick Phase: [**{self.num_to_words(rows[3])}**]\n• Map Pick Phase: [**{self.num_to_words(rows[2])}**]\n• Negative Elo: [**{self.num_to_words(rows[7])}**]\n• Win Elo: [**{rows[4]}**]\n• Loss Elo: [**{rows[5]}**]\n• Party Size: [**{rows[6]}**]\n• Queue Size: [**{rows[8]}**]\n\n**Maps:**\n"
                     embed.description = embed.description+"\n".join("• "+e[0] for e in maps)
@@ -236,8 +236,8 @@ class Settings(commands.Cog):
     async def addmap(self, ctx:commands.Context, map:str):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
-                if len((await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))) < 20:
-                    if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                if len((await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"))) < 20:
+                    if await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                         return await self._add_map(ctx, map, ctx.channel.id)
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of maps reached", color=15158588))
@@ -250,7 +250,7 @@ class Settings(commands.Cog):
     async def delmap(self, ctx:commands.Context, map:str):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
-                if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                if await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
                     return await self._del_map(ctx, map, ctx.channel.id)
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
@@ -261,8 +261,8 @@ class Settings(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def maps(self, ctx:commands.Context):
         if not ctx.author.bot:
-            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
-                rows = await SQL_CLASS().select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+            if await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {ctx.guild.id} AND lobby = {ctx.channel.id}"):
+                rows = await SqlData.select_all(f"SELECT map FROM maps WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 return await ctx.send(embed=discord.Embed(title=f"Maps ┃ {ctx.guild.name}", description="\n".join(e[0] for e in rows), color=33023))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
@@ -274,8 +274,8 @@ class Settings(commands.Cog):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
                 if role < ctx.author.top_role or ctx.author.guild_permissions.administrator:
-                    if await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                        await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
+                    if await SqlData.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+                        await SqlData.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
                         return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please choose a role lower than {ctx.author.top_role.mention}", color=15158588))
@@ -287,13 +287,13 @@ class Settings(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.guild)
     async def settings(self, ctx:commands.Context):
         if not ctx.author.bot:
-            if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({ctx.guild.id}, 0, 0, 0, 0, 0, 0, 0)")
+            if not await SqlData.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
+                await SqlData.execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({ctx.guild.id}, 0, 0, 0, 0, 0, 0, 0)")
         
             if not await self.check_admin_role(ctx):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             
-            settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+            settings = await SqlData.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             match_category = self._guild_settings_status("match_category", settings)
             match_logging = self._guild_settings_status("match_logging", settings)
             self_rename = self._guild_settings_status("self_rename", settings)
@@ -322,12 +322,12 @@ class Settings(commands.Cog):
                 # // SELF RENAME
                 if res.values[0] == "self_rename":
                     if await self.check_admin_role(res):
-                        row = (await SQL_CLASS().select(f"SELECT self_rename FROM settings WHERE guild_id = {res.guild.id}"))[0]
+                        row = (await SqlData.select(f"SELECT self_rename FROM settings WHERE guild_id = {res.guild.id}"))[0]
                         if row == 0:
-                            await SQL_CLASS().execute(f"UPDATE settings SET self_rename = 1 WHERE guild_id = {res.guild.id}")
+                            await SqlData.execute(f"UPDATE settings SET self_rename = 1 WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Self Rename**", color=3066992))
 
-                        await SQL_CLASS().execute(f"UPDATE settings SET self_rename = 0 WHERE guild_id = {res.guild.id}")
+                        await SqlData.execute(f"UPDATE settings SET self_rename = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Self Rename**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                 
@@ -338,10 +338,10 @@ class Settings(commands.Cog):
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):
                             role = res.guild.get_role(int(re.sub("\D","", c.content)))
-                            await SQL_CLASS().execute(f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {res.guild.id}")
+                            await SqlData.execute(f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the admin role to {role.mention}", color=3066992))
                         
-                        await SQL_CLASS().execute(f"UPDATE settings SET admin_role = 0 WHERE guild_id = {res.guild.id}")
+                        await SqlData.execute(f"UPDATE settings SET admin_role = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the admin role to None", color=3066992))
                 
                 # // CHANGE ADMIN ROLE
@@ -351,10 +351,10 @@ class Settings(commands.Cog):
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):
                             role = res.guild.get_role(int(re.sub("\D","", c.content)))
-                            await SQL_CLASS().execute(f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {res.guild.id}")
+                            await SqlData.execute(f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the mod role to {role.mention}", color=3066992))
                         
-                        await SQL_CLASS().execute(f"UPDATE settings SET mod_role = 0 WHERE guild_id = {res.guild.id}")
+                        await SqlData.execute(f"UPDATE settings SET mod_role = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} successfully set the mod role to None", color=3066992))
                     
                 
@@ -365,7 +365,7 @@ class Settings(commands.Cog):
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         
                         if int(c.content) >= 4 and int(c.content) <= 20:
-                            await SQL_CLASS().execute(f"UPDATE lobby_settings SET queue_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                            await SqlData.execute(f"UPDATE lobby_settings SET queue_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the queue size to **{c.content} players**", color=3066992))
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} please respond with a number from **4-20**", color=15158588))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
@@ -373,19 +373,19 @@ class Settings(commands.Cog):
                 # // MAP PICKING PHASE
                 if res.values[0] == 'map_pick_phase':
                     if await self.check_admin_role(res):
-                        row = (await SQL_CLASS().select(f"SELECT map_pick_phase FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
+                        row = (await SqlData.select(f"SELECT map_pick_phase FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
                         if row == 0:
-                            await SQL_CLASS().execute(f"UPDATE lobby_settings SET map_pick_phase = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                            await SqlData.execute(f"UPDATE lobby_settings SET map_pick_phase = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Map Picking Phase**", color=3066992))
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET map_pick_phase = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SqlData.execute(f"UPDATE lobby_settings SET map_pick_phase = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Map Picking Phase**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // MATCH LOGGING
                 if res.values[0] == "match_logging":
                     if await self.check_admin_role(res):
-                        row = (await SQL_CLASS().select(f"SELECT match_logs FROM settings WHERE guild_id = {res.guild.id}"))[0]
+                        row = (await SqlData.select(f"SELECT match_logs FROM settings WHERE guild_id = {res.guild.id}"))[0]
                         if row == 0:
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} mention the channel you want to use", color=33023))
                             c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
@@ -393,36 +393,36 @@ class Settings(commands.Cog):
                             if "#" in c.content:
                                 channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
                                 if channel is not None:
-                                    await SQL_CLASS().execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
+                                    await SqlData.execute(f"UPDATE settings SET match_logs = {channel.id} WHERE guild_id = {res.guild.id}")
                                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Logging** in **{channel.mention}**", color=3066992))
                                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} we could not find the given channel", color=3066992))
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} invalid channel (please mention the channel)", color=15158588))
 
-                        await SQL_CLASS().execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
+                        await SqlData.execute(f"UPDATE settings SET match_logs = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Logging**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // MATCH CATEGORIES
                 if res.values[0] == 'match_category':
                     if await self.check_admin_role(res):
-                        row = (await SQL_CLASS().select(f"SELECT match_categories FROM settings WHERE guild_id = {res.guild.id}"))[0]
+                        row = (await SqlData.select(f"SELECT match_categories FROM settings WHERE guild_id = {res.guild.id}"))[0]
                         if row == 0:
-                            await SQL_CLASS().execute(f"UPDATE settings SET match_categories = 1 WHERE guild_id = {res.guild.id}")
+                            await SqlData.execute(f"UPDATE settings SET match_categories = 1 WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Match Categories**", color=3066992))
 
-                        await SQL_CLASS().execute(f"UPDATE settings SET match_categories = 0 WHERE guild_id = {res.guild.id}")
+                        await SqlData.execute(f"UPDATE settings SET match_categories = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Match Categories**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
                 # // TEAM PICKING PHASE
                 if res.values[0] == 'team_pick_phase':
                     if await self.check_admin_role(res):
-                        row = (await SQL_CLASS().select(f"SELECT team_pick_phase FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
+                        row = (await SqlData.select(f"SELECT team_pick_phase FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
                         if row == 0:
-                            await SQL_CLASS().execute(f"UPDATE lobby_settings SET team_pick_phase = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                            await SqlData.execute(f"UPDATE lobby_settings SET team_pick_phase = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Team Picking Phase**", color=3066992))
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET team_pick_phase = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SqlData.execute(f"UPDATE lobby_settings SET team_pick_phase = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Team Picking Phase**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
@@ -433,10 +433,10 @@ class Settings(commands.Cog):
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
                         if "@" in str(c.content):
                             role = res.guild.get_role(int(re.sub("\D","", c.content)))
-                            await SQL_CLASS().execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
+                            await SqlData.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Role** to {role.mention}", color=3066992))
                         
-                        await SQL_CLASS().execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {res.guild.id}")
+                        await SqlData.execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {res.guild.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Role** to **None**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
@@ -459,12 +459,12 @@ class Settings(commands.Cog):
                 # // NEGATIVE ELO
                 if res.values[0] == "negative_elo":
                     if await self.check_admin_role(res):
-                        row = (await SQL_CLASS().select(f"SELECT negative_elo FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
+                        row = (await SqlData.select(f"SELECT negative_elo FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}"))[0]
                         if row == 0:
-                            await SQL_CLASS().execute(f"UPDATE lobby_settings SET negative_elo = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                            await SqlData.execute(f"UPDATE lobby_settings SET negative_elo = 1 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} has enabled **Negative Elo**", color=3066992))
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET negative_elo = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SqlData.execute(f"UPDATE lobby_settings SET negative_elo = 0 WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has disabled **Negative Elo**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
@@ -475,12 +475,12 @@ class Settings(commands.Cog):
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
                         if "<#" not in str(c.content):
-                            await SQL_CLASS().execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}")
+                            await SqlData.execute(f"UPDATE settings SET reg_channel = 0 WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to **None**", color=3066992))
 
                         channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
                         if channel is not None:
-                            await SQL_CLASS().execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
+                            await SqlData.execute(f"UPDATE settings SET reg_channel = {channel.id} WHERE guild_id = {res.guild.id}")
                             return await res.send(embed=discord.Embed(description=f"{res.author.mention} set the **Register Channel** to {channel.mention}", color=3066992))
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} we could not find the given channel", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
@@ -491,7 +491,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to gain", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET win_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SqlData.execute(f"UPDATE lobby_settings SET win_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Win Elo** to **{c.content}**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
                     
@@ -501,7 +501,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the amount of elo you want to lose", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET loss_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SqlData.execute(f"UPDATE lobby_settings SET loss_elo = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Loss Elo** to **{c.content}**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
@@ -513,7 +513,7 @@ class Settings(commands.Cog):
                         
                         channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
                         if channel is not None:
-                            if await SQL_CLASS().exists(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id} AND lobby = {channel.id}"):
+                            if await SqlData.exists(f"SELECT * FROM lobbies WHERE guild_id = {res.guild.id} AND lobby = {channel.id}"):
                                 await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
                                 embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)
                                 embed.set_footer(text=str(channel.id))
@@ -531,7 +531,7 @@ class Settings(commands.Cog):
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} respond with the maximum party size", color=33023))
                         c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
 
-                        await SQL_CLASS().execute(f"UPDATE lobby_settings SET party_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
+                        await SqlData.execute(f"UPDATE lobby_settings SET party_size = {c.content} WHERE guild_id = {res.guild.id} AND lobby_id = {res.channel.id}")
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} has set the **Maximum Party Size** to **{c.content}**", color=3066992))
                     return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
             except asyncio.TimeoutError:

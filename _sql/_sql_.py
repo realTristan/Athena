@@ -1,23 +1,14 @@
-# // MYSQL DATABASE CONNECTOR
+from contextlib import closing
 import mysql.connector
 
-# // IMPORT AUTO CURSOR CLOSING
-from contextlib import closing
+db = mysql.connector.connect(
+    host="localhost", port="3306", user="root", password="root", database="main"
+)
 
-# CONNECT TO THE "MySQL Database" FUNCTION
-# ////////////////////////////////////////////
-def _connect():
-    return mysql.connector.connect(
-        host="localhost", port="3306", user="root", password="root", database="main"
-    )
-
-# // CREATING DATABASE VARIABLES
-# ////////////////////////////////
-db = _connect()
-
-class SQL_CLASS():
+class SqlData():
     def __init__(self):
-        with closing(db.cursor()) as cur:
+        pass
+        #with closing(db.cursor()) as cur:
             # cur.execute(f"DROP TABLE bans")
             #cur.execute(f"DROP TABLE maps")
             # cur.execute(f"DROP TABLE matches")
@@ -49,12 +40,17 @@ class SQL_CLASS():
             
             # // ELO ROLE TABLE
             # cur.execute("CREATE TABLE elo_roles (guild_id BIGINT, role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT, id INT PRIMARY KEY AUTO_INCREMENT)")
-            pass
-            
-            
-    # // CHECK IF A VALUE IN A TABLE EXISTS
-    # ////////////////////////////////////////
-    async def exists(self, command):
+    
+    # Connect to the database
+    @staticmethod
+    async def db_connect():
+        return mysql.connector.connect(
+            host="localhost", port="3306", user="root", password="root", database="main"
+        )
+        
+    # Check if value exists
+    @staticmethod
+    async def exists(command: str):
         global db
         try:
             with closing(db.cursor(buffered=True)) as cur:
@@ -63,44 +59,48 @@ class SQL_CLASS():
                     return False  # // Doesn't exist
                 return True  # // Does exist
         except mysql.connector.Error as e:
-            print(e)
+            print(f"SqlData (exists): {e}")
             db.close()
-            db = _connect()
+            db = await SqlData.db_connect()
 
-    # // RETURNS A SINGLE LIST FROM THE SELECTED TABLE
-    # /////////////////////////////////////////////////
-    async def select(self, command):
+    # Returns a single list of results
+    @staticmethod
+    async def select(command: str):
         global db
         try:
             with closing(db.cursor()) as cur:
-                if await self.exists(command):
+                if await SqlData.exists(command):
                     cur.execute(command)
                     return list(cur.fetchone())
                 return None
-        except mysql.connector.Error:
+        except mysql.connector.Error as e:
+            print(f"SqlData (select): {e}")
             db.close()
-            db = _connect()
+            db = await SqlData.db_connect()
 
-    # // RETURNS MULTIPLE LISTS FROM THE SELECTED TABLE
-    # ///////////////////////////////////////////////////
-    async def select_all(self, command):
+    # Returns multiple lists of results
+    @staticmethod
+    async def select_all(command: str):
         global db
         try:
             with closing(db.cursor(buffered=True)) as cur:
                 cur.execute(command)
                 return [list(i) for i in cur.fetchall()]
-        except mysql.connector.Error:
+        except mysql.connector.Error as e:
+            print(f"SqlData (select_all): {e}")
             db.close()
-            db = _connect()
+            db = await SqlData.db_connect()
 
-    # // EXECUTE A SEPERATE COMMAND
-    # /////////////////////////////////////
-    async def execute(self, command):
+    # Execute a command
+    @staticmethod
+    async def execute(command: str):
         global db
         try:
             with closing(db.cursor()) as cur:
                 cur.execute(command)
                 db.commit()
-        except mysql.connector.Error:
+        except mysql.connector.Error as e:
+            print(f"SqlData (execute): {e}")
             db.close()
-            db = _connect()
+            db = await SqlData.db_connect()
+            

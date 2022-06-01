@@ -13,8 +13,8 @@ class Elo(commands.Cog):
     async def _check_member(self, ctx:commands.Context, member_id:int):
         member = ctx.guild.get_member(member_id)
         if member is None:
-            if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"):
-                await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}")
+            if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"):
+                await SqlData.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}")
         return member
         
     # // Check mod role or mod permissions
@@ -22,7 +22,7 @@ class Elo(commands.Cog):
     async def check_mod_role(self, ctx:commands.Context):
         if await self.check_admin_role(ctx):
             return True
-        mod_role = await SQL_CLASS().select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
+        mod_role = await SqlData.select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
         if mod_role is None:
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
             return False
@@ -33,7 +33,7 @@ class Elo(commands.Cog):
     # // Check admin role or admin permissions
     # //////////////////////////////////////////
     async def check_admin_role(self, ctx:commands.Context):
-        admin_role = await SQL_CLASS().select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
+        admin_role = await SqlData.select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
         if admin_role is None:
             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
             return False
@@ -53,14 +53,14 @@ class Elo(commands.Cog):
     # RESET AN USERS STATS
     # ///////////////////////////////////////
     async def _reset_stats(self, ctx:commands.Context, user:discord.Member):
-        await SQL_CLASS().execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        await SQL_CLASS().execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        await SQL_CLASS().execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        await SqlData.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        await SqlData.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        await SqlData.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////
     async def _register_user(self, ctx:commands.Context, user:discord.Member, name:str, role:discord.Role):
-        await SQL_CLASS().execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
+        await SqlData.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
         if role is not None and role not in user.roles:
             await self._user_edit(user, role=role)
 
@@ -82,9 +82,9 @@ class Elo(commands.Cog):
     # // EDIT AN USERS ELO ROLE
     # /////////////////////////////////////////
     async def edit_elo_role(self, ctx:commands.Context, user:discord.Member, elo_amount:int, option:str):
-        roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level <= {elo_amount} AND guild_id = {ctx.guild.id}")
+        roles = await SqlData.select_all(f"SELECT role_id FROM elo_roles WHERE elo_level <= {elo_amount} AND guild_id = {ctx.guild.id}")
         if option == "remove":
-            roles = await SQL_CLASS().select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo_amount} AND guild_id = {ctx.guild.id}")
+            roles = await SqlData.select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo_amount} AND guild_id = {ctx.guild.id}")
         
         # // Check roles and add them
         if len(roles) > 0:
@@ -100,10 +100,10 @@ class Elo(commands.Cog):
     # // GIVE AN USER A WIN FUNCTION
     # /////////////////////////////////////////
     async def _win(self, ctx:commands.Context, user:discord.Member, lobby_settings:list):
-        row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SqlData.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
-            await SQL_CLASS().execute(f"UPDATE users SET elo = {row[3]+lobby_settings[4]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-            await SQL_CLASS().execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SqlData.execute(f"UPDATE users SET elo = {row[3]+lobby_settings[4]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            await SqlData.execute(f"UPDATE users SET wins = {row[4]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
             await self.edit_elo_role(ctx, user, row[3]+lobby_settings[4], "add")
             
             return await self._user_edit(user, nick=f"{row[2]} [{row[3]+lobby_settings[4]}]")
@@ -112,23 +112,23 @@ class Elo(commands.Cog):
     # // GIVE AN USER A LOSS FUNCTION
     # /////////////////////////////////////////
     async def _loss(self, ctx:commands.Context, user:discord.Member, lobby_settings:list):
-        row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SqlData.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             if lobby_settings[7] == 0 and (row[3]-lobby_settings[5]) < 0:
-                await SQL_CLASS().execute(f"UPDATE users SET elo = {0} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                await SqlData.execute(f"UPDATE users SET elo = {0} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 await self._user_edit(user, nick=f"{row[2]} [0]")
             else:
-                await SQL_CLASS().execute(f"UPDATE users SET elo = {row[3]-lobby_settings[5]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                await SqlData.execute(f"UPDATE users SET elo = {row[3]-lobby_settings[5]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 await self._user_edit(user, nick=f"{row[2]} [{row[3]-lobby_settings[5]}]")
             await self.edit_elo_role(ctx, user, row[3]-lobby_settings[5], "remove")
-            return await SQL_CLASS().execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+            return await SqlData.execute(f"UPDATE users SET loss = {row[5]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
 
 
     # // LOG A MATCH TO THE DATABASE FUNCTION
     # /////////////////////////////////////////
     async def _match_show(self, ctx:commands.Context, match_id:int):
-        row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+        row = await SqlData.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
         if row is not None:
             embed=discord.Embed(title=f"Match #{match_id} ┃ {row[8].upper()}", description=f"**Map:** {row[3]}\n**Winners:** {row[9][0].upper()+row[9][1:]}", color=33023)
             embed.add_field(name="Orange Captain", value=f"<@{row[4]}>")
@@ -143,7 +143,7 @@ class Elo(commands.Cog):
     # // SHOW THE USERS STATS FUNCTION
     # /////////////////////////////////////////
     async def _stats(self, ctx:commands.Context, user:discord.Member):
-        row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+        row = await SqlData.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
         if row is not None:
             embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}\n**Matches:** {row[5]+row[4]}", color=33023)
             embed.set_author(name=row[2], icon_url=user.avatar_url)
@@ -153,13 +153,13 @@ class Elo(commands.Cog):
     # // UNDO A WIN FOR THE ORANGE TEAM
     # ////////////////////////////////////
     async def _undo_win(self, ctx:commands.Context, lobby_id:int, winners:list, losers:list):
-        lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby_id}")
+        lobby_settings = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobby_id}")
 
         # // REMOVE LOSS FROM LOSERS
         for _user_id in losers:
-            _row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
-            await SQL_CLASS().execute(f"UPDATE users SET elo = {_row[3]+lobby_settings[5]} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
-            await SQL_CLASS().execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
+            _row = await SqlData.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
+            await SqlData.execute(f"UPDATE users SET elo = {_row[3]+lobby_settings[5]} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
+            await SqlData.execute(f"UPDATE users SET loss = {_row[5]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}")
             
             
             member = await self._check_member(ctx, int(_user_id))
@@ -168,12 +168,12 @@ class Elo(commands.Cog):
         
         # // REMOVE WIN FROM WINNERS
         for user_id in winners:
-            _row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
+            _row = await SqlData.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
             if lobby_settings[7] == 0 and (_row[3]-lobby_settings[4]) < 0:
-                await SQL_CLASS().execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
+                await SqlData.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
             else:
-                await SQL_CLASS().execute(f"UPDATE users SET elo = {_row[3]-lobby_settings[4]} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
-            await SQL_CLASS().execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
+                await SqlData.execute(f"UPDATE users SET elo = {_row[3]-lobby_settings[4]} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
+            await SqlData.execute(f"UPDATE users SET wins = {_row[4]-1} WHERE guild_id = {ctx.guild.id} AND user_id = {user_id}")
             
             member = await self._check_member(ctx, int(user_id))
             if member is not None:
@@ -191,11 +191,11 @@ class Elo(commands.Cog):
         if option in ["add", "create", "new"]:
             if await self.check_admin_role(ctx):
                 if role.position < ctx.author.top_role.position or ctx.author.guild_permissions.administrator:
-                    elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
+                    elo_roles = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                     if len(elo_roles) < 20:
                         elo_amount = int(args[1])
-                        if not await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
-                            await SQL_CLASS().execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {elo_amount}, 5, 2)")
+                        if not await SqlData.exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
+                            await SqlData.execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {elo_amount}, 5, 2)")
                             return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
                     return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
@@ -204,23 +204,23 @@ class Elo(commands.Cog):
         
         if option in ["remove", "delete", "del"]:
             if await self.check_admin_role(ctx):
-                if await SQL_CLASS().exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
-                    elo_roles = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
+                if await SqlData.exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
+                    elo_roles = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                     
-                    await SQL_CLASS().execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}")
+                    await SqlData.execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}")
                     return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)-1}/20]** {ctx.author.mention} {role.mention} has been removed", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         if option in ["list", "show"]:
             description = ""
-            rows = await SQL_CLASS().select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
+            rows = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
             for i in range(len(rows)):
                 role = ctx.guild.get_role(rows[i][1])
                 if role is not None:
                     description += f'**{i+1}:** {role.mention} [**{rows[i][2]}**]\n'
                 else:
-                    await SQL_CLASS().execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {rows[i][1]}")
+                    await SqlData.execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {rows[i][1]}")
             return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023))
         
     # // MATCH REPORT/CANCEL/UNDO/SHOW COMMAND
@@ -232,13 +232,13 @@ class Elo(commands.Cog):
             # // REPORTING AN ONGOING MATCH
             if action in ["report"]:
                 if await self.check_mod_role(ctx):
-                    match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    match = await SqlData.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     if match is not None:
-                        lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {match[2]}")
+                        lobby_settings = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {match[2]}")
 
                         if len(args) > 0 and match[8] in ["ongoing"]:
-                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                            await SQL_CLASS().execute(f"UPDATE matches SET winners = '{args[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET winners = '{args[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                             orange_team = match[5].split(",")
                             orange_team.append(int(match[4]))
@@ -276,11 +276,11 @@ class Elo(commands.Cog):
             # // CANCELLING AN ONGOING MATCH
             elif action in ["cancel"]:
                 if await self.check_mod_role(ctx):
-                    status = (await SQL_CLASS().select(f"SELECT status FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"))[0]
+                    status = (await SqlData.select(f"SELECT status FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"))[0]
                     if status is not None:
                         if status in ["ongoing"]:
-                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                            await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                             await self._match_show(ctx, match_id)
 
                             return await self._delete_channels(ctx, match_id)
@@ -295,12 +295,12 @@ class Elo(commands.Cog):
             # // UNDOING A REPORTED MATCH
             elif action in ["undo"]:
                 if await self.check_mod_role(ctx):
-                    match = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                    match = await SqlData.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     if match is not None:
                         if match[8] in ["reported", "cancelled"]:
                             # // UPDATING THE DATABASE
-                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
-                            await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                             # // ADD THE CAPTAINS TO EACH TEAM
                             blue_team = match[7].split(",")
@@ -329,20 +329,20 @@ class Elo(commands.Cog):
     async def set(self, ctx:commands.Context, action:str, user:discord.Member, amount:int):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
-                user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
+                user_name = (await SqlData.select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
                 if user_name is not None:
                     # // SET A PLAYERS ELO
                     if action in ["elo", "points"]:
-                        await SQL_CLASS().execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        await SqlData.execute(f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                         await self._user_edit(user, nick=f"{user_name} [{amount}]")
                         
                     # // SET A PLAYERS WINS
                     elif action in ["wins", "win"]:
-                        await SQL_CLASS().execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        await SqlData.execute(f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
 
                     # // SET A PLAYERS LOSSES
                     elif action in ["losses", "lose", "loss"]:
-                        await SQL_CLASS().execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                        await SqlData.execute(f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     else:
                         raise Exception("Invalid option")
                     return await self._stats(ctx, user)
@@ -355,7 +355,7 @@ class Elo(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def lastmatch(self, ctx:commands.Context):
         if not ctx.author.bot:
-            count = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+            count = await SqlData.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             return await self._match_show(ctx, len(count))
 
     # // REPLACE / SUB TWO PLAYERS COMMAND
@@ -365,28 +365,28 @@ class Elo(commands.Cog):
     async def replace(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, match_id:int):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
-                row = await SQL_CLASS().select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                row = await SqlData.select(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                 if "reported" not in row[8] and "cancelled" not in row[8] and "rollbacked" not in row[8]:
                     blue_team = str(row[7]).split(",")
                     orange_team = str(row[5]).split(",")
 
                     # // REPLACE USER FROM ORANGE CAPTAIN
                     if str(user1.id) in str(row[4]) and str(user2.id) not in str(row[4]):
-                        await SQL_CLASS().execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        await SqlData.execute(f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                     # // REPLACE USER FROM BLUE CAPTAIN
                     elif str(user1.id) in str(row[6]) and str(user2.id) not in str(row[6]):
-                        await SQL_CLASS().execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        await SqlData.execute(f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     
                     # // REPLACE USER FROM ORANGE TEAM
                     elif str(user1.id) in orange_team and str(user2.id) not in orange_team:
                         orange_team[orange_team.index(str(user1.id))] = str(user2.id)
-                        await SQL_CLASS().execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        await SqlData.execute(f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
 
                     # // REPLACE USER FROM BLUE TEAM
                     elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
                         blue_team[blue_team.index(str(user1.id))] = str(user2.id)
-                        await SQL_CLASS().execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
+                        await SqlData.execute(f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}")
                     else:
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player(s) not found/error", color=15158588))
                     return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
@@ -399,7 +399,7 @@ class Elo(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def recent(self, ctx:commands.Context, *args):
         if not ctx.author.bot:
-            row = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+            row = await SqlData.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
             amount = len(row)
             if len(args) > 0:
                 amount = int(args[0])
@@ -416,15 +416,15 @@ class Elo(commands.Cog):
     async def rename(self, ctx:commands.Context, name:str):
         if not ctx.author.bot:
             if not await self.check_admin_role(ctx) and not await self.check_mod_role(ctx):
-                self_rename = await SQL_CLASS().select(f"SELECT self_rename FROM settings WHERE guild_id = {ctx.guild.id}")
+                self_rename = await SqlData.select(f"SELECT self_rename FROM settings WHERE guild_id = {ctx.guild.id}")
                 if self_rename is None:
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
                 if self_rename[0] == 0:
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} self renaming is not enabled", color=15158588))
                 
-            row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
+            row = await SqlData.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
             if row is not None:
-                await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
+                await SqlData.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}")
                 await self._user_edit(ctx.author, nick=f"{name} [{row[3]}]")
 
                 return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed to **{name}**', color=3066992))
@@ -438,9 +438,9 @@ class Elo(commands.Cog):
     async def forcerename(self, ctx:commands.Context, user:discord.Member, name:str):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
-                row = await SQL_CLASS().select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                row = await SqlData.select(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                 if row is not None:
-                    await SQL_CLASS().execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                    await SqlData.execute(f"UPDATE users SET user_name = '{name}' WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     await self._user_edit(user, nick=f"{name} [{row[3]}]")
 
                     return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} renamed {user.mention} to **{name}**', color=3066992))
@@ -453,7 +453,7 @@ class Elo(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def register(self, ctx:commands.Context, *args):
         if not ctx.author.bot:
-            settings = await SQL_CLASS().select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
+            settings = await SqlData.select(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}")
             if settings is None:
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
 
@@ -466,7 +466,7 @@ class Elo(commands.Cog):
             if settings[1] != 0:
                 role = ctx.guild.get_role(settings[1])
                 if role is None:
-                    await SQL_CLASS().execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {ctx.guild.id}")
+                    await SqlData.execute(f"UPDATE settings SET reg_role = 0 WHERE guild_id = {ctx.guild.id}")
         
             # // REGISTER THE MENTIONED USER
             if len(args) > 0 and "@" in args[0]:
@@ -474,7 +474,7 @@ class Elo(commands.Cog):
                     user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                     if user is not None:
                         if not user.bot:
-                            if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                            if not await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                                 name = user.name
                                 if len(args) > 1:
                                     name = args[1]
@@ -491,7 +491,7 @@ class Elo(commands.Cog):
                 name = ctx.author.name
                 if len(args) > 0:
                     name = args[0]
-                if not await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                if not await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
                     await self._register_user(ctx, ctx.author, name, role)
                     await self._user_edit(ctx.author, nick=f"{name} [0]")
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
@@ -504,8 +504,8 @@ class Elo(commands.Cog):
     async def unregister(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
-                if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
-                    await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
+                if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                    await SqlData.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
@@ -517,7 +517,7 @@ class Elo(commands.Cog):
     async def win(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
-                lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                lobby_settings = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 if lobby_settings is not None:
                     if len(users) > 0:
                         for user in users:
@@ -535,7 +535,7 @@ class Elo(commands.Cog):
     async def lose(self, ctx:commands.Context, users:commands.Greedy[discord.Member]):
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
-                lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
+                lobby_settings = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}")
                 if lobby_settings is not None:
                     if len(users) > 0:
                         for user in users:
@@ -570,14 +570,14 @@ class Elo(commands.Cog):
                 if args == "all":
                     for user in ctx.guild.members:
                         if not user.bot:
-                            if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                            if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
                                 await self._reset_stats(ctx, user)
                     return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset every players stats", color=3066992))
             
                 # // RESET THE MENTIONED USERS STATS
                 if "<@" in args:
                     user = ctx.guild.get_member(int(re.sub("\D","", args)))
-                    user_name = (await SQL_CLASS().select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
+                    user_name = (await SqlData.select(f"SELECT user_name FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"))[0]
                     if user_name is not None:
                         await self._reset_stats(ctx, user)
                         await self._user_edit(user, nick=f"{user_name} [0]")
@@ -593,7 +593,7 @@ class Elo(commands.Cog):
     async def leaderboard(self, ctx:commands.Context):
         if not ctx.author.bot:
             users = ""; _count=0
-            rows = await SQL_CLASS().select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
+            rows = await SqlData.select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
             for i in range(len(rows)):
                 member = await self._check_member(ctx, rows[i][1])
                 if member is not None:
@@ -615,7 +615,7 @@ class Elo(commands.Cog):
         '''
         if not ctx.author.bot:
             if await self.check_mod_role(ctx):
-                rows = await SQL_CLASS().select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
+                rows = await SqlData.select_all(f"SELECT * FROM matches WHERE guild_id = {ctx.guild.id}")
                 for row in rows:
                     if "ongoing" not in row[8] and "rollbacked" not in row[8] and "cancelled" not in row[8]:
                         blue_team = str(row[7]).split(","); blue_team.append(row[6])
@@ -630,7 +630,7 @@ class Elo(commands.Cog):
                                 if user in blue_team:
                                     await self._undo_win(ctx, row[2], blue_team, orange_team)
                                 
-                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
+                            await SqlData.execute(f"UPDATE matches SET status = 'rollbacked' WHERE guild_id = {ctx.guild.id} AND match_id = {row[1]}")
                             await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Match **#{row[1]}** has been rollbacked", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has successfully rollbacked all matches with the user **{user}**", color=3066992))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
@@ -648,8 +648,8 @@ class Elo(commands.Cog):
                     lobby_id = int(res.message.embeds[0].footer.text)
                     
                     # // GETTING THE ROWS FROM DATABASE
-                    status = (await SQL_CLASS().select(f"SELECT status FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}"))[0]
-                    lobby_settings = await SQL_CLASS().select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {lobby_id}")
+                    status = (await SqlData.select(f"SELECT status FROM matches WHERE guild_id = {res.guild.id} AND match_id = {match_id}"))[0]
+                    lobby_settings = await SqlData.select(f"SELECT * FROM lobby_settings WHERE guild_id = {res.guild.id} AND lobby_id = {lobby_id}")
 
                     if status in ["ongoing"]:
                         # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
@@ -662,14 +662,14 @@ class Elo(commands.Cog):
 
                         if res.component.id == "match_cancel":
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has cancelled **Match #{match_id}**", color=3066992))
-                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                            await SQL_CLASS().execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                         if res.component.id == 'blue_report':
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
 
-                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                            await SQL_CLASS().execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                             # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
                             for user in blue_team:
@@ -686,8 +686,8 @@ class Elo(commands.Cog):
                         if res.component.id == 'orange_report':
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
 
-                            await SQL_CLASS().execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                            await SQL_CLASS().execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                            await SqlData.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
 
                             for user in blue_team:
                                 member = await self._check_member(res, int(re.sub("\D","", user)))

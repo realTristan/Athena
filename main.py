@@ -11,15 +11,15 @@ client.remove_command('help')
 # //////////////////////////////////////////////////////////////
 @client.event
 async def on_member_remove(member):
-    if await SQL_CLASS().exists(f"SELECT * FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}"):
-        await SQL_CLASS().execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}")
+    if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}"):
+        await SqlData.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}")
 
 # // ON GUILD JOIN
 # ////////////////////
 @client.event
 async def on_guild_join(guild):
-    if not await SQL_CLASS().exists(f"SELECT * FROM settings WHERE guild_id = {guild.id}"):
-        await SQL_CLASS().execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({guild.id}, 0, 0, 0, 0, 0, 0, 0)")
+    if not await SqlData.exists(f"SELECT * FROM settings WHERE guild_id = {guild.id}"):
+        await SqlData.execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({guild.id}, 0, 0, 0, 0, 0, 0, 0)")
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{len(client.guilds)} Servers"))
    
 # // ON GUILD REMOVE
@@ -27,8 +27,8 @@ async def on_guild_join(guild):
 @client.event
 async def on_guild_remove(guild):
     for table in ["settings", "users", "lobbies", "lobby_settings", "matches", "maps", "bans", "elo_roles"]:
-        if await SQL_CLASS().exists(f"SELECT * FROM {table} WHERE guild_id = {guild.id}"):
-            await SQL_CLASS().execute(f"DELETE FROM {table} WHERE guild_id = {guild.id}")
+        if await SqlData.exists(f"SELECT * FROM {table} WHERE guild_id = {guild.id}"):
+            await SqlData.execute(f"DELETE FROM {table} WHERE guild_id = {guild.id}")
    
 # // ON BOT LAUNCH
 # ///////////////////
