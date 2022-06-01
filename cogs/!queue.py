@@ -546,6 +546,5 @@ class Queue(commands.Cog):
                     return await res.message.edit(embed=embed)
                 
 
-
 def setup(client: commands.Bot):
     client.add_cog(Queue(client))
