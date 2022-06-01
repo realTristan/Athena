@@ -92,37 +92,35 @@ class Queue(commands.Cog):
                 ]])
                 
 
-    # // CREATE MATCH CATEGORY FUNCTION
-    # /////////////////////////////////////////
+    # Create the match category function
     async def _match_category(self, ctx:commands.Context, match_id, lobby):
         settings = Cache.fetch(table="settings", guild=ctx.guild.id)
         if settings[2] == 1:
             if not get(ctx.guild.categories, name=f'Match #{match_id}'):
-                # // CREATING CATEGORY AND SETTING PERMISSIONS
+                # Creating category and setting permissions
                 category = await ctx.guild.create_category(f'Match #{match_id}')
                 await category.set_permissions(ctx.guild.default_role, connect=False, send_messages=False)
 
-                # // CREATING CHANNELS INSIDE CATEGORY
+                # Creating channels inside category
                 await ctx.guild.create_text_channel(f"match-{match_id}", category=category)
                 await ctx.guild.create_voice_channel(f'🔹 Team ' + self.data[ctx.guild.id][lobby]["blue_cap"].name, category=category)
                 await ctx.guild.create_voice_channel(f"🔸 Team " + self.data[ctx.guild.id][lobby]['orange_cap'].name, category=category)
 
-                # // CREATING TEAMS
+                # /Create the teams
                 blue_team = self.data[ctx.guild.id][lobby]["blue_team"]
                 blue_team.append(self.data[ctx.guild.id][lobby]["blue_cap"])
                 orange_team = self.data[ctx.guild.id][lobby]["orange_team"]
                 orange_team.append(self.data[ctx.guild.id][lobby]["orange_cap"])
                 self._reset(ctx, lobby)
 
-                # // CHANGE PERMISSIONS FOR MATCH PLAYERS
+                # Edit the permissions for each player in the teams
                 for user in orange_team:
                     await category.set_permissions(user, connect=True, send_messages=True)
 
                 for _user in blue_team:
                     await category.set_permissions(_user, connect=True, send_messages=True)
 
-    # // MATCH LOGGING FUNCTION
-    # /////////////////////////////////////////
+    # Match logging function
     async def _match(self, ctx:commands.Context, lobby):
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['orange_team'])
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['blue_team'])
@@ -136,8 +134,7 @@ class Queue(commands.Cog):
             ]
         )
 
-    # CREATE TEAM PICK LOGIC
-    # /////////////////////////
+    # Create team pick logic function
     async def _pick_logic(self, ctx:commands.Context, lobby):
         for _ in range(round(len(self.data[ctx.guild.id][lobby]["queue"]) / 2)):
             self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["blue_cap"])
@@ -146,10 +143,9 @@ class Queue(commands.Cog):
         if len(self.data[ctx.guild.id][lobby]["queue"]) > len(self.data[ctx.guild.id][lobby]["pick_logic"]):
             self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["orange_cap"])
 
-    # // EMBED GENERATOR FUNCTION
-    # /////////////////////////////////////////
+    # Embed generator function (for queue)
     async def _embeds(self, ctx:commands.Context, lobby):
-        # // QUEUE PHASE EMBED
+        # Queue phase embed
         if self.data[ctx.guild.id][lobby]["state"] == "queue":
             current_queue = "None"
             if len(self.data[ctx.guild.id][lobby]["queue"]) != 0:
@@ -157,7 +153,7 @@ class Queue(commands.Cog):
             settings = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=lobby)
             return await ctx.send(embed=discord.Embed(title=f"[{len(self.data[ctx.guild.id][lobby]['queue'])}/{settings[6]}] {ctx.channel.name}", description=current_queue, color=33023))
 
-        # // TEAM PICKING PHASE EMBED
+        # Team picking phase embed
         if self.data[ctx.guild.id][lobby]["state"] == "pick":
             orange_team="None"
             blue_team="None"
@@ -178,7 +174,7 @@ class Queue(commands.Cog):
             await ctx.send(embed=embed)
             return await ctx.send(f"**{self.data[ctx.guild.id][lobby]['pick_logic'][0].mention} it is your turn to pick (=pick [@user])**")
 
-        # // MAP PICKING PHASE EMBED
+        # Map picking phase embed
         if self.data[ctx.guild.id][lobby]["state"] == "maps":
             maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=lobby)
             embed=discord.Embed(title="Map Picking Phase", color=33023)
@@ -192,7 +188,7 @@ class Queue(commands.Cog):
             await ctx.send(embed=embed)
             return await ctx.send(f"**{self.data[ctx.guild.id][lobby]['blue_cap'].mention} select a map to play (=pickmap [map])**")
 
-        # // FINAL MATCH UP EMBED
+        # Final match up embed
         if self.data[ctx.guild.id][lobby]["state"] == "final":
             count = len(Cache.fetch(table="matches", guild=ctx.guild.id))
             embed=discord.Embed(title=f"Match #{len(count)+1}", description=f"**Map:** {self.data[ctx.guild.id][lobby]['map']}", color=33023)
@@ -266,8 +262,7 @@ class Queue(commands.Cog):
             )
         return True
 
-    # // WHEN AN USER JOINS THE QUEUE FUNCTION
-    # /////////////////////////////////////////
+    # When an user joins the queue function
     async def _join(self, ctx:commands.Context, user, lobby):
         if not await self.is_valid_lobby(ctx, lobby):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
@@ -298,8 +293,7 @@ class Queue(commands.Cog):
             
         
 
-    # // WHEN AN USER LEAVES THE QUEUE FUNCTION
-    # /////////////////////////////////////////
+    # When an user leaves the queue function
     async def _leave(self, ctx:commands.Context, user, lobby):
         if not await self.is_valid_lobby(ctx, lobby):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
@@ -314,8 +308,7 @@ class Queue(commands.Cog):
         return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in the queue", color=15158588))
         
 
-    # // PICK TEAMMATES (TEAM CAPTAIN) COMMAND
-    # /////////////////////////////////////////
+    # Pick teammates (team captain) command
     @commands.command(name="pick", aliases=["p"], description='`=pick (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def pick(self, ctx:commands.Context, user:discord.Member):
@@ -356,9 +349,7 @@ class Queue(commands.Cog):
             
             
             
-        
-    # // PICK MAP TO PLAY (BLUE CAPTAIN) COMMAND
-    # ///////////////////////////////////////////
+    # Pick map to play (blue captain) command
     @commands.command(name="pickmap", description='`=pickmap (map name)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def pickmap(self, ctx:commands.Context, map:str):
@@ -379,18 +370,15 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
             
-            
-    
-    # // JOIN THE QUEUE COMMAND
-    # /////////////////////////////////////////
+        
+    # Join the queue command
     @commands.command(name="join", aliases=["j"], description='`=join`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def join(self, ctx:commands.Context):
         if not ctx.author.bot:
             return await self._join(ctx, ctx.author, ctx.channel.id)
 
-    # // FORCE ADD AN USER TO THE QUEUE COMMAND
-    # //////////////////////////////////////////
+    # Force join an user to the queue command
     @commands.command(name="forcejoin", aliases=["fj"], description='`=forcejoin (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def forcejoin(self, ctx:commands.Context, user:discord.Member):
@@ -399,16 +387,14 @@ class Queue(commands.Cog):
                 return await self._join(ctx, user, ctx.channel.id)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
-    # // LEAVE THE QUEUE COMMAND
-    # /////////////////////////////////////////
+    # Leave the queue command
     @commands.command(name="leave", aliases=["l"], description='`=leave`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def leave(self, ctx:commands.Context):
         if not ctx.author.bot:
             return await self._leave(ctx, ctx.author, ctx.channel.id)
 
-    # // FORCE REMOVE A PLAYER FROM THE QUEUE COMMAND
-    # ////////////////////////////////////////////////
+    # Force remove an user from the queue command
     @commands.command(name="forceleave", aliases=["fl"], description='`=forceleave (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def forceleave(self, ctx:commands.Context, user:discord.Member):
@@ -417,8 +403,7 @@ class Queue(commands.Cog):
                 return await self._leave(ctx, user, ctx.channel.id)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
-    # // SHOW THE CURRENT QUEUE COMMAND
-    # /////////////////////////////////////////
+    # Show the current queue command
     @commands.command(name="queue", aliases=["q"], description='`=queue`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def queue(self, ctx:commands.Context):
@@ -427,8 +412,7 @@ class Queue(commands.Cog):
                 return await self._embeds(ctx, ctx.channel.id)
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
     
-    # // CLEAR THE CURRENT QUEUE COMMAND
-    # /////////////////////////////////////////
+    # Clear the current queue command
     @commands.command(name="clear", description='`=clear`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def clear(self, ctx:commands.Context):
@@ -440,8 +424,7 @@ class Queue(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
-    # // PARTY COMMAND
-    # ////////////////////////////
+    # Party commands
     @commands.command(name="party", aliases=["team"], description='`=party create`**,** `=party leave)`**,** `=party show`**,** `=party kick (@user)`**,** `=party invite (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def party(self, ctx:commands.Context, action:str, *args):
