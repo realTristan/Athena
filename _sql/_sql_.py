@@ -5,7 +5,7 @@ db = mysql.connector.connect(
     host="localhost", port="3306", user="root", password="root", database="main"
 )
 
-class SqlData():
+class SqlData:
     def __init__(self):
         pass
         #with closing(db.cursor()) as cur:
@@ -23,14 +23,11 @@ class SqlData():
             # // SETTINGS TABLE
             #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
-            # // LOBBIES TABLE
-            #cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby BIGINT, id INT PRIMARY KEY AUTO_INCREMENT)")
-
             # // LOBBY SETTINGS
             #cur.execute("CREATE TABLE lobby_settings (guild_id BIGINT, lobby_id BIGINT, map_pick_phase INT, team_pick_phase INT, win_elo int, loss_elo INT, party_size INT, negative_elo INT, queue_size INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // MATCHES TABLE
-            # cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id INT, lobby_id BIGINT, map VARCHAR(50), orange_cap VARCHAR(50), orange_team VARCHAR(200), blue_cap VARCHAR(50), blue_team VARCHAR(200), status VARCHAR(50), winners VARCHAR(50), id INT PRIMARY KEY AUTO_INCREMENT)")
+            # cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id INT, lobby_id BIGINT, map VARCHAR(50), orange_cap BIGINT, orange_team VARCHAR(200), blue_cap BIGINT, blue_team VARCHAR(200), status VARCHAR(20), winners VARCHAR(10), id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // MAPS TABLES
             #cur.execute("CREATE TABLE maps (guild_id BIGINT, lobby_id BIGINT, map VARCHAR(30), id INT PRIMARY KEY AUTO_INCREMENT)")
