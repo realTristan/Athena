@@ -47,7 +47,7 @@ class Cache:
             
     # Fetch a value from the cache
     @staticmethod
-    def fetch(table: str, column=None, opt=None):
+    def fetch(table: str, column=None, opt: str=None):
         if column is not None:
             if opt is not None:
                 return cache[table][column][opt]
@@ -59,7 +59,7 @@ class Cache:
     
     # Check if a value exists in the cache
     @staticmethod
-    def exists(table: str, column: str, opt=None):
+    def exists(table: str, column: str, opt: str=None):
         if opt is None:
             return column in cache[table]
         return opt in cache[table][column]
