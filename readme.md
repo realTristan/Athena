@@ -1,8 +1,6 @@
-# Athena Ten Mans
+# Athena Ten Mans ![Stars](https://img.shields.io/github/stars/realTristan/Athena_Ten_Mans?color=brightgreen) ![Watchers](https://img.shields.io/github/watchers/realTristan/Athena_Ten_Mans?label=Watchers)
+![banner (1)](https://user-images.githubusercontent.com/75189508/186436602-49cece53-270e-4492-8146-b317fd8f966b.png)
 
-> - Bot Code:
-- **MySQL Database**
-- **Fast and Clean**
 
 > - Server Settings:
 - **Enable/Disable Match Logging with Easy Match Report Buttons**
