@@ -1,5 +1,5 @@
 # Athena Ten Mans ![Stars](https://img.shields.io/github/stars/realTristan/Athena_Ten_Mans?color=brightgreen) ![Watchers](https://img.shields.io/github/watchers/realTristan/Athena_Ten_Mans?label=Watchers)
-![banner (1)](https://user-images.githubusercontent.com/75189508/186436602-49cece53-270e-4492-8146-b317fd8f966b.png)
+![banner (2)](https://user-images.githubusercontent.com/75189508/186437730-7d7e97de-8cdc-4ca4-85ec-03adb58b913b.png)
 
 
 # Settings
