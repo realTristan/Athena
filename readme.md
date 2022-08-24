@@ -2,6 +2,8 @@
 ![banner (1)](https://user-images.githubusercontent.com/75189508/186436602-49cece53-270e-4492-8146-b317fd8f966b.png)
 
 
+# Settings
+
 > - Server Settings:
 - **Enable/Disable Match Logging with Easy Match Report Buttons**
 - **Queue Embed with Join and Leave Buttons**
@@ -12,6 +14,8 @@
 - **Enable/Disable Map Picking Phase**
 - **Enable/Disable Team Picking Phase**
 - **Change Party Size**
+
+# Usage
 
 > - Lobby Commands:
 - Type **(=lobby add)** to create a new lobby
