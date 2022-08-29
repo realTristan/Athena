@@ -13,8 +13,11 @@ class Elo(commands.Cog):
     async def _check_member(self, ctx:commands.Context, member_id:int):
         member = ctx.guild.get_member(member_id)
         if member is None:
-            if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"):
-                await SqlData.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}")
+            if Cache.exists(table="users", guild=ctx.guild.id, key=member_id):
+                await Cache.delete(
+                    table="users", guild=ctx.guild.id, key=member_id, 
+                    sqlcmd=f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"
+                )
         return member
         
     # Check mod role or mod permissions
@@ -43,14 +46,23 @@ class Elo(commands.Cog):
     # RESET AN USERS STATS
     # ///////////////////////////////////////
     async def _reset_stats(self, ctx:commands.Context, user:discord.Member):
-        await SqlData.execute(f"UPDATE users SET elo = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        await SqlData.execute(f"UPDATE users SET wins = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-        await SqlData.execute(f"UPDATE users SET loss = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
-
+        user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=user.id)
+        columns = ["wins", "loss", "elo"]
+        for i in range(1, 3):
+            user_data[i] = 0
+            Cache.update(
+                table="users", guild=ctx.guild.id, key=user.id, data=user_data, 
+                sqlcmd=f"UPDATE users SET {columns[i]} = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"
+            )
+        
     # // REGISTER USER INTO THE DATABASE FUNCTION
     # ///////////////////////////////////////////////
     async def _register_user(self, ctx:commands.Context, user:discord.Member, name:str, role:discord.Role):
-        await SqlData.execute(f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)")
+        await Cache.update(
+            sqlcmd=f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)",
+            table="musers", guild=ctx.guild.id, 
+            data=[name, 0, 0, 0]
+        )
         if role is not None and role not in user.roles:
             await self._user_edit(user, role=role)
 
