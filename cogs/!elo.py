@@ -13,7 +13,7 @@ class Elo(commands.Cog):
     async def _check_member(self, ctx:commands.Context, member_id:int):
         member = ctx.guild.get_member(member_id)
         if member is None:
-            if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"):
+            if Cache.exists(table="users", guild=ctx.guild.id, key=member_id):
                 await SqlData.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}")
         return member
         
@@ -184,7 +184,7 @@ class Elo(commands.Cog):
                     elo_roles = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                     if len(elo_roles) < 20:
                         elo_amount = int(args[1])
-                        if not await SqlData.exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
+                        if not Cache.exists(table="elo_roles", guild=ctx.guild.id, key=role.id):
                             await SqlData.execute(f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {elo_amount}, 5, 2)")
                             return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_amount} elo**", color=3066992))
                         return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
@@ -194,7 +194,7 @@ class Elo(commands.Cog):
         
         if option in ["remove", "delete", "del"]:
             if await self.check_admin_role(ctx):
-                if await SqlData.exists(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"):
+                if Cache.exists(table="elo_roles", guild=ctx.guild.id, key=role.id):
                     elo_roles = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id}")
                     
                     await SqlData.execute(f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}")
@@ -464,7 +464,7 @@ class Elo(commands.Cog):
                     user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                     if user is not None:
                         if not user.bot:
-                            if not await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                            if not Cache.exists(table="users", guild=ctx.guild.id, key=user.id):
                                 name = user.name
                                 if len(args) > 1:
                                     name = args[1]
@@ -481,7 +481,7 @@ class Elo(commands.Cog):
                 name = ctx.author.name
                 if len(args) > 0:
                     name = args[0]
-                if not await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {ctx.author.id}"):
+                if not Cache.exists(table="users", guild=ctx.guild.id, key=ctx.author.id):
                     await self._register_user(ctx, ctx.author, name, role)
                     await self._user_edit(ctx.author, nick=f"{name} [0]")
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
@@ -494,7 +494,7 @@ class Elo(commands.Cog):
     async def unregister(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
-                if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                if Cache.exists(table="users", guild=ctx.guild.id, key=user.id):
                     await SqlData.execute(f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}")
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unregistered {user.mention}", color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
@@ -560,7 +560,7 @@ class Elo(commands.Cog):
                 if args == "all":
                     for user in ctx.guild.members:
                         if not user.bot:
-                            if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"):
+                            if Cache.exists(table="users", guild=ctx.guild.id, key=user.id):
                                 await self._reset_stats(ctx, user)
                     return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{ctx.author.mention} has reset every players stats", color=3066992))
             
