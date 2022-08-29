@@ -59,15 +59,15 @@ class Elo(commands.Cog):
     async def _user_edit(self, user:discord.Member, nick:str=None, role:discord.Role=None, remove_role:discord.Role=None):
         if nick is not None:
             try: await user.edit(nick=nick)
-            except Exception as e: print(f"Elo 65: {e}")
+            except Exception: pass
 
         if role is not None:
             try: await user.add_roles(role)
-            except Exception as e: print(f"Elo 69: {e}")
+            except Exception: pass
             
         if remove_role is not None:
             try: await user.remove_roles(remove_role)
-            except Exception as e: print(f"Elo 73: {e}")
+            except Exception: pass
 
     # // EDIT AN USERS ELO ROLE
     # /////////////////////////////////////////
