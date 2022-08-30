@@ -1192,68 +1192,118 @@ class Elo(commands.Cog):
     async def on_button_click(self, res:Interaction):
         if not res.author.bot:
             if res.component.id in ['blue_report', 'orange_report', 'match_cancel']:
+                
+                # // Check if the user has the mod role
                 if await self.check_mod_role(res):
+                    
                     # // GETTING THE MATCH ID
                     match_id = int(str(res.message.embeds[0].title).replace("Match #", ""))
                     lobby_id = int(res.message.embeds[0].footer.text)
                     
                     # // GETTING THE ROWS FROM DATABASE
-                    status = Cache.fetch(table="matches", guild=res.guild.id, key=match_id)[7]
+                    match_data = Cache.fetch(table="matches", guild=res.guild.id, key=match_id)
                     lobby_settings = Cache.fetch(table="lobby_settings", guild=res.guild.id, key=lobby_id)
 
-                    if status in ["ongoing"]:
+                    # // Check match status
+                    if match_data[6] in ["ongoing"]:
                         # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
-                        blue_team=res.message.embeds[0].fields[5].value.split("\n")
+                        blue_team = res.message.embeds[0].fields[5].value.split("\n")
                         blue_team.append(int(re.sub("\D","", res.message.embeds[0].fields[2].value)))
 
                         # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
-                        orange_team=res.message.embeds[0].fields[3].value.split("\n")
+                        orange_team = res.message.embeds[0].fields[3].value.split("\n")
                         orange_team.append(int(re.sub("\D","", res.message.embeds[0].fields[0].value)))
 
+                        # // CANCEL THE MATCH
                         if res.component.id == "match_cancel":
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has cancelled **Match #{match_id}**", color=3066992))
-                            await SqlData.execute(f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                            await SqlData.execute(f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
+                            # // Update the match status and winners
+                            match_data[6] = "reported"
+                            match_data[7] = "none"
+                            
+                            # // Update the cache and database
+                            await Cache.update(
+                                table="matches", guild=res.guild.id, key=match_id, data=match_data, 
+                                sqlcmds=[
+                                    f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}",
+                                    f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}"
+                                ]
+                            )
 
+                        # // REPORT BLUE TEAM WIN
                         if res.component.id == 'blue_report':
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
-
-                            await SqlData.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                            await SqlData.execute(f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-
-                            # // ADDING A WIN FOR EACH BLUE TEAM PLAYER
+                            
+                            # // Update the match status and winners
+                            match_data[6] = "reported"
+                            match_data[7] = "blue"
+                            
+                            # // Update the cache and database
+                            await Cache.update(
+                                table="matches", guild=res.guild.id, key=match_id, data=match_data, 
+                                sqlcmds=[
+                                    f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}",
+                                    f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}"
+                                ]
+                            )
+                            
+                            # // Add a win to each blue team member
                             for user in blue_team:
                                 member = await self._check_member(res, int(re.sub("\D","", user)))
                                 if member is not None:
                                     await self._add_win(res.channel, member, lobby_settings)
 
-                            # // ADDING A LOSS FOR EACH ORANGE TEAM PLAYER
+                            # // Add a loss to each orange team member
                             for _user in orange_team:
                                 member = await self._check_member(res, int(re.sub("\D","", _user)))
                                 if member is not None:
                                     await self._add_loss(res.channel, member, lobby_settings)
 
+                        
+                        # // REPORT ORANGE TEAM WIN
                         if res.component.id == 'orange_report':
+                            
+                            # // Send reported embed
                             await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
 
-                            await SqlData.execute(f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-                            await SqlData.execute(f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}")
-
+                            # // Update the match status and winners
+                            match_data[6] = "reported"
+                            match_data[7] = "orange"
+                            
+                            # // Update the cache and database
+                            await Cache.update(
+                                table="matches", guild=res.guild.id, key=match_id, data=match_data, 
+                                sqlcmds=[
+                                    f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}",
+                                    f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}"
+                                ]
+                            )
+                            # // Add a loss to each blue team member
                             for user in blue_team:
                                 member = await self._check_member(res, int(re.sub("\D","", user)))
                                 if member is not None:
                                     await self._add_loss(res.channel, member, lobby_settings)
 
+                            # // Add a win to each orange team member
                             for _user in orange_team:
                                 member = await self._check_member(res, int(re.sub("\D","", _user)))
                                 if member is not None:
                                     await self._add_win(res.channel, member, lobby_settings)
+                                    
+                    # // Send error embed
                     else:
                         await res.send(embed=discord.Embed(description=f"{res.author.mention} this match has already been reported", color=15158588))
 
+                    # // Delete the original embed
                     await res.message.delete()
+                    
+                    # // Show the new match data
                     await self._match_show(res.channel, match_id)
+                    
+                    # // Delete the match channels
                     return await self._delete_channels(res.channel, match_id)
+                
+                # // Permissions error embed
                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
 
 
