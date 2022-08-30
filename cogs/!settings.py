@@ -4,10 +4,10 @@ import discord, asyncio, re
 from functools import *
 from _sql import *
 
+# // Settings cog
 class Settings(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        # 1 == true, 0 == false
     
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
@@ -52,16 +52,22 @@ class Settings(commands.Cog):
                 return ["🟢", "Disable"]
             return ["🔴", "Enable"]
         
+        
     # // CONVERT 0-1 TO FALSE-TRUE
     # /////////////////////////////////////
     def num_to_words(self, value:int):
         if value == 1:
             return 'ENABLED'
         return 'DISABLED'
-
-    # Check admin role or admin permissions
+    
+    
+    # // Check admin role or admin permissions
+    # //////////////////////////////////////////
     async def check_admin_role(self, ctx: commands.Context):
+        # // Get the admin role from settings
         admin_role = Cache.fetch(table="settings", guild=ctx.guild.id)[5]
+        
+        # // Check admin permissions
         if admin_role == 0 or ctx.author.guild_permissions.administrator:
             return ctx.author.guild_permissions.administrator
         return ctx.guild.get_role(admin_role) in ctx.author.roles

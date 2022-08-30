@@ -19,6 +19,7 @@ class Queue(commands.Cog):
     def _clean_name(self, name):
         return str(name[0]).upper() + str(name[1:]).lower()
     
+    
     # Check if a member is still in the server
     async def _check_member(self, ctx:commands.Context, member_id:int):
         member = ctx.guild.get_member(member_id)
@@ -29,6 +30,7 @@ class Queue(commands.Cog):
                     sqlcmds=[f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"]
                 )
         return member
+    
     
     # Check if channel is a valid queue lobby
     async def is_valid_lobby(self, ctx:commands.Context, lobby: int):
@@ -42,19 +44,30 @@ class Queue(commands.Cog):
             return True
         return False
     
-    # Check for mod role
+    
+    # // Check mod role or mod permissions
+    # //////////////////////////////////////////
     async def check_mod_role(self, ctx: commands.Context):
+        # // If the user has admin role, return true
         if await self.check_admin_role(ctx):
             return True
+        
+        # // Else, check for whether the user has mod role
         mod_role = Cache.fetch(table="settings", guild=ctx.guild.id)[4]
         return ctx.guild.get_role(mod_role) in ctx.author.roles
     
-    # Check for admin role or admin permissions
+    
+    # // Check admin role or admin permissions
+    # //////////////////////////////////////////
     async def check_admin_role(self, ctx: commands.Context):
+        # // Get the admin role from settings
         admin_role = Cache.fetch(table="settings", guild=ctx.guild.id)[5]
+        
+        # // Check admin permissions
         if admin_role == 0 or ctx.author.guild_permissions.administrator:
             return ctx.author.guild_permissions.administrator
         return ctx.guild.get_role(admin_role) in ctx.author.roles
+
 
     # Add other party members to the queue
     async def _check_party(self, ctx:commands.Context, user, lobby):
@@ -73,16 +86,18 @@ class Queue(commands.Cog):
             return False
         return True
     
+    
     # Send match logs to the given match logs channel
     async def _match_log(self, ctx:commands.Context, embed:discord.Embed):
-        settings = Cache.fetch(table="settings", guild=ctx.guild.id)[3]
-        if settings[3] != 0:
-            channel = ctx.guild.get_channel(settings[3])
+        settings = Cache.fetch(table="settings", guild=ctx.guild.id)
+        if settings[2] != 0:
+            channel = ctx.guild.get_channel(settings[2])
             if channel is None:
                 settings[3] = 0
-                return await Cache.update(
+                return (await Cache.update(
                     table="settings", guild=ctx.guild.id, data=settings, 
-                    sqlcmds=[f"UPDATE settings SET match_logs = 0 WHERE guild_id = {ctx.guild.id}"])
+                    sqlcmds=[f"UPDATE settings SET match_logs = 0 WHERE guild_id = {ctx.guild.id}"]
+                ))
             return await channel.send(
                 embed=embed,
                 components=[[
@@ -95,7 +110,7 @@ class Queue(commands.Cog):
     # Create the match category function
     async def _match_category(self, ctx:commands.Context, match_id, lobby):
         settings = Cache.fetch(table="settings", guild=ctx.guild.id)
-        if settings[2] == 1:
+        if settings[1] == 1:
             if not get(ctx.guild.categories, name=f'Match #{match_id}'):
                 # Creating category and setting permissions
                 category = await ctx.guild.create_category(f'Match #{match_id}')
@@ -120,6 +135,7 @@ class Queue(commands.Cog):
                 for _user in blue_team:
                     await category.set_permissions(_user, connect=True, send_messages=True)
 
+
     # Match logging function
     async def _match(self, ctx:commands.Context, lobby):
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['orange_team'])
@@ -134,6 +150,7 @@ class Queue(commands.Cog):
             ]
         )
 
+
     # Create team pick logic function
     async def _pick_logic(self, ctx:commands.Context, lobby):
         for _ in range(round(len(self.data[ctx.guild.id][lobby]["queue"]) / 2)):
@@ -142,6 +159,7 @@ class Queue(commands.Cog):
 
         if len(self.data[ctx.guild.id][lobby]["queue"]) > len(self.data[ctx.guild.id][lobby]["pick_logic"]):
             self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["orange_cap"])
+
 
     # Embed generator function (for queue)
     async def _embeds(self, ctx:commands.Context, lobby):
@@ -206,6 +224,7 @@ class Queue(commands.Cog):
             await self._match_category(ctx, len(count)+1, lobby)
             self._reset(ctx, lobby)
 
+
     # When the queue reaches max capacity function
     async def _start(self, ctx:commands.Context, lobby):
         settings = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=lobby)
@@ -249,6 +268,7 @@ class Queue(commands.Cog):
             self.data[ctx.guild.id][lobby]["state"] = "final"
         return await self._embeds(ctx, lobby)
 
+
     # Check if user is banned function
     async def _ban_check(self, ctx:commands.Context, user):
         if Cache.exists(table="bans", guild=ctx.guild.id, key=user.id):
@@ -261,6 +281,7 @@ class Queue(commands.Cog):
                 sqlcmds=[f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"]
             )
         return True
+
 
     # When an user joins the queue function
     async def _join(self, ctx:commands.Context, user, lobby):
@@ -291,8 +312,6 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/{queue_size}]** {user.mention} has joined the queue", color=33023))
         
             
-        
-
     # When an user leaves the queue function
     async def _leave(self, ctx:commands.Context, user, lobby):
         if not await self.is_valid_lobby(ctx, lobby):
