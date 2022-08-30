@@ -53,4 +53,4 @@ async def on_ready():
             client.load_extension(f'cogs.{filename[:-3]}')
             print(f'Loaded: cog.{filename[:-3]}')
 
-client.run('ODgzMDA2NjA5MjgwODY0MjU3.GTwvui.LHj9y24ldc7dU9aoMAjqwGKUO5noab1ObCc9vE')
+client.run('YOUR BOT TOKEN')

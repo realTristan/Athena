@@ -1,4 +1,5 @@
-from _sql_ import SqlData
+from ._sql_ import SqlData
+import sys
 
 # // The Global Cache Variable
 cache: dict[str, dict] = {
@@ -85,8 +86,9 @@ class Cache:
                 
         # If no key is provided
         if key is None:
-            cache[table][guild] = data; print(cache[table][guild]); return
-        cache[table][guild][key] = data; print(cache[table][guild]); return
+            cache[table][guild] = data; print(sys.getsizeof(cache)); return
+        cache[table][guild][key] = data; print(sys.getsizeof(cache)); return
+        
         
     # Delete a value in the cache
     @staticmethod
