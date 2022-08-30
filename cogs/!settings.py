@@ -99,8 +99,6 @@ class Settings(commands.Cog):
         
         elif args[0] in ["info", "show"]:
             role_id = await SqlData.select(f"SELECT mod_role FROM settings WHERE guild_id = {ctx.guild.id}")
-            if role_id is None:
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
             if role_id[0] != 0:
                 role = ctx.guild.get_role(role_id[0])
                 return await ctx.send(embed=discord.Embed(description=f"**Mod Role:** {role.mention}", color=33023))
@@ -127,8 +125,6 @@ class Settings(commands.Cog):
         
         elif args[0] in ["info", "show"]:
             role_id = await SqlData.select(f"SELECT admin_role FROM settings WHERE guild_id = {ctx.guild.id}")
-            if role_id is None:
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
             if role_id[0] != 0:
                 role = ctx.guild.get_role(role_id[0])
                 return await ctx.send(embed=discord.Embed(description=f"**Admin Role:** {role.mention}", color=33023))
@@ -270,10 +266,8 @@ class Settings(commands.Cog):
         if not ctx.author.bot:
             if await self.check_admin_role(ctx):
                 if role < ctx.author.top_role or ctx.author.guild_permissions.administrator:
-                    if await SqlData.exists(f"SELECT * FROM settings WHERE guild_id = {ctx.guild.id}"):
-                        await SqlData.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
-                        return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} an administrator needs to run the **=settings** command", color=15158588))
+                    await SqlData.execute(f"UPDATE settings SET reg_role = {role.id} WHERE guild_id = {ctx.guild.id}")
+                    return await ctx.send(embed=discord.Embed(description=f'{ctx.author.mention} set the register role to {role.mention}', color=3066992))
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please choose a role lower than {ctx.author.top_role.mention}", color=15158588))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
