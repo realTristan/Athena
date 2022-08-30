@@ -26,7 +26,7 @@ class Queue(commands.Cog):
             if Cache.exists(table="users", guild=ctx.guild.id, key=member_id):
                 await Cache.delete(
                     table="users", guild=ctx.guild.id, key=member_id, 
-                    sqlcmd=f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"
+                    sqlcmds=[f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"]
                 )
         return member
     
@@ -82,7 +82,7 @@ class Queue(commands.Cog):
                 settings[3] = 0
                 return await Cache.update(
                     table="settings", guild=ctx.guild.id, data=settings, 
-                    sqlcmd=f"UPDATE settings SET match_logs = 0 WHERE guild_id = {ctx.guild.id}")
+                    sqlcmds=[f"UPDATE settings SET match_logs = 0 WHERE guild_id = {ctx.guild.id}"])
             return await channel.send(
                 embed=embed,
                 components=[[
@@ -126,7 +126,7 @@ class Queue(commands.Cog):
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['blue_team'])
         count = len(Cache.fetch(table="matches", guild=ctx.guild.id))+1
         await Cache.update(
-            sqlcmd=f"INSERT INTO matches (guild_id, match_id, lobby_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {count}, {lobby}, '{self.data[ctx.guild.id][lobby]['map']}', '{self.data[ctx.guild.id][lobby]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id][lobby]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')",
+            sqlcmds=[f"INSERT INTO matches (guild_id, match_id, lobby_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) VALUES ({ctx.guild.id}, {count}, {lobby}, '{self.data[ctx.guild.id][lobby]['map']}', '{self.data[ctx.guild.id][lobby]['orange_cap'].id}', '{orange_team}', '{self.data[ctx.guild.id][lobby]['blue_cap'].id}', '{blue_team}', 'ongoing', 'none')"],
             table="matches", guild=ctx.guild.id, key=count, 
             data=[
                 lobby, self.data[ctx.guild.id][lobby]['map'], self.data[ctx.guild.id][lobby]['orange_cap'].id, 
@@ -258,7 +258,7 @@ class Queue(commands.Cog):
                 return False
             await Cache.delete(
                 table="bans", guild=ctx.guild.id, key=user.id,
-                sqlcmd=f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"
+                sqlcmds=[f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"]
             )
         return True
 
