@@ -37,11 +37,7 @@ class Bans(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def ban(self, ctx:commands.Context, user:discord.Member, length_str:str, *args):
         if not ctx.author.bot:
-            
-            # // Check if the user has the mod role
             if await self.check_mod_role(ctx):
-                
-                # // Get the ban length
                 if "s" in length_str:
                     length = int(re.sub("\D","", length_str))
                 if "m" in length_str:
@@ -75,10 +71,8 @@ class Bans(commands.Cog):
                     sqlcmds=[f"INSERT INTO bans (guild_id, user_id, length, reason, banned_by) VALUES ({ctx.guild.id}, {user.id}, {ban_time}, '{ban_reason}', '{ctx.author.mention}')"]
                 )
                 
-                # // Send success embed
+                # // Send the embeds
                 return await ctx.send(embed=discord.Embed(title=f"{user.name} banned", description=f"**Length:** {datetime.timedelta(seconds=int(ban_time-time.time()))}\n**Reason:** {ban_reason}\n**Banned by:** {ctx.author.mention}", color=15158588))
-            
-            # // Send permissions error embed
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
     # Remove an user from the ban database command
@@ -86,23 +80,16 @@ class Bans(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def unban(self, ctx:commands.Context, user:discord.Member):
         if not ctx.author.bot:
-            
-            # // Check if the user has the mod role
             if await self.check_mod_role(ctx):
-                
                 # // If the user exists in the bans cache and database
                 if Cache.exists(table="bans", guild=ctx.guild.id, key=user.id):
-                    
-                    # // Remove the user from the cache and database
                     await Cache.delete(
                         table="bans", guild=ctx.guild.id, key=user.id,
                         sqlcmds=[f"DELETE FROM bans WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"]
                     )
                     
-                    # // Send success embed
+                    # // Send the embeds
                     return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has unbanned {user.mention}", color=3066992))
-                
-            # // Send error embeds (all below)
                 return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not banned", color=33023))
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
 
