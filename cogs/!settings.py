@@ -197,7 +197,7 @@ class Settings(commands.Cog):
             
             # // Insert the lobby into the database
             await Cache.update(table="lobby_settings", guild=ctx.guild.id, key=ctx.channel.id, 
-                data=[{ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10], 
+                data=[ctx.guild.id, ctx.channel.id, 0, 1, 5, 2, 1, 1, 10], 
                 sqlcmds=[
                     f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10)"
                 ]
@@ -285,6 +285,7 @@ class Settings(commands.Cog):
             
             # // Fetch the lobby settings and maps
             settings = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=ctx.channel.id)
+            print(settings)
             maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=ctx.channel.id)
 
             embed = discord.Embed(title=f"About #{ctx.channel.name}", color=33023)
@@ -389,7 +390,7 @@ class Settings(commands.Cog):
         # // If the settings table doesn't exist
         if not Cache.exists(table="settings", guild=ctx.guild.id):
             await Cache.update(table="settings", guild=ctx.guild.id, 
-                data=[{ctx.guild.id}, 0, 0, 0, 0, 0, 0, 0],
+                data=[ctx.guild.id, 0, 0, 0, 0, 0, 0, 0],
                 sqlcmds=[
                     f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({ctx.guild.id}, 0, 0, 0, 0, 0, 0, 0)"
                 ]

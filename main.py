@@ -42,7 +42,7 @@ async def on_guild_remove(guild):
 # ///////////////////
 @client.event
 async def on_ready():
-    await Cache.map_data()
+    await Cache.load_data()
     DiscordComponents(client)
     print(f'Launched: {client.user.name} // {client.user.id}')
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{len(client.guilds)} Servers"))
@@ -53,4 +53,4 @@ async def on_ready():
             client.load_extension(f'cogs.{filename[:-3]}')
             print(f'Loaded: cog.{filename[:-3]}')
 
-client.run('YOUR BOT TOKEN')
+client.run('YOUR TOKEN HERE')

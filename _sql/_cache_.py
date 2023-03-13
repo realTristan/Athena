@@ -13,7 +13,7 @@ cache: dict[str, dict] = {
 class Cache:
     # // Add all MySQL Data into a cached map
     @staticmethod
-    async def map_data():
+    async def load_data():
         adv_tables: list[str] = ["users", "bans", "lobby_settings", "elo_roles", "matches"]
         [await Cache.load_advanced(table) for table in adv_tables]
         await Cache.load_settings()
@@ -26,6 +26,7 @@ class Cache:
         for row in rows:
             if row[0] not in cache[table]:
                 cache[table][row[0]] = {}
+                print(table + ": " + str(row[0]))
             cache[table][row[0]][row[1]] = row[2:]
     
     
@@ -51,9 +52,18 @@ class Cache:
     # // Fetch a value from the cache
     @staticmethod
     def fetch(table: str, guild=None, key: str=None):
+        # // Check if the guild exists in the cache table
+        if guild not in cache[table]:
+            cache[table][guild] = {}
+
         # // If not guild param is provided
         if guild is not None:
             if key is not None:
+                # // If the key does not exists in the cache
+                if key not in cache[table][guild]:
+                    cache[table][guild][key] = []
+                
+                # // Return the value from the cache
                 return cache[table][guild][key]
             return cache[table][guild]
         
@@ -76,7 +86,7 @@ class Cache:
     
     # Update a value in the cache
     @staticmethod
-    async def update(table: str, guild: str, data: any, key: str=None, sqlcmds: list=None):
+    async def update(table: str, guild: str, data: any, key: str=None, sqlcmds: list=[]):
         # // If there are provided sql cmds
         if len(sqlcmds) > 0:
             for cmd in sqlcmds:
@@ -100,7 +110,7 @@ class Cache:
         
     # Delete a value in the cache
     @staticmethod
-    async def delete(table: str, guild: str, key: str=None, sub_key: str=None, sqlcmds: list=None):
+    async def delete(table: str, guild: str, key: str=None, sub_key: str=None, sqlcmds: list=[]):
         # If there are provided sql cmds
         if len(sqlcmds) > 0:
             for cmd in sqlcmds:
