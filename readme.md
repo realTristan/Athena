@@ -13,7 +13,7 @@
 - **Enable/Disable Map Picking Phase**
 - **Enable/Disable Team Picking Phase**
 - **Change Party Size**
-
+ 
 # Usage
 
 > - Lobby Commands:
