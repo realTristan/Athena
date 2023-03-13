@@ -31,7 +31,7 @@ class Elo(commands.Cog):
             return True
         
         # // Else, check for whether the user has mod role
-        mod_role = Cache.fetch(table="settings", guild=ctx.guild.id)[4]
+        mod_role = Cache.fetch(table="settings", guild=ctx.guild.id, key=4)
         return ctx.guild.get_role(mod_role) in ctx.author.roles
     
     
@@ -39,7 +39,7 @@ class Elo(commands.Cog):
     # //////////////////////////////////////////
     async def check_admin_role(self, ctx: commands.Context):
         # // Get the admin role from settings
-        admin_role = Cache.fetch(table="settings", guild=ctx.guild.id)[5]
+        admin_role = Cache.fetch(table="settings", guild=ctx.guild.id, key=5)
         
         # // Check admin permissions
         if admin_role == 0 or ctx.author.guild_permissions.administrator:

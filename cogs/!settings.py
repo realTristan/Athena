@@ -65,7 +65,7 @@ class Settings(commands.Cog):
     # //////////////////////////////////////////
     async def check_admin_role(self, ctx: commands.Context):
         # // Get the admin role from settings
-        admin_role = Cache.fetch(table="settings", guild=ctx.guild.id)[5]
+        admin_role = Cache.fetch(table="settings", guild=ctx.guild.id, key=5)
         
         # // Check admin permissions
         if admin_role == 0 or ctx.author.guild_permissions.administrator:
@@ -89,7 +89,7 @@ class Settings(commands.Cog):
     async def _del_map(self, ctx: commands.Context, map:str, lobby:int):
         maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=ctx.channel.id)
         if map in maps:
-            await Cache.delete(table="maps", guild=ctx.guild.id, key=ctx.channel.id, key=map, sqlcmds=[
+            await Cache.delete(table="maps", guild=ctx.guild.id, key=ctx.channel.id, sub_key=map, sqlcmds=[
                 f"DELETE FROM maps WHERE map = '{map}' AND guild_id = {ctx.guild.id} AND lobby_id = {lobby}"
             ])
             return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)-1}/20]** {ctx.author.mention} removed **{map}** from the map pool", color=3066992))
@@ -101,30 +101,37 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 1, commands.BucketType.guild)
     async def modrole(self, ctx: commands.Context, *args):
-        if args[0] in ["set", "create"]:
+        # // SET THE MOD ROLE
+        if args[0] in ["set", "add"]:
+            # // Get the role
             role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
-            if role is not None:
-                await Cache.update(table="settings", guild=ctx.guild.id, key=5, data=role.id, sqlcmds=[
-                    f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {ctx.guild.id}"
-                ])
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully set the mod role to {role.mention}", color=3066992))
-            else: 
-                raise Exception("Invalid role")
+            if role is None:
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid role", color=15158588))
+            
+            # // Update the database
+            await Cache.update(table="settings", guild=ctx.guild.id, key=5, data=role.id, sqlcmds=[
+                f"UPDATE settings SET mod_role = {role.id} WHERE guild_id = {ctx.guild.id}"
+            ])
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully set the mod role to {role.mention}", color=3066992))
         
+        # // SHOW THE MOD ROLE
         elif args[0] in ["info", "show"]:
+            # // Get the role
             role_id = Cache.fetch(table="settings", guild=ctx.guild.id, key=5)
+
+            # // Check if the role exists
             if role_id[0] != 0:
                 role = ctx.guild.get_role(role_id[0])
                 return await ctx.send(embed=discord.Embed(description=f"**Mod Role:** {role.mention}", color=33023))
             return await ctx.send(embed=discord.Embed(description=f"**Mod Role:** None", color=33023))
         
+        # // DELETE THE MOD ROLE
         elif args[0] in ["delete", "del", "reset", "remove"]:
             await Cache.update(table="settings", guild=ctx.guild.id, key=5, data=0, sqlcmds=[
                     f"UPDATE settings SET mod_role = 0 WHERE guild_id = {ctx.guild.id}"
                 ])
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully removed the mod role", color=3066992))
-        else:
-            raise Exception("Invalid option")
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid option", color=15158588))
         
     # // SET THE ADMIN ROLE
     # ////////////////////////
@@ -132,29 +139,37 @@ class Settings(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 1, commands.BucketType.guild)
     async def adminrole(self, ctx: commands.Context, *args):
+        # // SET THE ADMIN ROLE
         if args[0] in ["set", "create"]:
+            # // Get the role
             role = ctx.guild.get_role(int(re.sub("\D","", args[1])))
-            if role is not None:
-                await Cache.update(table="settings", guild=ctx.guild.id, key=6, data=role.id, sqlcmds=[
-                    f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {ctx.guild.id}"
-                ])
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully set the admin role to {role.mention}", color=3066992))
-            else: raise Exception("Invalid role")
+            if role is None:
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid role", color=15158588))
+            
+            # // Update the database
+            await Cache.update(table="settings", guild=ctx.guild.id, key=6, data=role.id, sqlcmds=[
+                f"UPDATE settings SET admin_role = {role.id} WHERE guild_id = {ctx.guild.id}"
+            ])
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully set the admin role to {role.mention}", color=3066992))
         
+        # // SHOW THE ADMIN ROLE
         elif args[0] in ["info", "show"]:
+            # // Get the role
             role_id = Cache.fetch(table="settings", guild=ctx.guild.id, key=6)
-            if role_id[0] != 0:
-                role = ctx.guild.get_role(role_id[0])
-                return await ctx.send(embed=discord.Embed(description=f"**Admin Role:** {role.mention}", color=33023))
-            return await ctx.send(embed=discord.Embed(description=f"**Admin Role:** None", color=33023))
+            if role_id[0] == 0:
+                return await ctx.send(embed=discord.Embed(description=f"**Admin Role:** None", color=33023))
+            
+            # // Send the admin role
+            role = ctx.guild.get_role(role_id[0])
+            return await ctx.send(embed=discord.Embed(description=f"**Admin Role:** {role.mention}", color=33023))
         
+        # // DELETE THE ADMIN ROLE
         elif args[0] in ["delete", "del", "reset", "remove"]:
             await Cache.update(table="settings", guild=ctx.guild.id, key=6, data=0, sqlcmds=[
                 f"UPDATE settings SET admin_role = 0 WHERE guild_id = {ctx.guild.id}"
             ])
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} successfully removed the admin role", color=3066992))
-        else:
-            raise Exception("Invalid option")
+        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid option", color=15158588))
     
     
     # // GUILD LOBBIES COMMAND
@@ -184,7 +199,6 @@ class Settings(commands.Cog):
             await Cache.update(table="lobby_settings", guild=ctx.guild.id, key=ctx.channel.id, 
                 data=[{ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10], 
                 sqlcmds=[
-                    f"INSERT INTO lobbies (guild_id, lobby) VALUES ({ctx.guild.id}, {ctx.channel.id})",
                     f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({ctx.guild.id}, {ctx.channel.id}, 0, 1, 5, 2, 1, 1, 10)"
                 ]
             )
@@ -204,7 +218,7 @@ class Settings(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
 
             # // Delete the lobby settings from the database
-            Cache.delete(table="lobby_settings", guild=ctx.guild.id, key=ctx.channel.id, sqlcmds=[
+            await Cache.delete(table="lobby_settings", guild=ctx.guild.id, key=ctx.channel.id, sqlcmds=[
                 f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {ctx.channel.id}"
             ])
 
@@ -252,7 +266,7 @@ class Settings(commands.Cog):
                 try:
                     channel = ctx.guild.get_channel(int(lobbies[i][0]))
                     if channel is not None:
-                        embed.add_field(name= f"{i+1}. " + channel.name, value=channel.mention)
+                        embed.add_field(name= f"{i + 1}. " + channel.name, value=channel.mention)
                     else:
                         await Cache.delete(table="lobbies", guild=ctx.guild.id, key=lobbies[i][0], sqlcmds=[
                             f"DELETE FROM lobby_settings WHERE guild_id = {ctx.guild.id} AND lobby_id = {lobbies[i][0]}"
@@ -763,23 +777,32 @@ class Settings(commands.Cog):
                 
                 # // QUEUE EMBED
                 if res.values[0] == "queue_embed":
-                    if await self.check_admin_role(res):
-                        await res.send(embed=discord.Embed(description=f"{res.author.mention} respond which lobby you want to use", color=33023))
-                        c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
-                        
-                        channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
-                        if channel is not None:
-                            if Cache.exists(table="lobby_settings", guild=res.guild.id, lobby=channel.id):
-                                await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
-                                embed=discord.Embed(title=f'[0/10] {channel.name}', color=33023)
-                                embed.set_footer(text=str(channel.id))
-
-                                return await res.channel.send(embed=embed, components=[[
-                                    Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
-                                    Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')]])
-                            return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
+                    if not await self.check_admin_role(res):
+                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
+                    
+                    # // Get the lobby
+                    await res.send(embed=discord.Embed(description=f"{res.author.mention} respond which lobby you want to use", color=33023))
+                    c = await self.client.wait_for('message', check=lambda message: message.author == res.author and message.channel == res.channel, timeout=10)
+                    
+                    # // Get the channel
+                    channel = res.guild.get_channel(int(re.sub("\D","",str(c.content))))
+                    if channel is None:
                         return await res.send(embed=discord.Embed(description=f"{res.author.mention} we could not find the given channel", color=3066992))
-                    return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
+                    
+                    # // Check if the channel is a lobby
+                    if not  Cache.exists(table="lobby_settings", guild=res.guild.id, lobby=channel.id):
+                        return await res.send(embed=discord.Embed(description=f"{res.author.mention} that channel is not a lobby", color=15158588))
+                    
+                    # // Create the embed
+                    await res.send(embed=discord.Embed(description=f"{res.author.mention} has created a new **Queue Embed**", color=3066992))
+                    embed = discord.Embed(title=f'[0/10] {channel.name}', color=33023)
+                    embed.set_footer(text=str(channel.id))
+
+                    # // Return the queue embed
+                    return await res.channel.send(embed=embed, components=[[
+                        Button(style=ButtonStyle.green, label='Join', custom_id='join_queue'),
+                        Button(style=ButtonStyle.red, label="Leave", custom_id='leave_queue')
+                    ]])
             
             # // If the user did not respond in time
             except asyncio.TimeoutError:

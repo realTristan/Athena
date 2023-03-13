@@ -100,7 +100,7 @@ class Cache:
         
     # Delete a value in the cache
     @staticmethod
-    async def delete(table: str, guild: str, key: str=None, sqlcmds: list=None):
+    async def delete(table: str, guild: str, key: str=None, sub_key: str=None, sqlcmds: list=None):
         # If there are provided sql cmds
         if len(sqlcmds) > 0:
             for cmd in sqlcmds:
@@ -110,5 +110,9 @@ class Cache:
         if key is None:
             return cache[table].pop(guild)
         
-        # Else remove the key from the cache[table][guild] map
-        return cache[table][guild].pop(key)
+        # If no sub key is provided
+        if sub_key is None:
+            return cache[table][guild].pop(key)
+        
+        # Else remove the sub key from the key
+        return cache[table][guild][key].pop(sub_key)
