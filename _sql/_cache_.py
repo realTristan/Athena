@@ -14,7 +14,7 @@ class Cache:
     # // Add all MySQL Data into a cached map
     @staticmethod
     async def map_data():
-        adv_tables = ["users", "bans", "lobby_settings", "elo_roles", "matches"]
+        adv_tables: list[str] = ["users", "bans", "lobby_settings", "elo_roles", "matches"]
         [await Cache.load_advanced(table) for table in adv_tables]
         await Cache.load_settings()
         await Cache.load_maps()
@@ -51,7 +51,6 @@ class Cache:
     # // Fetch a value from the cache
     @staticmethod
     def fetch(table: str, guild=None, key: str=None):
-        
         # // If not guild param is provided
         if guild is not None:
             if key is not None:
@@ -78,7 +77,6 @@ class Cache:
     # Update a value in the cache
     @staticmethod
     async def update(table: str, guild: str, data: any, key: str=None, sqlcmds: list=None):
-        
         # // If there are provided sql cmds
         if len(sqlcmds) > 0:
             for cmd in sqlcmds:
@@ -86,14 +84,23 @@ class Cache:
                 
         # If no key is provided
         if key is None:
-            cache[table][guild] = data; print(sys.getsizeof(cache)); return
-        cache[table][guild][key] = data; print(sys.getsizeof(cache)); return
+            if len(data) == 1:
+                cache[table][guild] = data[0]
+            else:
+                cache[table][guild] = data
+        else:
+            if len(data) == 1:
+                cache[table][guild][key] = data[0]
+            else:
+                cache[table][guild][key] = data
+
+        # // Print the size of the cache
+        print(sys.getsizeof(cache))
         
         
     # Delete a value in the cache
     @staticmethod
     async def delete(table: str, guild: str, key: str=None, sqlcmds: list=None):
-        
         # If there are provided sql cmds
         if len(sqlcmds) > 0:
             for cmd in sqlcmds:
@@ -105,4 +112,3 @@ class Cache:
         
         # Else remove the key from the cache[table][guild] map
         return cache[table][guild].pop(key)
-

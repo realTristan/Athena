@@ -56,6 +56,7 @@ class Elo(commands.Cog):
         if _category:
             for channel in _category.channels:
                 await channel.delete()
+
             # // Delete the category
             return await _category.delete()
 
@@ -147,8 +148,8 @@ class Elo(commands.Cog):
         # // Make sure the user is in the cache, if they aren't it will return None
         if user_data is not None:
             # // Update users elo and wins
-            user_data[1] = user_data[1]+lobby_settings[2]
-            user_data[2] = user_data[2]+1
+            user_data[1] = user_data[1] + lobby_settings[2]
+            user_data[2] = user_data[2] + 1
             
             # // Update the cache and SQL Database
             await Cache.update(
@@ -177,13 +178,13 @@ class Elo(commands.Cog):
             member = await self._check_member(ctx, int(user.id))
             if member is not None:
                 # // Check if negative elo is disabled
-                if lobby_settings[5] == 0 and (user_data[1]-lobby_settings[3]) < 0:
+                if lobby_settings[5] == 0 and (user_data[1] - lobby_settings[3]) < 0:
                     # // Set the users elo
                     user_data[1] = 0
                 else:
-                    user_data[1] = user_data[3]-lobby_settings[3]
+                    user_data[1] = user_data[3] - lobby_settings[3]
                 # // Update the users losses
-                user_data[3] = user_data[3]+1
+                user_data[3] = user_data[3] + 1
                 
                 # // Update the users elo in the cache and the database
                 await Cache.update(
@@ -249,9 +250,9 @@ class Elo(commands.Cog):
             if member is not None:
                 user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=_user_id)
                 # // Update users elo
-                user_data[1] = user_data[1]+lobby_settings[2]
+                user_data[1] = user_data[1] + lobby_settings[2]
                 # // Update users losses
-                user_data[3] = user_data[3]-1
+                user_data[3] = user_data[3] - 1
                 
                 # // Update the cache and SQL Database
                 await Cache.update(
@@ -273,10 +274,10 @@ class Elo(commands.Cog):
                 
                 # // Check whether negative elo is disabled
                 # // Updating the users elo..
-                if lobby_settings[5] == 0 and (user_data[1]-lobby_settings[2]) < 0:
+                if lobby_settings[5] == 0 and (user_data[1] - lobby_settings[2]) < 0:
                     user_data[1] = 0
                 else:
-                    user_data[1] = user_data[1]-lobby_settings[2]
+                    user_data[1] = user_data[1] - lobby_settings[2]
                 # // Update users losses
                 user_data[3] = user_data[3]-1
                 
