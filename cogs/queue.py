@@ -405,7 +405,7 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         
         # // If the user isn't registered
-        if not User(ctx.guild.id).exists(user.id):
+        if not User(ctx.guild.id, user.id).exists():
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
         
         # // Check if the user is a party leader

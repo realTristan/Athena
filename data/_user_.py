@@ -6,7 +6,7 @@ class User:
         self.user_id = user_id
 
     # // Get user info
-    def get(self):
+    def info(self):
         return Cache.fetch("users", self.guild)[self.user_id]
     
     # // Check if user exists

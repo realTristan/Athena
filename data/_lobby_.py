@@ -5,6 +5,35 @@ class Lobby:
         self.guild = guild
         self.lobby_id = lobby_id
 
+    # // Get all the lobbies in the guild
+    @staticmethod
+    def get_all(guild: int):
+        return Cache.fetch("lobby_settings", guild)
+    
+    # // Check if a lobby exists for the guild
+    @staticmethod
+    def exists(guild: int, lobby_id: int):
+        return lobby_id in Cache.fetch("lobby_settings", guild)
+
+    @staticmethod
+    async def create(guild: int, lobby_id: int):
+        await Cache.update("lobby_settings", guild=guild, data={
+            lobby_id: {
+                "map_pick_phase": 0,
+                "team_pick_phase": 1,
+                "win_elo": 5,
+                "loss_elo": 2,
+                "party_size": 1,
+                "negative_elo": 1,
+                "queue_size": 10
+            }
+        }, sqlcmds=[
+            f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({guild}, {lobby_id}, 0, 1, 5, 2, 1, 1, 10)"
+        ])
+        await Cache.update("elo_roles", guild=guild, data={}, sqlcmds=[
+            f"INSERT INTO elo_roles (guild_id, lobby_id) VALUES ({guild}, {lobby_id})"
+        ])
+
     # // Delete an elo role from the lobby
     async def delete_elo_role(self, role_id: int):
         # // Fetch the elo roles
@@ -58,40 +87,11 @@ class Lobby:
     def get_maps(self):
         return Cache.fetch("maps", self.guild)[self.lobby_id]
     
-    # // Get all the lobbies in the guild
-    @staticmethod
-    def get_all(guild: int):
-        return Cache.fetch("lobby_settings", guild)
-    
     # // Get a specific lobby
     def get(self, key: str = None):
         if key is not None:
             return Cache.fetch("lobby_settings", self.guild)[self.lobby_id][key]
         return Cache.fetch("lobby_settings", self.guild)[self.lobby_id]
-    
-    # // Check if a lobby exists for the guild
-    @staticmethod
-    def exists(guild: int, lobby_id: int):
-        return lobby_id in Cache.fetch("lobby_settings", guild)
-
-    @staticmethod
-    async def create(guild: int, lobby_id: int):
-        await Cache.update("lobby_settings", guild=guild, data={
-            lobby_id: {
-                "map_pick_phase": 0,
-                "team_pick_phase": 1,
-                "win_elo": 5,
-                "loss_elo": 2,
-                "party_size": 1,
-                "negative_elo": 1,
-                "queue_size": 10
-            }
-        }, sqlcmds=[
-            f"INSERT INTO lobby_settings (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({guild}, {lobby_id}, 0, 1, 5, 2, 1, 1, 10)"
-        ])
-        await Cache.update("elo_roles", guild=guild, data={}, sqlcmds=[
-            f"INSERT INTO elo_roles (guild_id, lobby_id) VALUES ({guild}, {lobby_id})"
-        ])
     
     # // Delete the lobby
     async def delete(self):

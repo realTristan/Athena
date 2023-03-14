@@ -39,5 +39,8 @@ class Matches:
         ])
 
     # // Get the matches
-    def get(self):
+    def get(self, match_id: int = None):
+        if match_id is not None:
+            return Cache.fetch("matches", self.guild)[self.lobby_id][match_id]
         return Cache.fetch("matches", self.guild)[self.lobby_id]
+    

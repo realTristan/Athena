@@ -31,8 +31,10 @@ class Bans:
             f"DELETE FROM bans WHERE guild_id = {self.guild_id} AND lobby_id = {self.lobby_id} AND user_id = {user_id}"
         ])
 
-    # // Get the bans
-    def get(self, user_id: int):
+    # // Get the ban of an user
+    def get(self, user_id: int = None):
+        if user_id is not None:
+            return Cache.fetch("bans", self.guild_id)[user_id]
         return Cache.fetch("bans", self.guild_id)[user_id]
     
     # // Check if a user is banned

@@ -4,7 +4,7 @@ from functools import *
 from data import *
 import discord, re
 
-# Elo cog
+# // Elo cog
 class Elo(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
