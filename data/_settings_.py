@@ -4,8 +4,44 @@ class Settings:
     def __init__(self, guild_id: int):
         self.guild_id = guild_id
 
+    # // Setup default settings and cache
+    async def setup(self):
+        await Cache.update("settings", guild=self.guild_id, data={
+            "reg_role": 0,
+            "match_categories": 0,
+            "reg_channel": 0,
+            "match_logs": 0,
+            "mod_role": 0,
+            "admin_role": 0,
+            "self_rename": 1
+        }, sqlcmds=[
+            f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({self.guild_id}, 0, 0, 0, 0, 0, 0, 1)"
+            # // guild_id BIGINT, reg_role BIGINT, match_categories BIGINT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename BIGINT
+        ])
+
+        # // Add guild to the elo roles cache
+        await Cache.update("elo_roles", guild=self.guild_id, data={})
+        
+        # // Add guild to the lobby settings cache
+        await Cache.update("lobby_settings", guild=self.guild_id, data={})
+
+        # // Add the guild to the bans cache
+        await Cache.update("bans", guild=self.guild_id, data={})
+
+        # // Add the guild to the maps cache
+        await Cache.update("maps", guild=self.guild_id, data={})
+
+        # // Add the guild to the matches cache
+        await Cache.update("matches", guild=self.guild_id, data={})
+
+        # // Add the guild to the users cache
+        await Cache.update("users", guild=self.guild_id, data={})
+
+    # // Check if the settings exist
+    async def exists(self):
+        return self.guild_id in Cache.fetch("settings")
+
     # // Add a setting to the lobby
-    # // match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT
     async def update(self, reg_role=None, match_categories=None, reg_channel=None, match_logs=None, mod_role=None, admin_role=None, self_rename=None):
         # // Update reg role
         if reg_role is not None:

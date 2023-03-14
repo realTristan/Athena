@@ -138,17 +138,17 @@ class Cache:
     # Update a value in the cache
     @staticmethod
     async def update(table: str, guild: str, data: any, lobby: str=None, sqlcmds: list=[]):
-        # // If there are provided sql cmds
-        if len(sqlcmds) > 0:
-            for cmd in sqlcmds:
-                await SqlData.execute(cmd)
-                
         # // If no lobby is provided
         if lobby is None:
             for key in data:
                 cache[table][guild][key] = data[key]
-            return
 
         # // Update the cache for the lobby
-        for key in data:
-            cache[table][guild][lobby][key] = data[key]
+        else:
+            for key in data:
+                cache[table][guild][lobby][key] = data[key]
+
+        # // If there are provided sql cmds
+        if len(sqlcmds) > 0:
+            for cmd in sqlcmds:
+                await SqlData.execute(cmd)

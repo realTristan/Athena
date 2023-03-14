@@ -1,6 +1,6 @@
 from discord.ext import commands
 from discord_components import *
-from _sql import *
+from data import *
 import discord, os
 
 client = commands.Bot(
@@ -19,24 +19,19 @@ client = commands.Bot(
 # //////////////////////////////////////////////////////////////
 @client.event
 async def on_member_remove(member):
-    if await SqlData.exists(f"SELECT * FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}"):
-        await SqlData.execute(f"DELETE FROM users WHERE guild_id = {member.guild.id} AND user_id = {member.id}")
+    if User(member.guild.id, member.id).exists():
+        User(member.guild.id, member.id).delete()
 
 # // ON GUILD JOIN
 # ////////////////////
 @client.event
 async def on_guild_join(guild):
-    if not await SqlData.exists(f"SELECT * FROM settings WHERE guild_id = {guild.id}"):
-        await SqlData.execute(f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({guild.id}, 0, 0, 0, 0, 0, 0, 0)")
+    # // Create the settings
+    if not Settings(guild.id).exists():
+        Settings(guild.id).setup()
+
+    # // Update server count
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{len(client.guilds)} Servers"))
-   
-# // ON GUILD REMOVE
-# ////////////////////
-@client.event
-async def on_guild_remove(guild):
-    for table in ["settings", "users", "lobbies", "lobby_settings", "matches", "maps", "bans", "elo_roles"]:
-        if await SqlData.exists(f"SELECT * FROM {table} WHERE guild_id = {guild.id}"):
-            await SqlData.execute(f"DELETE FROM {table} WHERE guild_id = {guild.id}")
     
 # // ON BOT LAUNCH
 # ///////////////////
@@ -53,4 +48,4 @@ async def on_ready():
             client.load_extension(f'cogs.{filename[:-3]}')
             print(f'Loaded: cog.{filename[:-3]}')
 
-client.run('ODgzMDA2NjA5MjgwODY0MjU3.GsMf2k.TahkwF17Y59rjgSbYHXlMxEjoCzfEsPRsWpu1s')
+client.run('YOUR BOT TOKEN')
