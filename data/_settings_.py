@@ -23,13 +23,10 @@ class Settings:
         await Cache.update("elo_roles", guild=self.guild_id, data={})
         
         # // Add guild to the lobby settings cache
-        await Cache.update("lobby_settings", guild=self.guild_id, data={})
+        await Cache.update("lobbies", guild=self.guild_id, data={})
 
         # // Add the guild to the bans cache
         await Cache.update("bans", guild=self.guild_id, data={})
-
-        # // Add the guild to the maps cache
-        await Cache.update("maps", guild=self.guild_id, data={})
 
         # // Add the guild to the matches cache
         await Cache.update("matches", guild=self.guild_id, data={})

@@ -1,23 +1,21 @@
 from ._sql_ import *
 import threading
 
-# // The Global Cache Lock
-cache_lock: threading.Lock = threading.Lock()
-
 # // The Global Cache Variable
 cache: dict[str, dict] = {
-    "maps": {}, "settings": {}, "users": {}, 
-    "bans": {}, "elo_roles": {}, "matches": {},
-    "lobby_settings": {}
+    "settings": {}, "users": {}, "lobbies": {},
+    "bans": {}, "elo_roles": {}, "matches": {}
 }
 
 # // The Cache Class that contains all the cache functions
 class Cache:
+    lock: threading.Lock = threading.Lock()
+
     # // Add all MySQL Data into a cached map
     @staticmethod
     async def load_data():
         await Cache.load_users()
-        await Cache.load_lobby_settings()
+        await Cache.load_lobbies()
         await Cache.load_elo_roles()
         await Cache.load_bans()
         await Cache.load_matches()
@@ -43,18 +41,18 @@ class Cache:
 
     # // Load lobby settings into the sql cache
     @staticmethod
-    async def load_lobby_settings():
-        rows = await SqlData.select_all(f"SELECT * FROM lobby_settings")
+    async def load_lobbies():
+        rows = await SqlData.select_all(f"SELECT * FROM lobbies")
         for row in rows:
             # // If the guild does not exist in the cache
             guild: int = row[0]
-            if guild not in cache["lobby_settings"]:
-                cache["lobby_settings"][guild] = {}
+            if guild not in cache["lobbies"]:
+                cache["lobbies"][guild] = {}
 
             # // Add the lobby settings to the cache
             lobby_id: int = row[1]
-            cache["lobby_settings"][guild][lobby_id] = {
-                "lobby_id": lobby_id, "map_pick_phase": row[2], "team_pick_phase": row[3], "win_elo": row[4], "loss_elo": row[5], "party_size": row[6], "negative_elo": row[7], "queue_size": row[8]
+            cache["lobbies"][guild][lobby_id] = {
+                "lobby_id": lobby_id, "maps": [], "map_pick_phase": row[2], "team_pick_phase": row[3], "win_elo": row[4], "loss_elo": row[5], "party_size": row[6], "negative_elo": row[7], "queue_size": row[8]
                 # // map_pick_phase INT, team_pick_phase INT, win_elo INT, loss_elo INT, party_size INT, negative_elo INT, queue_size INT
             }
 
@@ -121,7 +119,6 @@ class Cache:
                 # // reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT
             }
     
-    
     # // Load maps into the sql cache
     @staticmethod
     async def load_maps():
@@ -129,77 +126,115 @@ class Cache:
         for row in rows:
             # // If the guild does not exist in the cache
             guild: int = row[0]
-            if guild not in cache["maps"]:
-                cache["maps"][guild] = {}
+            if guild not in cache["lobbies"]:
+                cache["lobbies"][guild] = {}
 
             # // If the lobby does not exist in the cache
             lobby_id: int = row[1]
-            if lobby_id not in cache["maps"][guild]:
-                cache["maps"][guild][lobby_id] = []
+            if lobby_id not in cache["lobbies"][guild]:
+                cache["lobbies"][guild][lobby_id] = {}
+            
+            # // If the maps do not exist in the cache
+            if "maps" not in cache["lobbies"][guild][lobby_id]:
+                cache["lobbies"][guild][lobby_id]["maps"] = []
 
             # // Add the map to the cache
-            cache["maps"][guild][lobby_id].append(row[2])
-            
+            cache["lobbies"][guild][lobby_id]["maps"].append(row[2])
+    
+
     # // Fetch a value from the cache
     @staticmethod
     def fetch(table: str, guild = None):
-        # // Lock the cache
-        cache_lock.acquire()
-
         # // Check if the guild exists in the cache table
-        if guild not in cache[table]:
-            cache[table][guild] = {}
-
-        # // Unlock the cache
-        cache_lock.release()
-
-        # // Return the cache table
-        return cache[table][guild]
+        with Cache.lock.acquire():
+            if guild not in cache[table]:
+                cache[table][guild] = {}
+            return cache[table][guild]
         
-    
+
     # // Update a value in the cache
     @staticmethod
     async def update(table: str, guild: str, data: any, lobby: int = None, sqlcmds: list = []):
-        # // Lock the cache
-        cache_lock.acquire()
-
-        # // If no lobby is provided
-        if lobby is None:
-            for key in data:
-                cache[table][guild][key] = data[key]
-
-        # // Update the cache for the lobby
-        else:
-            for key in data:
-                cache[table][guild][lobby][key] = data[key]
+        # // Update the cache
+        with Cache.lock.acquire():
+            if lobby is None:
+                cache[table][guild].update(data)
+            else:
+                cache[table][guild][lobby].update(data)
 
         # // If there are provided sql cmds
         if len(sqlcmds) > 0:
             for cmd in sqlcmds:
                 await SqlData.execute(cmd)
-        
-        # // Unlock the cache
-        cache_lock.release()
 
-    # // Set a value from the cache
+
+    # // Delete a ban from the cache
     @staticmethod
-    async def set(table: str, guild: str, lobby: int = None, data: any = None, sqlcmds: list = []):
-        # // Lock the cache
-        cache_lock.acquire()
+    async def delete_ban(guild: int, user_id: int):
+        # // Delete the ban from the cache
+        with Cache.lock.acquire():
+            del cache["bans"][guild][user_id]
 
-        # // If the lobby is provided
-        if lobby is not None:
-            cache[table][guild][lobby] = data
-        
-        # // Set the cache value
-        else:
-            cache[table][guild] = data
-        
-        # // If there are provided sql cmds
-        if len(sqlcmds) > 0:
-            for cmd in sqlcmds:
-                await SqlData.execute(cmd)
-        
-        # // Unlock the cache
-        cache_lock.release()
-                
+        # // Delete the ban from the database
+        await SqlData.execute(f"DELETE FROM bans WHERE guild_id = {guild} AND user_id = {user_id}")
+
+
+    # // Delete a lobby from the cache
+    @staticmethod
+    async def delete_lobby(guild: int, lobby_id: int):
+        # // Delete the lobby from the cache
+        with Cache.lock.acquire():
+            del cache["lobbies"][guild][lobby_id]
+
+        # // Delete the lobby from the database
+        await SqlData.execute(f"DELETE FROM lobbies WHERE guild_id = {guild} AND lobby_id = {lobby_id}")
+
+    # // Delete a match from the cache
+    @staticmethod
+    async def delete_match(guild: int, match_id: int):
+        # // Delete the match from the cache
+        with Cache.lock.acquire():
+            del cache["matches"][guild][match_id]
+
+        # // Delete the match from the database
+        await SqlData.execute(f"DELETE FROM matches WHERE guild_id = {guild} AND match_id = {match_id}")
+
+    # // Delete a map from the cache
+    @staticmethod
+    async def delete_map(guild: int, lobby_id: int, map: str):
+        # // Delete the map from the cache
+        with Cache.lock.acquire():
+            cache["lobbies"][guild][lobby_id]["maps"].remove(map)
+
+        # // Delete the map from the database
+        await SqlData.execute(f"DELETE FROM maps WHERE guild_id = {guild} AND lobby_id = {lobby_id} AND map = '{map}'")
+
+    # // Add a map to the cache
+    @staticmethod
+    async def add_map(guild: int, lobby_id: int, map: str):
+        # // Add the map to the cache
+        with Cache.lock.acquire():
+            cache["lobbies"][guild][lobby_id]["maps"].append(map)
+
+        # // Add the map to the database
+        await SqlData.execute(f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({guild}, {lobby_id}, '{map}')")
+
+    # // Delete a player from the cache
+    @staticmethod
+    async def delete_player(guild: int, lobby_id: int, user_id: int):
+        # // Delete the player from the cache
+        with Cache.lock.acquire():
+            cache["lobbies"][guild][lobby_id]["players"].remove(user_id)
+
+        # // Delete the player from the database
+        await SqlData.execute(f"DELETE FROM players WHERE guild_id = {guild} AND lobby_id = {lobby_id} AND user_id = {user_id}")
+
+    # // Delete an elo role from the cache
+    @staticmethod
+    async def delete_elo_role(guild: int, role_id: int):
+        # // Delete the elo role from the cache
+        with Cache.lock.acquire():
+            cache["elo_roles"][guild].remove(role_id)
+
+        # // Delete the elo role from the database
+        await SqlData.execute(f"DELETE FROM elo_roles WHERE guild_id = {guild} AND role_id = {role_id}")

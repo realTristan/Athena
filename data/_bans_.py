@@ -15,21 +15,11 @@ class Bans:
             }
         }, sqlcmds=[
             f"INSERT INTO bans (guild_id, user_id, length, reason, banned_by) VALUES ({self.guild_id}, {user_id}, {length}, '{reason}', '{banned_by}')"
-            # // guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50)
         ])
 
     # // Delete a ban from the lobby
     async def unban(self, user_id: str):
-        # // Fetch the current bans
-        bans = Cache.fetch("bans", self.guild_id)
-
-        # // Delete the ban
-        del bans[user_id]
-
-        # // Update the cache and the database
-        await Cache.set("bans", guild=self.guild_id, data=bans, sqlcmds=[
-            f"DELETE FROM bans WHERE guild_id = {self.guild_id} AND user_id = {user_id}"
-        ])
+        Cache.delete_ban(self.guild_id, user_id)
 
     # // Get the ban of an user
     def get(self, user_id: int = None):

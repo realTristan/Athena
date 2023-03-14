@@ -40,7 +40,6 @@ class Queue(commands.Cog):
         
         # // If the member is not in the server, check if they are in the database
         if User(ctx.guild.id, member_id).exists():
-            # // If so, delete the user
             await User(ctx.guild.id, member_id).delete()
 
         # // Return the member
@@ -314,7 +313,7 @@ class Queue(commands.Cog):
     # // When the queue reaches max capacity function
     async def _start(self, ctx:commands.Context, lobby: int):
         # // Get the lobby settings
-        lobby_settings = Lobby(ctx.guild.id, lobby).get()
+        lobby = Lobby(ctx.guild.id, lobby).get()
 
         # // Create team captains (blue)
         blue_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
@@ -327,7 +326,7 @@ class Queue(commands.Cog):
         self.data[ctx.guild.id][lobby]["queue"].remove(orange_cap)
 
         # // If the pick phase is enabled
-        if lobby_settings["team_pick_phase"] == 1:
+        if lobby["team_pick_phase"] == 1:
             self.data[ctx.guild.id][lobby]["state"] = "pick"
 
             # // Get the pick logic
@@ -352,7 +351,7 @@ class Queue(commands.Cog):
         
 
         # // If the map pick phase is enabled
-        if lobby_settings["map_pick_phase"] == 1:
+        if lobby["map_pick_phase"] == 1:
             self.data[ctx.guild.id][lobby]["state"] = "maps"
 
         # // Else, pick a random map
@@ -378,30 +377,26 @@ class Queue(commands.Cog):
             # // Get the users ban info
             ban_data = Bans(ctx.guild.id).get(user.id)
 
-            # // If the ban is still active
-            if ban_data[0] - time.time() > 0:
-                # // Get the ban length
-                ban_length = datetime.timedelta(seconds=int(ban_data[0] - time.time()))
-
-                # // Send the embed
-                await ctx.channel.send(
-                    embed = discord.Embed(
-                        title = f"{user.name} is banned", 
-                        description = f"**Length:** {ban_length}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", 
-                        color = 15158588
-                ))
-
-                # // Return false
-                return False
-            
             # // If the ban has expired, then unban the user
-            await Bans(ctx.guild.id).unban(user.id)
+            if ban_data[0] - time.time() <= 0:
+                await Bans(ctx.guild.id).unban(user.id)
 
-        # // Return true
+            # // If the ban is still active, then...
+            # // Get the ban length
+            ban_length = datetime.timedelta(seconds=int(ban_data[0] - time.time()))
+
+            # // Send the embed
+            await ctx.channel.send(
+                embed = discord.Embed(
+                    title = f"{user.name} is banned", 
+                    description = f"**Length:** {ban_length}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", 
+                    color = 15158588
+            ))
+            return False
         return True
 
 
-    # When an user joins the queue function
+    # // When an user joins the queue function
     async def _join(self, ctx:commands.Context, user, lobby):
         # // If the lobby is invalid
         if not await self.is_valid_lobby(ctx, lobby):
@@ -451,18 +446,15 @@ class Queue(commands.Cog):
 
         # // Check if the user is banned
         if await self._ban_check(ctx, user):
-            # // Get the queue size
+            # // Get the queue sizes
             queue_size = Lobby(ctx.guild.id, lobby).get("queue_size")
-
-            # // Get the current queue size
             current_queue_size: int = len(self.data[ctx.guild.id][lobby]['queue'])
 
             # // Add the user to the queue
             self.data[ctx.guild.id][lobby]["queue"].append(user)
 
-            # // If the queue is full
+            # // If the queue is full, then start the game
             if current_queue_size == queue_size:
-                # // Start the game
                 return await self._start(ctx, lobby)
             
             # // Send the queue embed
@@ -489,8 +481,7 @@ class Queue(commands.Cog):
                 embed = discord.Embed(
                     description = f"{user.mention} it is not the queueing phase", 
                     color = 15158588
-                )
-            )
+            ))
         
         # // If the user is not in the queue
         if user not in self.data[ctx.guild.id][lobby]["queue"]:
@@ -498,11 +489,11 @@ class Queue(commands.Cog):
                 embed = discord.Embed(
                     description = f"{user.mention} is not in the queue", 
                     color = 15158588
-                )
-            )
+            ))
         
-        # // Get the queue size
-        queue_size = Lobby(ctx.guild.id, lobby).get("queue_size")
+        # // Get the queue sizes
+        queue_size: int = Lobby(ctx.guild.id, lobby).get("queue_size")
+        current_queue_size: int = len(self.data[ctx.guild.id][lobby]['queue'])
 
         # // Remove the user from the queue
         self.data[ctx.guild.id][lobby]["queue"].remove(user)
@@ -510,10 +501,9 @@ class Queue(commands.Cog):
         # // Send the queue embed
         return await ctx.send(
             embed = discord.Embed(
-                description = f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/{queue_size}]** {user.mention} has left the queue", 
+                description = f"**[{current_queue_size - 1}/{queue_size}]** {user.mention} has left the queue", 
                 color = 33023
-            )
-        )
+        ))
         
 
     # // The command for team captains to pick a teammate
@@ -799,12 +789,15 @@ class Queue(commands.Cog):
             
             # // Check if the invited user is already in a party
             for party in parties:
-                if user.id in parties[party]:
-                    return await ctx.send(
-                        embed = discord.Embed(
-                            description = f"{ctx.author.mention} this player is already in a party", 
-                            color = 15158588
-                    ))
+                if user.id not in parties[party]:
+                    continue
+
+                # // Send a message that the user is already in a party
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} this player is already in a party", 
+                        color = 15158588
+                ))
             
             # // Invite the user
             try:
@@ -867,6 +860,8 @@ class Queue(commands.Cog):
             # // Disband party
             if ctx.author.id in parties:
                 del parties[ctx.author.id]
+
+                # // Send the embed
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} has disbanded their party", 
@@ -874,15 +869,22 @@ class Queue(commands.Cog):
                     )
                 )
 
-            # // Leave party
+            # // Iterate over the parties
             for party in parties:
-                if ctx.author.id in parties[party]:
-                    parties[party].remove(ctx.author.id)
-                    return await ctx.send(
-                        embed = discord.Embed(
-                            description = f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left the party", 
-                            color = 3066992
-                    ))
+                if ctx.author.id not in parties[party]:
+                    continue
+
+                # // Remove the user from the party
+                parties[party].remove(ctx.author.id)
+
+                # // Send the embed
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left the party", 
+                        color = 3066992
+                ))
+            
+            # // Send a message that the user is not in a party
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you are not in a party", color=15158588
@@ -894,16 +896,21 @@ class Queue(commands.Cog):
             if not args:
                 # // Find the party the user is in
                 for party in parties:
-                    if ctx.author.id in parties[party]:
-                        # // Verify the party leader
-                        member = await self._check_member(ctx, party)
-                        if member is not None:
-                            return await ctx.send(
-                                embed = discord.Embed(
-                                    title = f"[{len(parties[party])}/{max_party_size}] {member.name}'s party", 
-                                    description = "\n".join("<@" + str(e) + ">" for e in parties[party]),
-                                    color = 33023
-                            ))
+                    if ctx.author.id not in parties[party]:
+                        continue
+
+                    # // Verify the party leader
+                    member = await self._check_member(ctx, party)
+                    if member is None:
+                        continue
+
+                    # // Send the party
+                    return await ctx.send(
+                        embed = discord.Embed(
+                            title = f"[{len(parties[party])}/{max_party_size}] {member.name}'s party", 
+                            description = "\n".join("<@" + str(e) + ">" for e in parties[party]),
+                            color = 33023
+                    ))
                 
                 # // Send a message that the user is not in a party
                 return await ctx.send(
@@ -920,16 +927,21 @@ class Queue(commands.Cog):
                 # // Find the party the user is in
                 for party in parties:
                     # // If the user is in the party, return the party
-                    if user.id in parties[party]:
-                        # // Verify the party leader
-                        member = await self._check_member(ctx, party)
-                        if member is not None:
-                            return await ctx.send(
-                                embed = discord.Embed(
-                                    title = f"[{len(parties[party])}/{max_party_size}] {member.name}'s party", 
-                                    description = "\n".join("<@" + str(e) + ">" for e in parties[user.id]), 
-                                    color = 33023
-                            ))
+                    if user.id not in parties[party]:
+                        continue
+
+                    # // Verify the party leader
+                    member = await self._check_member(ctx, party)
+                    if member is None:
+                        continue
+
+                    # // Send the party
+                    return await ctx.send(
+                        embed = discord.Embed(
+                            title = f"[{len(parties[party])}/{max_party_size}] {member.name}'s party", 
+                            description = "\n".join("<@" + str(e) + ">" for e in parties[user.id]), 
+                            color = 33023
+                    ))
                 
                 # // Send a message that the user is not in a party
                 return await ctx.send(

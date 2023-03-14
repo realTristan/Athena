@@ -24,7 +24,7 @@ class SqlData:
             #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // LOBBY SETTINGS
-            #cur.execute("CREATE TABLE lobby_settings (guild_id BIGINT, lobby_id BIGINT, map_pick_phase INT, team_pick_phase INT, win_elo INT, loss_elo INT, party_size INT, negative_elo INT, queue_size INT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            #cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby_id BIGINT, map_pick_phase INT, team_pick_phase INT, win_elo INT, loss_elo INT, party_size INT, negative_elo INT, queue_size INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // MATCHES TABLE
             # cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id INT, lobby_id BIGINT, map VARCHAR(50), orange_cap BIGINT, orange_team VARCHAR(200), blue_cap BIGINT, blue_team VARCHAR(200), status VARCHAR(20), winners VARCHAR(10), id INT PRIMARY KEY AUTO_INCREMENT)")
