@@ -35,8 +35,10 @@ class Cache:
             # // Add the user to the cache
             user_id: int = row[1]
             cache["users"][guild][user_id] = {
-                "user_name": row[2], "elo": row[3], "wins": row[4], "loss": row[5]
-                # // user_name VARCHAR(50), elo INT, wins INT, loss INT
+                "user_name": row[2], 
+                "elo": row[3], 
+                "wins": row[4], 
+                "loss": row[5]
             }
 
     # // Load lobby settings into the sql cache
@@ -52,8 +54,15 @@ class Cache:
             # // Add the lobby settings to the cache
             lobby_id: int = row[1]
             cache["lobbies"][guild][lobby_id] = {
-                "lobby_id": lobby_id, "maps": [], "map_pick_phase": row[2], "team_pick_phase": row[3], "win_elo": row[4], "loss_elo": row[5], "party_size": row[6], "negative_elo": row[7], "queue_size": row[8]
-                # // map_pick_phase INT, team_pick_phase INT, win_elo INT, loss_elo INT, party_size INT, negative_elo INT, queue_size INT
+                "lobby_id": lobby_id, 
+                "maps": [], 
+                "map_pick_phase": row[2], 
+                "team_pick_phase": row[3], 
+                "win_elo": row[4], 
+                "loss_elo": row[5], 
+                "party_size": row[6], 
+                "negative_elo": row[7], 
+                "queue_size": row[8]
             }
 
     # // Load elo roles into the sql cache
@@ -69,8 +78,10 @@ class Cache:
             # // Add the elo roles to the cache
             role_id: int = row[1]
             cache["elo_roles"][guild][role_id] = {
-                "role_id": role_id, "elo_level": row[2], "win_elo": row[3], "lose_elo": row[4]
-                # // guild_id BIGINT, role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT
+                "role_id": role_id, 
+                "elo_level": row[2], 
+                "win_elo": row[3], 
+                "lose_elo": row[4]
             }
     
     # // Load matches into the sql cache
@@ -86,8 +97,14 @@ class Cache:
             # // Add the match to the cache
             match_id: int = row[1]
             cache["matches"][guild][match_id] = {
-                "match_id": match_id, "lobby_id": row[2], "map": row[3], "team_1": row[4], "team_2": row[5], "team_1_score": row[6], "team_2_score": row[7], "winner": row[8]
-                # // lobby_id BIGINT, map VARCHAR(50), team_1 VARCHAR(1000), team_2 VARCHAR(1000), team_1_score INT, team_2_score INT, winner INT
+                "match_id": match_id, 
+                "lobby_id": row[2], 
+                "map": row[3], 
+                "team_1": row[4], 
+                "team_2": row[5], 
+                "team_1_score": row[6], 
+                "team_2_score": row[7], 
+                "winner": row[8]
             }
 
     # // Load bans into the sql cache
@@ -103,8 +120,10 @@ class Cache:
             # // Add the ban to the cache
             user_id: int = row[1]
             cache["bans"][guild][user_id] = {
-                "user_id": user_id, "length": row[2], "reason": row[3], "banned_by": row[4]
-                # // length BIGINT, reason VARCHAR(50), banned_by VARCHAR(50)
+                "user_id": user_id, 
+                "length": row[2], 
+                "reason": row[3], 
+                "banned_by": row[4]
             }
     
     # // Load settings into the sql cache
@@ -115,8 +134,13 @@ class Cache:
             # // Add the setting to the cache
             guild: int = row[0]
             cache["settings"][guild] = {
-                "reg_role": row[1], "match_categories": row[2], "reg_channel": row[3], "match_logs": row[4], "mod_role": row[5], "admin_role": row[6], "self_rename": row[7]
-                # // reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT
+                "reg_role": row[1], 
+                "match_categories": row[2], 
+                "reg_channel": row[3], 
+                "match_logs": row[4], 
+                "mod_role": row[5], 
+                "admin_role": row[6], 
+                "self_rename": row[7]
             }
     
     # // Load maps into the sql cache
