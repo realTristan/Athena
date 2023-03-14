@@ -37,6 +37,22 @@ class Settings:
     # // Check if the settings exist
     async def exists(self):
         return self.guild_id in Cache.fetch("settings")
+    
+    # // Get the elo roles
+    def get_elo_roles(self):
+        return Cache.fetch("elo_roles", self.guild_id)
+
+    # // Add an elo role to the lobby
+    async def add_elo_role(self, role_id: int, elo_level: int, win_elo: int, lose_elo: int):
+        # // Fetch the elo roles
+        elo_roles = Cache.fetch("elo_roles", self.guild_id)
+        elo_roles[role_id] = {"elo_level": elo_level, "win_elo": win_elo, "lose_elo": lose_elo}
+
+        # // Update the cache and the database
+        await Cache.update("elo_roles", guild=self.guild_id, data=elo_roles, sqlcmds=[
+            # // role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT
+            f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({self.guild}, {role_id}, {elo_level}, {win_elo}, {lose_elo})"
+        ])
 
     # // Add a setting to the lobby
     async def update(self, reg_role=None, match_categories=None, reg_channel=None, match_logs=None, mod_role=None, admin_role=None, self_rename=None):

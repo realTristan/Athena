@@ -30,26 +30,9 @@ class Lobby:
         }, sqlcmds=[
             f"INSERT INTO lobbies (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({guild}, {lobby_id}, 0, 1, 5, 2, 1, 1, 10)"
         ])
-        await Cache.update("elo_roles", guild=guild, data={}, sqlcmds=[
-            f"INSERT INTO elo_roles (guild_id, lobby_id) VALUES ({guild}, {lobby_id})"
-        ])
+        await Cache.update("elo_roles", guild=guild, data={}, sqlcmds=[])
 
-    # // Get the elo roles
-    def get_elo_roles(self):
-        return Cache.fetch("elo_roles", self.guild)
 
-    # // Add an elo role to the lobby
-    async def add_elo_role(self, role_id: int, elo_level: int, win_elo: int, lose_elo: int):
-        # // Fetch the elo roles
-        elo_roles = Cache.fetch("elo_roles", self.guild)
-        elo_roles[role_id] = {"elo_level": elo_level, "win_elo": win_elo, "lose_elo": lose_elo}
-
-        # // Update the cache and the database
-        await Cache.update("elo_roles", guild=self.guild, data=elo_roles, sqlcmds=[
-            # // role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT
-            f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({self.guild}, {role_id}, {elo_level}, {win_elo}, {lose_elo})"
-        ])
-    
     # // Delete an elo role from the lobby
     async def delete_elo_role(self, role_id: int):
         Cache.delete_elo_role(self.guild, role_id)
@@ -119,3 +102,6 @@ class Lobby:
             await Cache.update("lobbies", lobby=self.lobby_id, data={"queue_size": queue_size}, sqlcmds=[
                 f"UPDATE lobbies SET queue_size = {queue_size} WHERE lobby_id = {self.lobby_id}"
             ])
+
+
+        
