@@ -84,7 +84,7 @@ class Queue(commands.Cog):
 
 
     # // Add other party members to the queue
-    async def _check_party(self, ctx:commands.Context, user, lobby):
+    async def _check_party(self, ctx: commands.Context, user: discord.Member, lobby: int):
         for party in self.data[ctx.guild.id][lobby]["parties"]:
             if user.id in self.data[ctx.guild.id][lobby]["parties"][party] and party != user.id:
                 return False
@@ -104,7 +104,7 @@ class Queue(commands.Cog):
     
     
     # // Send match logs to the given match logs channel
-    async def _match_log(self, ctx:commands.Context, embed:discord.Embed):
+    async def _match_log(self, ctx: commands.Context, embed: discord.Embed):
         match_logs = Settings(ctx.guild.id).get("match_logs")
 
         # // If the match logs are disabled
@@ -212,8 +212,7 @@ class Queue(commands.Cog):
                     title = f"[{current_queue_size}/{queue_size}] {ctx.channel.name}", 
                     description = current_queue, 
                     color = 33023
-                )
-            )
+            ))
 
         # // Team picking phase embed
         if lobby_data["state"] == "pick":
@@ -228,7 +227,10 @@ class Queue(commands.Cog):
                 blue_team = '\n'.join(str(e.mention) for e in lobby_data["blue_team"])
 
             # // Create the embed
-            embed = discord.Embed(title="Team Picking Phase", color=33023)
+            embed = discord.Embed(
+                title = "Team Picking Phase", 
+                color = 33023
+            )
 
             # // Captains
             embed.add_field(name = "Orange Captain", value = lobby_data["orange_cap"].mention)
@@ -253,7 +255,10 @@ class Queue(commands.Cog):
             maps = Lobby(ctx.guild.id, lobby).get_maps()
 
             # // Create the embed
-            embed = discord.Embed(title="Map Picking Phase", color=33023)
+            embed = discord.Embed(
+                title = "Map Picking Phase", 
+                color = 33023
+            )
 
             # // Captains
             embed.add_field(name = "Orange Captain", value = lobby_data["orange_cap"].mention)
@@ -278,7 +283,10 @@ class Queue(commands.Cog):
             amount_of_matches = Matches.count(ctx.guild.id, lobby) + 1
 
             # // Create the embed
-            embed = discord.Embed(title = f"Match #{amount_of_matches}", description = f"**Map:** {lobby_data['map']}", color = 33023)
+            embed = discord.Embed(
+                title = f"Match #{amount_of_matches}", description = f"**Map:** {lobby_data['map']}", 
+                color = 33023
+            )
 
             # // Captains
             embed.add_field(name = "Orange Captain", value = lobby_data["orange_cap"].mention)
@@ -378,11 +386,10 @@ class Queue(commands.Cog):
                 # // Send the embed
                 await ctx.channel.send(
                     embed = discord.Embed(
-                        title = f"{self._clean_name(user.name)} is banned", 
+                        title = f"{user.name} is banned", 
                         description = f"**Length:** {ban_length}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", 
                         color = 15158588
-                    )
-                )
+                ))
 
                 # // Return false
                 return False
@@ -398,19 +405,35 @@ class Queue(commands.Cog):
     async def _join(self, ctx:commands.Context, user, lobby):
         # // If the lobby is invalid
         if not await self.is_valid_lobby(ctx, lobby):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} this channel is not a lobby", 
+                    color = 15158588
+            ))
         
         # // If the lobby state is not queue
         if self.data[ctx.guild.id][lobby]["state"] != "queue":
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{user.mention} it is not the queueing phase", 
+                    color = 15158588
+            ))
         
         # // If the user isn't registered
         if not User(ctx.guild.id, user.id).exists():
-            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{user.mention} is not registered",
+                    color = 15158588
+            ))
         
         # // Check if the user is a party leader
         if not await self._check_party(ctx, user, lobby):
-            return await ctx.send(embed=discord.Embed(description = f"{ctx.author.mention} you are not a party leader / party too full", color = 15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you are not a party leader / party too full", 
+                    color = 15158588
+            ))
         
         # // Check if the user is already queued
         for l in self.data[ctx.guild.id]:
@@ -418,7 +441,10 @@ class Queue(commands.Cog):
                 # // Get the channel
                 channel = ctx.guild.get_channel(int(l))
                 if channel is not None:
-                    return await ctx.send(embed = discord.Embed(description = f"{user.mention} is already queued in {channel.mention}", color = 15158588))
+                    return await ctx.send(embed = discord.Embed(
+                        description = f"{user.mention} is already queued in {channel.mention}", 
+                        color = 15158588
+                    ))
                 
                 # // If the channel is not found, then remove the lobby
                 del self.data[ctx.guild.id][l]
@@ -428,16 +454,23 @@ class Queue(commands.Cog):
             # // Get the queue size
             queue_size = Lobby(ctx.guild.id, lobby).get("queue_size")
 
+            # // Get the current queue size
+            current_queue_size: int = len(self.data[ctx.guild.id][lobby]['queue'])
+
             # // Add the user to the queue
             self.data[ctx.guild.id][lobby]["queue"].append(user)
 
             # // If the queue is full
-            if len(self.data[ctx.guild.id][lobby]["queue"]) == queue_size:
+            if current_queue_size == queue_size:
                 # // Start the game
                 return await self._start(ctx, lobby)
             
             # // Send the queue embed
-            return await ctx.send(embed=discord.Embed(description=f"**[{len(self.data[ctx.guild.id][lobby]['queue'])}/{queue_size}]** {user.mention} has joined the queue", color=33023))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"**[{current_queue_size + 1}/{queue_size}]** {user.mention} has joined the queue", 
+                    color = 33023
+            ))
         
     
     # // When an user leaves the queue function
@@ -492,19 +525,35 @@ class Queue(commands.Cog):
         
         # // Check if the lobby is valid
         if not await self.is_valid_lobby(ctx, ctx.channel.id):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} this channel is not a lobby", 
+                    color = 15158588
+            ))
         
         # // Check if the lobby state is not pick
         if self.data[ctx.guild.id][ctx.channel.id]["state"] != "pick":
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} it is not the picking phase", 
+                    color = 15158588
+            ))
         
         # // Check if the user is not the captain
         if not ctx.author == self.data[ctx.guild.id][ctx.channel.id]["pick_logic"][0]:
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not your turn to pick", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} it is not your turn to pick", 
+                    color = 15158588
+            ))
         
         # // Check if the user is not in the queue
         if user not in self.data[ctx.guild.id][ctx.channel.id]["queue"]:
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in this queue", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} that player is not in this queue", 
+                    color = 15158588
+            ))
         
         # // Continue with picking
         self.data[ctx.guild.id][ctx.channel.id]["pick_logic"].pop(0)
@@ -514,7 +563,13 @@ class Queue(commands.Cog):
         else:
             self.data[ctx.guild.id][ctx.channel.id]["orange_team"].append(user)
             self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(user)
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has picked {user.mention}", color=33023))
+
+        # // Send who the captain picked
+        await ctx.send(
+            embed = discord.Embed(
+                description = f"{ctx.author.mention} has picked {user.mention}", 
+                color = 33023
+            ))
 
         # // Check if the queue has one player left
         if len(self.data[ctx.guild.id][ctx.channel.id]["queue"]) == 1:
@@ -557,15 +612,27 @@ class Queue(commands.Cog):
         
         # // Check if the lobby is valid
         if not await self.is_valid_lobby(ctx, ctx.channel.id):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} this channel is not a lobby", 
+                    color = 15158588
+            ))
         
         # // Check if the lobby state is not maps
         if self.data[ctx.guild.id][ctx.channel.id]["state"] != "maps":
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the map picking phase", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} it is not the map picking phase", 
+                    color = 15158588
+            ))
         
         # // Check if the user is the blue team captain
         if ctx.author != self.data[ctx.guild.id][ctx.channel.id]["blue_cap"]:
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not the blue team captain", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description=f"{ctx.author.mention} you are not the blue team captain", 
+                    color=15158588
+            ))
         
         # // Get the maps
         maps = Lobby(ctx.guild.id, ctx.channel.id).get_maps()
@@ -576,7 +643,13 @@ class Queue(commands.Cog):
                 self.data[ctx.guild.id][ctx.channel.id]["map"] = self._clean_name(map)
                 self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
                 return await self._embeds(ctx, ctx.channel.id)
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that map is not in the map pool", color=15158588))
+        
+        # // If the map is not in the map pool
+        return await ctx.send(
+            embed = discord.Embed(
+            description = f"{ctx.author.mention} that map is not in the map pool", 
+            color = 15158588
+        ))
             
         
     # // Join the queue command
@@ -595,7 +668,11 @@ class Queue(commands.Cog):
         
         # // Check if the user has the mod role
         if not await self.check_mod_role(ctx):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you do not have enough permissions", 
+                    color = 15158588
+            ))
         
         # // Force join the user
         return await self._join(ctx, user, ctx.channel.id)
@@ -616,7 +693,11 @@ class Queue(commands.Cog):
         
         # // Check if the author has the mod role
         if not await self.check_mod_role(ctx):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you do not have enough permissions", 
+                    color = 15158588
+            ))
         
         # // Forceleave the user
         return await self._leave(ctx, user, ctx.channel.id)
@@ -630,7 +711,11 @@ class Queue(commands.Cog):
         
         # // Check if the lobby is valid
         if not await self.is_valid_lobby(ctx, ctx.channel.id):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} this channel is not a lobby", 
+                    color = 15158588
+            ))
         
         # // Send the embed
         await self._embeds(ctx, ctx.channel.id)
@@ -645,15 +730,27 @@ class Queue(commands.Cog):
         
         # // Check if the user is a mod
         if not await self.check_mod_role(ctx):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you do not have enough permissions", 
+                    color = 15158588
+            ))
         
         # // Check if the lobby is valid
         if not await self.is_valid_lobby(ctx, ctx.channel.id):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                description = f"{ctx.author.mention} this channel is not a lobby", 
+                color = 15158588
+            ))
         
         # // Clear the queue
         self._reset(ctx, ctx.channel.id)
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has cleared the queue", color=3066992))
+        return await ctx.send(
+            embed = discord.Embed(
+                description = f"{ctx.author.mention} has cleared the queue", 
+                color = 3066992
+            ))
         
     # // Party commands
     @commands.command(name="party", aliases=["team"], description='`=party create`**,** `=party leave)`**,** `=party show`**,** `=party kick (@user)`**,** `=party invite (@user)`')
@@ -664,99 +761,245 @@ class Queue(commands.Cog):
         
         # // Check if the lobby is valid
         if not await self.is_valid_lobby(ctx, ctx.channel.id):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} this channel is not a lobby", 
+                    color = 15158588
+            ))
         
+        # // Get the parties and max party size for the current lobby
         parties = self.data[ctx.guild.id][ctx.channel.id]["parties"]
         max_party_size = Lobby(ctx.guild.id, ctx.channel.id).get("max_party_size")
 
-        # Invite a player to your party
+        # // Invite a player to your party
         if action in ["invite", "inv"]:
-            if ctx.author.id in parties:
-                if len(parties[ctx.author.id])+1 <= max_party_size:
-                    user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
-                    if user is not None:
-                        for party in parties:
-                            if user.id in parties[party]:
-                                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this player is already in a party", color=15158588))
-                        try:
-                            await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} a party invite has been sent to {user.mention}", color=3066992))
-                            message = await user.send(embed=discord.Embed(description=f"{ctx.author.mention} has invited you to join their party", color=33023),
-                            components=[[
-                                    Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
-                                    Button(style=ButtonStyle.red, label="Decline", custom_id='decline_party')
-                                ]])
-                            res = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
+            if ctx.author.id not in parties:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} you are not a party leader", 
+                        color = 15158588
+                ))
+            
+            # // Verify that the party is not full
+            if len(parties[ctx.author.id]) + 1 > max_party_size:
+                return await ctx.send(
+                    embed = discord.Embed(
+                    description = f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", 
+                    color = 15158588
+                ))
+            
+            # // Check if the user is valid
+            user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+            if user is None:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} unknown player", 
+                        color = 15158588
+                ))
+            
+            # // Check if the invited user is already in a party
+            for party in parties:
+                if user.id in parties[party]:
+                    return await ctx.send(
+                        embed = discord.Embed(
+                            description = f"{ctx.author.mention} this player is already in a party", 
+                            color = 15158588
+                    ))
+            
+            # // Invite the user
+            try:
+                # // Send the success message
+                await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} a party invite has been sent to {user.mention}", 
+                        color = 3066992
+                ))
 
-                            if res.component.id == "accept_party":
-                                parties[ctx.author.id].append(user.id)
-                                await res.send(embed=discord.Embed(description=f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", color=3066992))
-                                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", color=3066992))
-                            
-                            await res.send(embed=discord.Embed(description=f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", color=15158588))
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} has declined {ctx.author.mention}'s party invite", color=15158588))
+                # // Send the party invite
+                message = await user.send(
+                    embed = discord.Embed(
+                        description=f"{ctx.author.mention} has invited you to join their party", 
+                        color=33023), 
+                    components=[[
+                        Button(style=ButtonStyle.green, label="Accept", custom_id='accept_party'),
+                        Button(style=ButtonStyle.red, label="Decline", custom_id='decline_party')
+                ]])
 
-                        except asyncio.TimeoutError:
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} did not answer {ctx.author.mention}'s invite in time", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {ctx.author.mention} your party is full", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader", color=15158588))
+                # // Wait for the user to accept or decline the invite
+                res = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
+
+                # // If the user accepted the party invite
+                if res.component.id == "accept_party":
+                    parties[ctx.author.id].append(user.id)
+                    await res.send(
+                        embed = discord.Embed(
+                            description = f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", 
+                            color = 3066992
+                    ))
+                    return await ctx.send(
+                        embed = discord.Embed(
+                            description = f"**[{len(parties[ctx.author.id])}/{max_party_size}]** {user.mention} has accepted {ctx.author.mention}'s party invite", 
+                            color = 3066992
+                    ))
+                
+                # // If the user declined the party invite
+                await res.send(
+                    embed = discord.Embed(
+                        description = f"{res.author.mention} you have declined {ctx.author.mention}'s party invite", 
+                        color = 15158588
+                ))
+                return await ctx.send(
+                    embed = discord.Embed(
+                    description = f"{user.mention} has declined {ctx.author.mention}'s party invite", 
+                    color = 15158588
+                ))
+            
+            # // If the user did not respond in time
+            except asyncio.TimeoutError:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{user.mention} did not answer {ctx.author.mention}'s invite in time", 
+                        color = 15158588
+                ))
 
         # Leave/Disband party
         if action in ["leave"]:
-            # Disband party
+            # // Disband party
             if ctx.author.id in parties:
                 del parties[ctx.author.id]
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has disbanded their party", color=3066992))
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} has disbanded their party", 
+                        color = 3066992
+                    )
+                )
 
-            # Leave party
+            # // Leave party
             for party in parties:
                 if ctx.author.id in parties[party]:
                     parties[party].remove(ctx.author.id)
-                    return await ctx.send(embed=discord.Embed(description=f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left the party", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
+                    return await ctx.send(
+                        embed = discord.Embed(
+                            description = f"**[{len(parties[party])}/{max_party_size}]** {ctx.author.mention} has left the party", 
+                            color = 3066992
+                    ))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you are not in a party", color=15158588
+            ))
 
-        # Show party
+        # // Show party
         if action in ["show"]:
+            # // Show the authors party
             if not args:
+                # // Find the party the user is in
                 for party in parties:
                     if ctx.author.id in parties[party]:
+                        # // Verify the party leader
                         member = await self._check_member(ctx, party)
                         if member is not None:
-                            return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(member.name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[party]), color=33023))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not in a party", color=15158588))
+                            return await ctx.send(
+                                embed = discord.Embed(
+                                    title = f"[{len(parties[party])}/{max_party_size}] {member.name}'s party", 
+                                    description = "\n".join("<@" + str(e) + ">" for e in parties[party]),
+                                    color = 33023
+                            ))
+                
+                # // Send a message that the user is not in a party
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} you are not in a party", 
+                        color = 15158588
+                ))
             
-            # Show another players party
+            # // Show another players party
             if "@" in args[0]:
+                # // Get the user from the mention
                 user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+
+                # // Find the party the user is in
                 for party in parties:
+                    # // If the user is in the party, return the party
                     if user.id in parties[party]:
+                        # // Verify the party leader
                         member = await self._check_member(ctx, party)
                         if member is not None:
-                            return await ctx.send(embed=discord.Embed(title=f"[{len(parties[party])}/{max_party_size}] {self._clean_name(member.name)}'s party", description="\n".join("<@" + str(e) + ">" for e in parties[user.id]), color=33023))
-                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not in a party", color=15158588))
+                            return await ctx.send(
+                                embed = discord.Embed(
+                                    title = f"[{len(parties[party])}/{max_party_size}] {member.name}'s party", 
+                                    description = "\n".join("<@" + str(e) + ">" for e in parties[user.id]), 
+                                    color = 33023
+                            ))
+                
+                # // Send a message that the user is not in a party
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{user.mention} is not in a party", 
+                        color = 15158588
+                ))
 
-        # Create a new party
+        # // Create a new party
         if action in ["create"]:
+            # // If the user is already a party leader, return
+            if ctx.author.id in parties:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} you are already in a party",
+                        color = 15158588
+                ))
+            
+            # // Check if the user is already in a party
             for party in parties:
                 if ctx.author.id in parties[party]:
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already in a party", color=15158588))
-                
-            if not ctx.author.id in parties:
-                parties[ctx.author.id] = [ctx.author.id]
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has created a party", color=3066992))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are already in a party", color=15158588))
+                    return await ctx.send(
+                        embed = discord.Embed(
+                            description = f"{ctx.author.mention} you are already in a party", 
+                            color = 15158588
+                    ))
+            
+            # // Add the user to the parties list
+            parties[ctx.author.id] = [ctx.author.id]
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} has created a party", 
+                    color = 3066992
+            ))
+            
 
-        # Kick an user from the party
+        # // Kick an user from the party
         if action in ["kick", "remove"]:
-            if ctx.author.id in parties:
-                user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
-                if user is not None:
-                    if user.id in parties[ctx.author.id]:
-                        parties[ctx.author.id].remove(user.id)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has kicked {user.mention} from the party", color=3066992))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} that player is not in your party", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you are not a party leader", color=15158588))
+            # // Check if the author is a party leader
+            if ctx.author.id not in parties:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} you are not a party leader", 
+                        color = 15158588
+                ))
+            
+            # // Get the user to kick and verify that they are not null
+            user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+            if user is None:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} unknown player", 
+                        color = 15158588
+                ))
+            
+            # // If the user is not in the party
+            if user.id not in parties[ctx.author.id]:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} that player is not in your party", 
+                        color = 15158588
+                ))
+            
+            # // Kick the user from the party
+            parties[ctx.author.id].remove(user.id)
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} has kicked {user.mention} from the party", 
+                    color = 3066992
+            ))
 
     # // Listen to the queue embed buttons
     @commands.Cog.listener()
@@ -764,21 +1007,44 @@ class Queue(commands.Cog):
         if res.author.bot:
             return
         
+        # // If the user is trying to join or leave a queue
         if res.component.id in ["join_queue", "leave_queue"]:
             lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
+
+            # // Verify that the lobby exists
             if lobby is None:
-                await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} unknown lobby", color=3066992))
+                await res.channel.send(
+                    embed = discord.Embed(
+                        description = f"{res.author.mention} unknown lobby", color=3066992
+                ))
                 return await res.message.delete()
+            
+            # // Check if the lobby is valid
             if await self.is_valid_lobby(res, lobby.id):
+                # // If the user is trying to join the queue
                 if res.component.id == "join_queue":
                     await self._join(res, res.author, lobby.id)
+
+                # // If the user is trying to leave the queue
                 else:
                     await self._leave(res, res.author, lobby.id)
                 
+                # // Get the players and store them in a string
                 players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
+
+                # // Get the queue size
                 queue_size = Lobby(res.guild.id, lobby.id).get("queue_size")
-                embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/{queue_size}] {lobby.name}', description=players, color=33023)
+
+                # // Create the new embed
+                current_queue_size: int = len(self.data[res.guild.id][lobby.id]["queue"])
+                embed = discord.Embed(
+                    title=f'[{current_queue_size}/{queue_size}] {lobby.name}', 
+                    description = players, 
+                    color=33023
+                )
                 embed.set_footer(text=str(lobby.id))
+
+                # // Edit the embed
                 return await res.message.edit(embed=embed)
                 
 
