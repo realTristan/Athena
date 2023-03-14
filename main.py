@@ -53,4 +53,4 @@ async def on_ready():
             client.load_extension(f'cogs.{filename[:-3]}')
             print(f'Loaded: cog.{filename[:-3]}')
 
-client.run('YOUR TOKEN HERE')
+client.run('ODgzMDA2NjA5MjgwODY0MjU3.GsMf2k.TahkwF17Y59rjgSbYHXlMxEjoCzfEsPRsWpu1s')
