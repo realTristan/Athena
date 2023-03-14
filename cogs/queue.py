@@ -401,7 +401,7 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
         # // If the lobby state is not queue
-        if not self.data[ctx.guild.id][lobby]["state"] == "queue":
+        if self.data[ctx.guild.id][lobby]["state"] != "queue":
             return await ctx.send(embed=discord.Embed(description=f"{user.mention} it is not the queueing phase", color=15158588))
         
         # // If the user isn't registered
@@ -451,7 +451,7 @@ class Queue(commands.Cog):
             )
         
         # // If the lobby state is not queue
-        if not self.data[ctx.guild.id][lobby]["state"] == "queue":
+        if self.data[ctx.guild.id][lobby]["state"] != "queue":
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{user.mention} it is not the queueing phase", 
@@ -495,7 +495,7 @@ class Queue(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this channel is not a lobby", color=15158588))
         
         # // Check if the lobby state is not pick
-        if not self.data[ctx.guild.id][ctx.channel.id]["state"] == "pick":
+        if self.data[ctx.guild.id][ctx.channel.id]["state"] != "pick":
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} it is not the picking phase", color=15158588))
         
         # // Check if the user is not the captain
@@ -761,23 +761,25 @@ class Queue(commands.Cog):
     # // Listen to the queue embed buttons
     @commands.Cog.listener()
     async def on_button_click(self, res:Interaction):
-        if not res.author.bot:
-            if res.component.id in ["join_queue", "leave_queue"]:
-                lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
-                if lobby is None:
-                    await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} unknown lobby", color=3066992))
-                    return await res.message.delete()
-                if await self.is_valid_lobby(res, lobby.id):
-                    if res.component.id == "join_queue":
-                        await self._join(res, res.author, lobby.id)
-                    else:
-                        await self._leave(res, res.author, lobby.id)
-                    
-                    players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
-                    queue_size = Lobby(res.guild.id, lobby.id).get("queue_size")
-                    embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/{queue_size}] {lobby.name}', description=players, color=33023)
-                    embed.set_footer(text=str(lobby.id))
-                    return await res.message.edit(embed=embed)
+        if res.author.bot:
+            return
+        
+        if res.component.id in ["join_queue", "leave_queue"]:
+            lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
+            if lobby is None:
+                await res.channel.send(embed=discord.Embed(description=f"{res.author.mention} unknown lobby", color=3066992))
+                return await res.message.delete()
+            if await self.is_valid_lobby(res, lobby.id):
+                if res.component.id == "join_queue":
+                    await self._join(res, res.author, lobby.id)
+                else:
+                    await self._leave(res, res.author, lobby.id)
+                
+                players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
+                queue_size = Lobby(res.guild.id, lobby.id).get("queue_size")
+                embed = discord.Embed(title=f'[{len(self.data[res.guild.id][lobby.id]["queue"])}/{queue_size}] {lobby.name}', description=players, color=33023)
+                embed.set_footer(text=str(lobby.id))
+                return await res.message.edit(embed=embed)
                 
 
 def setup(client: commands.Bot):
