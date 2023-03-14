@@ -160,6 +160,10 @@ class Cache:
                     "lobby_id": lobby_id,
                     "maps": []
                 }
+            
+            # // If the maps do not exist in the cache
+            if "maps" not in cache["lobbies"][guild][lobby_id]:
+                cache["lobbies"][guild][lobby_id]["maps"] = []
 
             # // Add the map to the cache
             cache["lobbies"][guild][lobby_id]["maps"].append(row[2])
