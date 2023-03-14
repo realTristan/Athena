@@ -157,9 +157,16 @@ class Cache:
     async def update(table: str, guild: str, data: any, lobby: int = None, sqlcmds: list = []):
         # // Update the cache
         with Cache.lock.acquire():
+            # // If the lobby is not provided
             if lobby is None:
+                if guild not in cache[table]:
+                    cache[table][guild] = {}
                 cache[table][guild].update(data)
+
+            # // If the lobby is provided
             else:
+                if lobby not in cache[table][guild]:
+                    cache[table][guild][lobby] = {}
                 cache[table][guild][lobby].update(data)
 
         # // If there are provided sql cmds
