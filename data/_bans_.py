@@ -27,8 +27,8 @@ class Bans:
         del bans[user_id]
 
         # // Update the cache and the database
-        await Cache.update("bans", guild=self.guild_id, data=bans, sqlcmds=[
-            f"DELETE FROM bans WHERE guild_id = {self.guild_id} AND lobby_id = {self.lobby_id} AND user_id = {user_id}"
+        await Cache.set("bans", guild=self.guild_id, data=bans, sqlcmds=[
+            f"DELETE FROM bans WHERE guild_id = {self.guild_id} AND user_id = {user_id}"
         ])
 
     # // Get the ban of an user

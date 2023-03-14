@@ -126,7 +126,7 @@ class Cache:
             
     # // Fetch a value from the cache
     @staticmethod
-    def fetch(table: str, guild=None):
+    def fetch(table: str, guild = None):
         # // Check if the guild exists in the cache table
         if guild not in cache[table]:
             cache[table][guild] = {}
@@ -135,9 +135,9 @@ class Cache:
         return cache[table][guild]
         
     
-    # Update a value in the cache
+    # // Update a value in the cache
     @staticmethod
-    async def update(table: str, guild: str, data: any, lobby: str=None, sqlcmds: list=[]):
+    async def update(table: str, guild: str, data: any, lobby: int = None, sqlcmds: list = []):
         # // If no lobby is provided
         if lobby is None:
             for key in data:
@@ -152,3 +152,20 @@ class Cache:
         if len(sqlcmds) > 0:
             for cmd in sqlcmds:
                 await SqlData.execute(cmd)
+
+    # // Set a value from the cache
+    @staticmethod
+    async def set(table: str, guild: str, lobby: int = None, data: any = None, sqlcmds: list = []):
+        # // If the lobby is provided
+        if lobby is not None:
+            cache[table][guild][lobby] = data
+        
+        # // Set the cache value
+        else:
+            cache[table][guild] = data
+        
+        # // If there are provided sql cmds
+        if len(sqlcmds) > 0:
+            for cmd in sqlcmds:
+                await SqlData.execute(cmd)
+                

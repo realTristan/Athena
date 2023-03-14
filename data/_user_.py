@@ -36,7 +36,7 @@ class User:
         del users[self.user_id]
 
         # // Update the cache and the database
-        await Cache.update("users", guild=self.guild, data=users, sqlcmds=[
+        await Cache.set("users", guild=self.guild, data=users, sqlcmds=[
             f"DELETE FROM users WHERE guild_id = {self.guild} AND user_id = {self.user_id}"
         ])
 

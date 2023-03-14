@@ -41,7 +41,7 @@ class Lobby:
         del elo_roles[role_id]
 
         # // Update the cache and the database
-        await Cache.update("elo_roles", guild=self.guild, data=elo_roles, sqlcmds=[
+        await Cache.set("elo_roles", guild=self.guild, data=elo_roles, sqlcmds=[
             f"DELETE FROM elo_roles WHERE guild_id = {self.guild} AND role_id = {role_id}"
         ])
 
@@ -64,22 +64,22 @@ class Lobby:
     # // Delete a map from the lobby
     async def delete_map(self, map: str):
         # // Fetch the current maps
-        maps = Cache.fetch("maps", self.guild)
-        maps[self.lobby_id].remove(map)
+        maps = Cache.fetch("maps", self.guild)[self.lobby_id]
+        maps.remove(map)
 
         # // Update the cache and the database
-        await Cache.update("maps", guild=self.guild, data=maps, sqlcmds=[
+        await Cache.set("maps", guild=self.guild, data=maps, sqlcmds=[
             f"DELETE FROM maps WHERE guild_id = {self.guild} AND lobby_id = {self.lobby_id} AND map = '{map}'"
         ])
 
     # // Add a map to the lobby
     async def add_map(self, map: str):
         # // Fetch the current maps
-        maps = Cache.fetch("maps", self.guild)
-        maps[self.lobby_id].append(map)
+        maps = Cache.fetch("maps", self.guild)[self.lobby_id]
+        maps.append(map)
 
         # // Update the cache and the database
-        await Cache.update("maps", guild=self.guild, data=maps, sqlcmds=[
+        await Cache.set("maps", guild=self.guild, lobby=self.lobby_id, data=maps, sqlcmds=[
             f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({self.guild}, {self.lobby_id}, '{map}')"
         ])
 
@@ -102,18 +102,18 @@ class Lobby:
         del lobbies[self.lobby_id]
         
         # // Update the lobby settings
-        await Cache.update("lobby_settings", guild=self.guild, data=lobbies, sqlcmds=[
+        await Cache.set("lobby_settings", guild=self.guild, data=lobbies, sqlcmds=[
             f"DELETE FROM lobby_settings WHERE lobby_id = {self.lobby_id}"
         ])
 
         # // Fetch the current maps
-        lobbies = Cache.fetch("maps", self.guild)
+        lobby_maps = Cache.fetch("maps", self.guild)
 
         # // Delete the lobby from the maps
-        del lobbies[self.lobby_id]
+        del lobby_maps[self.lobby_id]
 
         # // Update the maps
-        await Cache.update("maps", data=lobbies, sqlcmds=[
+        await Cache.set("maps", guild=self.guild, data=lobby_maps, sqlcmds=[
             f"DELETE FROM maps WHERE lobby_id = {self.lobby_id}"
         ])
 

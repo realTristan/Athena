@@ -34,7 +34,7 @@ class Matches:
         del matches[match_id]
 
         # // Update the cache and the database
-        await Cache.update("matches", guild=self.guild, lobby=self.lobby_id, data=matches, sqlcmds=[
+        await Cache.set("matches", guild=self.guild, lobby=self.lobby_id, data=matches, sqlcmds=[
             f"DELETE FROM matches WHERE guild_id = {self.guild} AND lobby_id = {self.lobby_id} AND match_id = '{match_id}'"
         ])
 
