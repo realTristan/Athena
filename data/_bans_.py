@@ -47,15 +47,15 @@ class Bans:
         ban_data: dict = Bans.get(guild_id, user.id)
 
         # // If the ban has expired, then unban the user
-        if ban_data[0] - time.time() <= 0:
+        if ban_data["length"] - time.time() <= 0:
             await Bans.unban(guild_id, user.id)
 
         # // If the ban is still active, then...
-        ban_length: datetime.timedelta = datetime.timedelta(seconds=int(ban_data[0] - time.time()))
+        ban_length: datetime.timedelta = datetime.timedelta(seconds = int(ban_data["length"] - time.time()))
 
         # // Return the embed
         return discord.Embed(
             title = f"{user.name} is banned", 
-            description = f"**Length:** {ban_length}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", 
+            description = f"**Length:** {ban_length}\n**Reason:** {ban_data['reason']}\n**Banned by:** {ban_data['banned_by']}", 
             color = 15158588
         )

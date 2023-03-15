@@ -20,7 +20,7 @@ class EloCog(commands.Cog):
         # // Add a new elo role
         if option in ["add", "create", "new"]:
             # // Check if the user has enough permissions
-            if not User.is_admin(ctx.guild, ctx.author):
+            if not Users.is_admin(ctx.guild, ctx.author):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -74,7 +74,7 @@ class EloCog(commands.Cog):
         # // Delete an existing elo role
         if option in ["remove", "delete", "del"]:
             # // Check if the user has enough permissions
-            if not User.is_admin(ctx.guild, ctx.author):
+            if not Users.is_admin(ctx.guild, ctx.author):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -163,7 +163,7 @@ class EloCog(commands.Cog):
             return await Matches.embed(ctx.guild.id, match_id)
         
         # // Check if the user has the mod role
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -195,29 +195,29 @@ class EloCog(commands.Cog):
             if "blue" in args[0]:
                 # // Add a loss for each orange team member
                 for user in orange_team:
-                    user: discord.Member = User.verify(ctx.guild, user)
+                    user: discord.Member = Users.verify(ctx.guild, user)
                     if user is not None:
-                        await User.lose(user, lobby_id)
+                        await Users.lose(user, lobby_id)
 
                 # // Add a win for each blue team member
                 for user in blue_team:
-                    user: discord.Member = User.verify(ctx.guild, user)
+                    user: discord.Member = Users.verify(ctx.guild, user)
                     if user is not None:
-                        await User.win(user, lobby_id)
+                        await Users.win(user, lobby_id)
 
             # // If orange team is the winner
             if "orange" in args[0]:
                 # // Add a win for each orange team member
                 for user in orange_team:
-                    user: discord.Member = User.verify(ctx.guild, user)
+                    user: discord.Member = Users.verify(ctx.guild, user)
                     if user is not None:
-                        await User.win(user, lobby_id)
+                        await Users.win(user, lobby_id)
 
                 # // Add a win for each blue team member
                 for user in blue_team:
-                    user: discord.Member = User.verify(ctx.guild, user)
+                    user: discord.Member = Users.verify(ctx.guild, user)
                     if user is not None:
-                        await User.lose(user, lobby_id)
+                        await Users.lose(user, lobby_id)
                         
             # // Send the match info the current channel
             await ctx.send(Matches.embed(ctx.guild.id, match_id))
@@ -287,7 +287,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the cmd author has the mod role
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -350,7 +350,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the cmd author has the mod role
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions",
@@ -420,7 +420,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user is not a mod nor admin
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             if Settings.get(ctx.guild.id, "self_rename") == 0:
                 return await ctx.send(
                     embed = discord.Embed(
@@ -460,7 +460,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user has the mod role
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         # // Get the user info
@@ -520,7 +520,7 @@ class EloCog(commands.Cog):
         # // Register the mentioned user
         elif len(args) > 0 and "@" in args[0]:
             # // Check if the user has the mod role
-            if not User.is_mod(ctx.author):
+            if not Users.is_mod(ctx.author):
                 return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
             
             user: discord.Member = ctx.guild.get_member(int(re.sub("\D","", args[0])))
@@ -574,7 +574,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user has admin role
-        if not User.is_admin(ctx.guild, ctx.author):
+        if not Users.is_admin(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -609,7 +609,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user has the mod role
-        if not User.is_mod(ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -655,7 +655,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the author has mod role
-        if not User.is_mod(ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions",
@@ -725,7 +725,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the author has admin role
-        if not User.is_admin(ctx.author):
+        if not Users.is_admin(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions",
@@ -832,7 +832,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user has admin role
-        if not User.is_admin(ctx.author):
+        if not Users.is_admin(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions",

@@ -1,7 +1,7 @@
 from discord.ext import commands
+from data import Users, Bans
 import datetime as datetime
 import discord, time, re
-from data import *
 
 # // Bans cog
 class BansCog(commands.Cog):
@@ -39,25 +39,25 @@ class BansCog(commands.Cog):
             ban_data = Bans.get(ctx.guild.id, user.id)
 
             # // If the users ban time hasn't expired yet
-            if ban_data[0] - time.time() > 0:
+            if ban_data["length"] - time.time() > 0:
                 # // Get the ban length
-                length: int = datetime.timedelta(seconds = ban_data[0])
+                length: datetime.timedelta = datetime.timedelta(seconds = ban_data["length"])
 
                 # // Send the embed
                 return await ctx.send(
                     embed = discord.Embed(
                         title = f"{user.name} already banned", 
-                        description = f"**Length:** {length}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", 
+                        description = f"**Length:** {length}\n**Reason:** {ban_data['reason']}\n**Banned by:** {ban_data['banned_by']}", 
                         color = 15158588
                 ))
             
             # // Else, Unban the user
             else:
                 await Bans.unban(ctx.guild.id, user.id)
-                
+            
         # // Ban the user (time, reason)
-        ban_time = int(length+time.time())
-        ban_reason = ' '.join(str(e) for e in args)
+        ban_time: int = int(length + time.time())
+        ban_reason: str = ' '.join(str(e) for e in args)
         
         # // Ban the user
         await Bans.ban(ctx.guild.id, user.id, ban_time, ban_reason, ctx.author.id)
@@ -80,7 +80,7 @@ class BansCog(commands.Cog):
             return
         
         # // Check if the user has mod role
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
