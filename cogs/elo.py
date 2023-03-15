@@ -160,7 +160,7 @@ class EloCog(commands.Cog):
         
         # // Show the match
         if action in ["show"]:
-            return await Matches.show(ctx.guild.id, match_id)
+            return await Matches.embed(ctx.guild.id, match_id)
         
         # // Check if the user has the mod role
         if not User.is_mod(ctx.guild, ctx.author):
@@ -220,7 +220,7 @@ class EloCog(commands.Cog):
                         await User.lose(user, lobby_id)
                         
             # // Send the match info the current channel
-            await ctx.send(Matches.show(ctx.guild.id, match_id))
+            await ctx.send(Matches.embed(ctx.guild.id, match_id))
 
             # // Delete the match channels
             return await Matches.delete_category(ctx.guild.id, match_id)
@@ -240,7 +240,7 @@ class EloCog(commands.Cog):
             Matches.update(ctx.guild.id, match_id, status="cancelled", winner="none")
             
             # // Send the match info embed
-            await ctx.send(Matches.show(ctx.guild.id, match_id))
+            await ctx.send(Matches.embed(ctx.guild.id, match_id))
 
             # // Delete the match channels
             return await Matches.delete_category(ctx.guild.id, match_id)
@@ -275,7 +275,7 @@ class EloCog(commands.Cog):
                 await Matches.undo(ctx, lobby_id, orange_team, blue_team)
             
             # // Send the match embed
-            return await ctx.send(Matches.show(ctx.guild.id, match_id))
+            return await ctx.send(Matches.embed(ctx.guild.id, match_id))
 
 
     # // SET PLAYERS STATS COMMAND
@@ -338,7 +338,7 @@ class EloCog(commands.Cog):
         
         # // Get the last match id
         match_id: int = Matches.count(ctx.guild.id)
-        return await ctx.send(embed=Matches.show(ctx.guild.id, match_id))
+        return await ctx.send(embed=Matches.embed(ctx.guild.id, match_id))
 
 
     # // REPLACE / SUB TWO PLAYERS COMMAND

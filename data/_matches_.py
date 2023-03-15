@@ -30,9 +30,9 @@ class Matches:
         # // Delete the category
         return await category.delete()
 
-    # // Show the match
+    # // Produce a match embed
     @staticmethod
-    def show(guild_id: int, match_id: int):
+    def embed(guild_id: int, match_id: int):
         # // Fetch the match data
         match_data: dict = Matches.find(guild_id, match_id)
 
