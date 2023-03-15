@@ -1,4 +1,4 @@
-from data import Cache, Settings, SqlData, Lobby
+from cache import Cache, Settings, SqlData, Lobby
 import discord
 
 class Users:

@@ -2,7 +2,7 @@ import discord, random, asyncio, re
 from discord_components import *
 from discord.ext import commands
 from functools import *
-from data import *
+from cache import *
 
 class QueueCog(commands.Cog):
     def __init__(self, client: commands.Bot):

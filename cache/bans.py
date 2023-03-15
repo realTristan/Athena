@@ -1,4 +1,4 @@
-from ._cache_ import Cache
+from .cache import Cache
 import time, datetime, discord, functools
 
 class Bans:

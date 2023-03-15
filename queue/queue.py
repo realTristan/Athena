@@ -1,6 +1,6 @@
 import threading, discord, functools
 from discord_components import *
-from data import Lobby, User, Matches, Settings
+from cache import Lobby, User, Matches, Settings
 
 # // Store the queue data in a cache map
 queue: dict = {}

@@ -1,4 +1,4 @@
-from data import Cache, Lobby, Users
+from cache import Cache, Lobby, Users
 import discord, functools
 
 class Matches:

@@ -1,4 +1,4 @@
-from data._cache_ import Cache
+from cache.cache import Cache
 
 class Settings:
     # // Setup default settings and cache
@@ -54,6 +54,11 @@ class Settings:
             f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({guild_id}, {role_id}, {elo_level}, {win_elo}, {lose_elo})"
         ])
 
+    # // Check if the elo role exists
+    @staticmethod
+    def elo_role_exists(guild_id: int, role_id: int) -> bool:
+        return role_id in Cache.fetch("settings", guild_id=guild_id)["elo_roles"]
+    
     # // Delete an elo role from the lobby
     @staticmethod
     async def delete_elo_role(guild_id: int, role_id: int) -> None:

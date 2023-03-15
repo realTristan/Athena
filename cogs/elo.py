@@ -1,7 +1,7 @@
 from discord_components import *
 from discord.ext import commands
 from functools import *
-from data import *
+from cache import *
 import discord, re
 
 # // Elo cog

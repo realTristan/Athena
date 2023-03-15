@@ -1,4 +1,4 @@
-from ._sql_ import SqlData
+from .database import SqlData
 import threading, functools
 
 # // The Global Cache Variable

@@ -1,5 +1,5 @@
 from discord.ext import commands
-from data import Users, Bans
+from cache import Users, Bans
 import datetime as datetime
 import discord, time, re
 

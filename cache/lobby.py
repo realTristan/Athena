@@ -1,15 +1,20 @@
-from ._cache_ import Cache
+from .cache import Cache
 
 class Lobby:
-    # // Get all the lobbies in the guild
-    @staticmethod
-    def get_all(guild_id: int) -> dict:
-        return Cache.fetch("lobbies", guild_id)
-    
     # // Check if a lobby exists for the guild
     @staticmethod
     def exists(guild_id: int, lobby_id: int) -> bool:
         return lobby_id in Cache.fetch("lobbies", guild_id)
+    
+    # // Get the amount of lobbies for the guild
+    @staticmethod
+    def count(guild_id: int) -> int:
+        return len(Cache.fetch("lobbies", guild_id))
+    
+    # // Get all the lobbies for the guild
+    @staticmethod
+    def get_all(guild_id: int) -> dict:
+        return Cache.fetch("lobbies", guild_id)
 
     # // Create a new lobby
     @staticmethod
@@ -26,22 +31,32 @@ class Lobby:
                 "maps": []
             }
         }, sqlcmds=[
-            f"INSERT INTO lobbies (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({guild}, {lobby_id}, 0, 1, 5, 2, 1, 1, 10)"
+            f"INSERT INTO lobbies (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({guild_id}, {lobby_id}, 0, 1, 5, 2, 1, 1, 10)"
         ])
 
-    # // Delete an elo role from the lobby
+    # // Check if a map exists
     @staticmethod
-    async def delete_elo_role(guild_id: int, role_id: int) -> None:
-        Cache.delete_elo_role(guild_id, role_id)
+    def map_exists(guild_id: int, lobby_id: int, map: str) -> bool:
+        return map in Cache.fetch("lobbies", guild_id)[lobby_id]["maps"]
 
     # // Delete a map from the lobby
     @staticmethod
     async def delete_map(guild_id: int, lobby_id: int, map: str) -> None:
+        # // If the map doesn't exist, return
+        if not Lobby.map_exists(guild_id, lobby_id, map):
+            return
+        
+        # // Delete the map
         Cache.delete_map(guild_id, lobby_id, map)
 
     # // Add a map to the lobby
     @staticmethod
     async def add_map(guild_id: int, lobby_id: int, map: str) -> None:
+        # // If the map already exists, return
+        if Lobby.map_exists(guild_id, lobby_id, map):
+            return
+        
+        # // Add the map
         Cache.add_map(guild_id, lobby_id, map)
     
     # // Delete the lobby

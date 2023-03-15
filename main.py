@@ -1,6 +1,6 @@
 from discord.ext import commands
 from discord_components import *
-from data import *
+from cache import *
 import discord, os
 
 # // CREATE THE CLIENT
