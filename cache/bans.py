@@ -18,7 +18,7 @@ class Bans:
     # // Delete a ban from the lobby
     @staticmethod
     async def unban(guild_id: int, user_id: int) -> None:
-        Cache.delete_ban(guild_id, user_id)
+        await Cache.delete_ban(guild_id, user_id)
 
     # // Get the ban of an user
     @staticmethod

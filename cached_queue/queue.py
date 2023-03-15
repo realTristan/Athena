@@ -1,0 +1,625 @@
+import threading, discord, functools, random
+from discord_components import *
+from cache import Lobby, User, Matches, Settings, Users, Bans
+
+# // Store the queue data in a cache map
+queue: dict = {}
+
+# // Queue Lock
+queue_lock: threading.Lock = threading.Lock()
+
+# // TODO
+# // - Convert the join() function
+# // - Convert the leave() function
+# // - Convert the pick() function
+# // - Convert the start() function
+
+# // Queue Class
+class Queue:
+    @staticmethod
+    def reset(guild_id: int, lobby_id: int):
+        with queue_lock.acquire():
+            queue[guild_id][lobby_id] = {
+                "queue": [], 
+                "blue_cap": "", 
+                "blue_team": [], 
+                "orange_cap": "", 
+                "orange_team": [], 
+                "pick_logic": [], 
+                "map": "None", 
+                "parties": {}, 
+                "state": "queue"
+            }
+
+    # // Get a value from the queue cache
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    def get(guild_id: int, lobby_id: int, key: str) -> any:
+        return queue[guild_id][lobby_id][key]
+    
+    # // Get the lobby data
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    def get_lobby(guild_id: int, lobby_id: int) -> any:
+        return queue[guild_id][lobby_id]
+    
+    # // Check if channel is a valid queue lobby
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    def is_valid_lobby(guild_id: int, lobby_id: int) -> bool:
+        with queue_lock.acquire():
+            if guild_id not in queue:
+                queue[guild_id] = {}
+        
+        # // Check if the lobby exists
+        if not Lobby.exists(guild_id, lobby_id):
+            return False
+        
+        # // Check if the lobby is in the cache
+        if lobby_id not in queue[guild_id]:
+            Queue.reset(guild_id, lobby_id)
+        return True
+    
+    # // Update the map
+    @staticmethod
+    def update_map(guild_id: int, lobby_id: int, map: str) -> None:
+        with queue_lock.acquire():
+            queue[guild_id][lobby_id]["map"] = str(map[0]).upper() + str(map[1:]).lower()
+
+    # // Update the state
+    @staticmethod
+    def update_state(guild_id: int, lobby_id: int, state: str) -> None:
+        with queue_lock.acquire():
+            queue[guild_id][lobby_id]["state"] = state
+
+    # // Add an user to a party
+    @staticmethod
+    def add_to_party(guild_id: int, lobby_id: int, party_leader: int, user_id: int) -> None:
+        with queue_lock.acquire():
+            queue[guild_id][lobby_id]["parties"][party_leader] = user_id
+
+    # // Create a party
+    @staticmethod
+    def create_party(guild_id: int, lobby_id: int, party_leader: int) -> None:
+        with queue_lock.acquire():
+            queue[guild_id][lobby_id]["parties"][party_leader] = []
+
+    # // Disband a party
+    @staticmethod
+    def disband_party(guild_id: int, lobby_id: int, party_leader: int) -> None:
+        with queue_lock.acquire():
+            del queue[guild_id][lobby_id]["parties"][party_leader]
+    
+    # // Remove a user from a party
+    @staticmethod
+    def remove_from_party(guild_id: int, lobby_id: int, user_id: int) -> bool:
+        with queue_lock.acquire():
+            for party in queue[guild_id][lobby_id]["parties"]:
+                if user_id in queue[guild_id][lobby_id]["parties"][party]:
+                    queue[guild_id][lobby_id]["parties"][party].remove(user_id)
+                    return True
+        return False
+
+    
+    # // Pick and user function
+    @staticmethod
+    def pick(guild: discord.Guild, lobby_id: int, captain: discord.Member, user: discord.Member) -> discord.Embed:
+        # // Lock the queue cache
+        with queue_lock.acquire():
+            # // Pop the first item from the pick logic
+            queue[guild.id][lobby_id]["pick_logic"].pop(0)
+
+            # // If the user is the blue team captain
+            if queue[guild.id][lobby_id]["blue_cap"] == captain:
+                queue[guild.id][lobby_id]["blue_team"].append(user)
+                queue[guild.id][lobby_id]["queue"].remove(user)
+
+            # // If the user is the orange team captain
+            elif queue[guild.id][lobby_id]["orange_cap"] == captain:
+                queue[guild.id][lobby_id]["orange_team"].append(user)
+                queue[guild.id][lobby_id]["queue"].remove(user)
+
+            # // Check if the queue has one player left
+            if len(queue[guild.id][lobby_id]["queue"]) == 1:
+                # // Add the last player to the team
+                queue[guild.id][lobby_id]["orange_team"].append(queue[guild.id][lobby_id]["queue"][0])
+                queue[guild.id][lobby_id]["queue"].remove(queue[guild.id][lobby_id]["queue"][0])
+
+                # // Get whether the map pick phase is enabled
+                map_pick_phase: int = Lobby.get(guild.id, lobby_id, "map_pick_phase")
+
+                # // If the map pick phase is enabled
+                if map_pick_phase == 1:
+                    queue[guild.id][lobby_id]["state"] = "maps"
+
+                # // If the map pick phase is disabled
+                else:
+                    # // Get the maps
+                    maps: list = Lobby.get(guild.id, lobby_id, "maps")
+
+                    # // If there are maps
+                    if len(maps) > 0:
+                        # // Pick a random map
+                        queue[guild.id][lobby_id]["map"] = random.choice(maps)
+
+                    # // Set the state to final
+                    queue[guild.id][lobby_id]["state"] = "final"
+
+            # // Send who the captain picked
+            return discord.Embed(
+                description = f"{captain.mention} has picked {user.mention}", 
+                color = 33023
+            )
+            
+    # // When the queue reaches max capacity function
+    @staticmethod
+    async def start(guild: discord.Guild, lobby_id: int) -> discord.Embed:
+        # // Get the lobby settings
+        lobby: dict = Lobby.get(guild.id, lobby_id)
+
+        # // Lock the queue cache
+        with queue_lock.acquire():
+            # // Set the blue team captain
+            blue_cap: discord.Member = random.choice(queue[guild.id][lobby_id]["queue"])
+            queue[guild.id][lobby_id]["blue_cap"] = blue_cap
+            queue[guild.id][lobby_id]["queue"].remove(blue_cap)
+            
+            # // Set the orange team captain
+            orange_cap: discord.Member = random.choice(queue[guild.id][lobby_id]["queue"])
+            queue[guild.id][lobby_id]["orange_cap"] = orange_cap
+            queue[guild.id][lobby_id]["queue"].remove(orange_cap)
+
+            # // If the pick phase is enabled
+            if lobby["team_pick_phase"] == 1:
+                queue[guild.id][lobby_id]["state"] = "pick"
+
+                # // Get the pick logic
+                await Queue.generate_pick_logic(guild.id, lobby_id)
+
+                # // Send the embed
+                return Queue.embed(guild.id, lobby_id)
+            
+            # // If pick phase is diabled, create random teams
+            for _ in range(len(queue[guild.id][lobby_id]["queue"]) // 2):
+                # // Get a random user from the queue
+                user: discord.Member = random.choice(queue[guild.id][lobby_id]["queue"])
+
+                # // Add the user to the orange team
+                queue[guild.id][lobby_id]['orange_team'].append(user)
+                queue[guild.id][lobby_id]["queue"].remove(user)
+            
+            # // Add the remaining users to the blue team
+            for _ in range(len(queue[guild.id][lobby_id]["queue"])):
+                queue[guild.id][lobby_id]['blue_team'].append(user)
+                queue[guild.id][lobby_id]["queue"].remove(user)
+            
+            # // If the map pick phase is enabled
+            if lobby["map_pick_phase"] == 1:
+                # // Set the state to map picking phase
+                queue[guild.id][lobby_id]["state"] = "maps"
+
+                # // Send the embed
+                return Queue.embed(guild, lobby_id)
+
+            # // Get the maps
+            maps: list = lobby.get("maps")
+            queue[guild.id][lobby_id]["map"] = "None"
+            
+            # // If there are maps
+            if len(maps) > 0:
+                queue[guild.id][lobby_id]["map"] = random.choice(maps)
+
+            # // Set the state to final
+            queue[guild.id][lobby_id]["state"] = "final"
+
+            # // Send the embed
+            return Queue.embed(guild, lobby_id)
+        
+    # // When an user joins the queue functioncheck_party
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def join(guild: discord.Guild, lobby_id: int, user: discord.Member) -> discord.Embed:
+        # // Lock the queue cache
+        with queue_lock.acquire():
+            # // If the lobby is invalid
+            if not Queue.is_valid_lobby(guild.id, lobby_id):
+                return discord.Embed(
+                    description = f"{user.mention} this channel is not a lobby", 
+                    color = 15158588
+                )
+            
+            # // If the lobby state is not queue
+            if queue[guild.id][lobby_id]["state"] != "queue":
+                return discord.Embed(
+                    description = f"{user.mention} it is not the queueing phase", 
+                    color = 15158588
+                )
+            
+            # // If the user isn't registered
+            if not Users.exists(guild.id, user.id):
+                return discord.Embed(
+                    description = f"{user.mention} is not registered",
+                    color = 15158588
+                )
+            
+            # // Check if the user is a party leader
+            if not await Queue.check_party(guild, user, lobby_id):
+                return discord.Embed(
+                    description = f"{user.mention} you are not a party leader / party too full", 
+                    color = 15158588
+                )
+            
+            # // Check if the user is already queued
+            for lobby in queue[guild.id]:
+                if user in queue[guild.id][lobby]["queue"]:
+                    # // Get the channel
+                    channel: discord.Channel = guild.get_channel(lobby)
+                    if channel is not None:
+                        return discord.Embed(
+                            description = f"{user.mention} is already queued in {channel.mention}", 
+                            color = 15158588
+                        )
+                    
+                    # // If the channel is not found, then remove the lobby
+                    del queue[guild.id][lobby]
+
+            # // Check if the user is banned
+            if Bans.is_banned(guild.id, user.id):
+                await Bans.embed(guild.id, user)
+
+            # // Get the queue sizes
+            queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
+            current_queue_size: int = len(queue[guild.id][lobby_id]["queue"])
+
+            # // Add the user to the queue
+            queue[guild.id][lobby_id]["queue"].append(user)
+
+            # // If the queue is full, then start the game
+            if current_queue_size == queue_size:
+                await Queue.start(guild, lobby_id)
+            
+            # // Send the queue embed
+            return discord.Embed(
+                description = f"**[{current_queue_size + 1}/{queue_size}]** {user.mention} has joined the queue", 
+                color = 33023
+            )
+    
+    # // Add other party members to the queue
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def check_party(guild: discord.Guild, user: discord.Member, lobby_id: int) -> bool:
+        # // If the user isn't a party leader
+        if user.id not in queue[guild.id][lobby_id]["parties"]:
+            return True
+        
+        # // Check if the user is in a party
+        for party in queue[guild.id][lobby_id]["parties"]:
+            if user.id in queue[guild.id][lobby_id]["parties"][party] and party != user.id:
+                return False
+        
+        # // Get the queue size
+        max_queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
+        lobby_queue_size: int = len(queue[guild.id][lobby_id]["queue"])
+        party_size: int = len(queue[guild.id][lobby_id]["parties"][user.id])
+
+        # // Check if the party can join the queue
+        if party_size + lobby_queue_size > max_queue_size:
+            return False
+            
+        # // Add the party to the queue
+        for party_member in queue[guild.id][lobby_id]["parties"][user.id][1:]:
+            party_member: discord.Member = await User.verify(guild, party_member)
+
+            # // If the party member is in the guild and registered
+            if party_member is not None:
+                await Queue.join(guild, party_member, lobby_id)
+
+        # // Return true
+        return True
+    
+    # // When an user leaves the queue function
+    @staticmethod
+    def leave(guild: discord.Guild, lobby_id: int, user: discord.Member) -> discord.Embed:
+        # // Lock the queue cache
+        with queue_lock.acquire():
+            # // If the lobby is invalid
+            if not Queue.is_valid_lobby(guild, lobby_id):
+                return discord.Embed(
+                    description = f"{user.mention} this channel is not a lobby", 
+                    color = 15158588
+                )
+            
+            # // If the lobby state is not queue
+            if queue[guild.id][lobby_id]["state"] != "queue":
+                return discord.Embed(
+                    description = f"{user.mention} it is not the queueing phase", 
+                    color = 15158588
+                )
+            
+            # // If the user is not in the queue
+            if user not in queue[guild.id][lobby_id]["queue"]:
+                return discord.Embed(
+                    description = f"{user.mention} is not in the queue", 
+                    color = 15158588
+                )
+            
+            # // Get the queue sizes
+            queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
+            current_queue_size: int = len(queue[guild.id][lobby_id]['queue'])
+
+            # // Remove the user from the queue
+            queue[guild.id][lobby_id]["queue"].remove(user)
+
+            # // Send the queue embed
+            return discord.Embed(
+                description = f"**[{current_queue_size - 1}/{queue_size}]** {user.mention} has left the queue", 
+                color = 33023
+            )
+    
+    # // Routing function to create a new match
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def new_match(guild_id: int, lobby_id: int) -> None:
+        # // Get the orange team and their user ids
+        orange_team: list = queue[guild_id][lobby_id].get("orange_team")
+        orange_team = [user.id for user in orange_team]
+
+        # // Get the blue team and their user ids
+        blue_team: list = queue[guild_id][lobby_id].get("blue_team")
+        blue_team = [user.id for user in blue_team]
+
+        # // Get the team captains
+        orange_cap: discord.Member = queue[guild_id][lobby_id].get("orange_cap")
+        blue_cap: discord.Member = queue[guild_id][lobby_id].get("blue_cap")
+
+        # // Get the count of matches
+        amount_of_matches: int = Matches.count(guild_id) + 1
+
+        # // Add the match to the database
+        await Matches.add(guild_id, lobby_id, amount_of_matches, {
+            "orange_team": orange_team,
+            "blue_team": blue_team,
+            "orange_cap": orange_cap.id,
+            "blue_cap": blue_cap.id
+        })
+
+    # // Create the match category function
+    @staticmethod
+    async def create_match_category(guild: discord.Guild, match_id: int, lobby_id: int) -> None:
+        match_categories: int = Settings.get(guild.id, "match_categories")
+
+        # // If the match categories are disabled
+        if match_categories == 0:
+            return
+        
+        # // If the match category already exists
+        if discord.utils.get(guild.categories, name=f'Match #{match_id}'):
+            return
+        
+        # // Creating category and setting permissions
+        category: discord.Category = await guild.create_category(f'Match #{match_id}')
+        await category.set_permissions(guild.default_role, connect = False, send_messages = False)
+
+        # // Creating channels inside category
+        await guild.create_text_channel(f"match-{match_id}", category = category)
+        await guild.create_voice_channel(f'🔹 Team ' + queue[guild.id][lobby_id]["blue_cap"].name, category = category)
+        await guild.create_voice_channel(f"🔸 Team " + queue[guild.id][lobby_id]['orange_cap'].name, category = category)
+
+        # // Blue team
+        blue_team: list = queue[guild.id][lobby_id].get("blue_team")
+        blue_team.append(queue[guild.id][lobby_id]["blue_cap"])
+
+        # // Orange team
+        orange_team: list = queue[guild.id][lobby_id].get("orange_team")
+        orange_team.append(queue[guild.id][lobby_id]["orange_cap"])
+
+        # // Edit the permissions for each player in the teams
+        for user in orange_team:
+            await category.set_permissions(user, connect = True, send_messages = True)
+
+        for user in blue_team:
+            await category.set_permissions(user, connect = True, send_messages = True)
+    
+    # // Create team pick logic function
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def generate_pick_logic(guild_id: int, lobby_id: int) -> None:
+        with queue_lock.acquire():
+            # // Get the queue size
+            queue_size: int = len(queue[guild_id][lobby_id]["queue"])
+
+            # // Get the team captains
+            blue_captain: discord.Member = queue[guild_id][lobby_id]["blue_cap"]
+            orange_captain: discord.Member = queue[guild_id][lobby_id]["orange_cap"]
+
+            # // Iterate over the queue size
+            for _ in range(queue_size // 2):
+                # // Add the captains to the pick logic
+                queue[guild_id][lobby_id]["pick_logic"].append(blue_captain)
+                queue[guild_id][lobby_id]["pick_logic"].append(orange_captain)
+
+            # // If the queue size is odd
+            if queue_size % 2 != 0:
+                # // Add the blue captain to the pick logic
+                queue[guild_id][lobby_id]["pick_logic"].append(blue_captain)
+
+
+    # // Send match logs to the given match logs channel
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def log_match(guild: discord.Guild, embed: discord.Embed) -> None:
+        match_logs: int = Settings.get(guild.id, "match_logs")
+
+        # // If the match logs are disabled
+        if match_logs == 0:
+            return
+        
+        # // If the match logs are enabled
+        channel: discord.Channel = guild.get_channel(match_logs)
+
+        # // If the channel is not found, set the match logs to 0
+        if channel is None:
+            return await Settings.update(guild.id, match_logs=0)
+        
+        # // Else, send the embed to the channel
+        await channel.send(
+            embed = embed,
+            components = [[
+                Button(style=ButtonStyle.blue, label="Blue", custom_id='blue_report'),
+                Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
+                Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
+            ]])
+    
+
+    # // Embed generator function (for queue)
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    def embed(guild: discord.Guild, lobby_id: int) -> discord.Embed:
+        # // Get the lobby data
+        queue_state: str = queue[guild.id][lobby_id]["state"]
+
+        # // Queue phase embed
+        if queue_state == "queue":
+            Queue.state_queue_embed(guild, lobby_id)
+
+        # // Team picking phase embed
+        if queue_state == "pick":
+            Queue.state_pick_embed(guild, lobby_id)
+
+        # // Map picking phase embed
+        if queue_state == "maps":
+            Queue.state_maps_embed(guild, lobby_id)
+
+        # // Final match up embed
+        if queue_state == "final":
+            Queue.state_final_embed(guild, lobby_id)
+
+    # // Embed generator function (for queue)
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def state_queue_embed(guild: discord.Guild, lobby_id: int) -> discord.Embed:
+        # // Get the lobby data
+        queue_data: dict = queue[guild.id][lobby_id]
+
+        # // Get the count of matches
+        amount_of_matches: int = Matches.count(guild.id) + 1
+
+        # // Create the embed
+        embed: discord.Embed = discord.Embed(
+            title = f"Match #{amount_of_matches}", description = f"**Map:** {queue_data['map']}", 
+            color = 33023
+        )
+
+        # // Captains
+        embed.add_field(name = "Orange Captain", value = queue_data["orange_cap"].mention)
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Captain", value = queue_data["blue_cap"].mention)
+
+        # // Teams
+        embed.add_field(name = "Orange Team", value = "None")
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Team", value = "None")
+
+        # // Queue
+        embed.add_field(name = "Queue", value = "\n".join([user.mention for user in queue_data["queue"]]))
+
+        # // Return the embed
+        return embed
+
+    # // Embed generator function (for team picking)
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def state_pick_embed(guild: discord.Guild, lobby_id: int) -> None:
+        # // Get the lobby data
+        queue_data: dict = queue[guild.id][lobby_id]
+
+        # // Get the count of matches
+        amount_of_matches: int = Matches.count(guild.id) + 1
+
+        # // Create the embed
+        embed: discord.Embed = discord.Embed(
+            title = f"Match #{amount_of_matches}", description = f"**Map:** {queue_data['map']}", 
+            color = 33023
+        )
+
+        # // Captains
+        embed.add_field(name = "Orange Captain", value = queue_data["orange_cap"].mention)
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Captain", value = queue_data["blue_cap"].mention)
+
+        # // Teams
+        embed.add_field(name = "Orange Team", value = "None")
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Team", value = "None")
+
+        # // Return the embed
+        return embed
+
+    # // Embed generator function (for map picking)
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def state_maps_embed(guild: discord.Guild, lobby_id: int) -> None:
+        # // Get the lobby data
+        queue_data: dict = queue[guild.id][lobby_id]
+
+        # // Get the count of matches
+        amount_of_matches: int = Matches.count(guild.id) + 1
+
+        # // Create the embed
+        embed: discord.Embed = discord.Embed(
+            title = f"Match #{amount_of_matches}", description = f"**Map:** {queue_data['map']}", 
+            color = 33023
+        )
+
+        # // Captains
+        embed.add_field(name = "Orange Captain", value = queue_data["orange_cap"].mention)
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Captain", value = queue_data["blue_cap"].mention)
+
+        # // Teams
+        embed.add_field(name = "Orange Team", value = '\n'.join(str(e.mention) for e in queue_data["orange_team"]))
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Team", value = '\n'.join(str(e.mention) for e in queue_data["blue_team"]))
+
+        # // Send the embed
+        return embed
+        
+
+    # // Embed generator function (for final match up)
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    async def state_final_embed(guild: discord.Guild, lobby_id: int) -> None:
+        # // Get the lobby data
+        queue_data: dict = queue[guild.id][lobby_id]
+
+        # // Get the count of matches
+        amount_of_matches: int = Matches.count(guild.id) + 1
+
+        # // Create the embed
+        embed: discord.Embed = discord.Embed(
+            title = f"Match #{amount_of_matches}", 
+            description = f"**Map:** {queue_data['map']}", 
+            color = 33023
+        )
+
+        # // Captains
+        embed.add_field(name = "Orange Captain", value = queue_data["orange_cap"].mention)
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Captain", value = queue_data["blue_cap"].mention)
+
+        # // Teams
+        embed.add_field(name = "Orange Team", value = '\n'.join(str(e.mention) for e in queue_data["orange_team"]))
+        embed.add_field(name = "\u200b", value = "\u200b")
+        embed.add_field(name = "Blue Team", value = '\n'.join(str(e.mention) for e in queue_data["blue_team"]))
+
+        # // Set the footer to the lobby id
+        embed.set_footer(text = str(lobby_id))
+
+        # // Match functions
+        await Queue.new_match(guild.id, lobby_id)
+        await Queue.log_match(guild, embed)
+        await Queue.create_match_category(guild, amount_of_matches, lobby_id)
+        Queue.reset(guild.id, lobby_id)
+
+        # // Send the embed
+        return embed
