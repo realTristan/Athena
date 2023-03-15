@@ -16,15 +16,15 @@ class QueueCog(commands.Cog):
     # // When the queue reaches max capacity function
     async def _start(self, ctx:commands.Context, lobby: int):
         # // Get the lobby settings
-        lobby = Lobby.get(ctx.guild.id, lobby)
+        lobby: dict = Lobby.get(ctx.guild.id, lobby)
 
         # // Create team captains (blue)
-        blue_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
+        blue_cap: discord.Member = random.choice(self.data[ctx.guild.id][lobby]["queue"])
         self.data[ctx.guild.id][lobby]["blue_cap"] = blue_cap
         self.data[ctx.guild.id][lobby]["queue"].remove(blue_cap)
         
         # // Create team captains (orange)
-        orange_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
+        orange_cap: discord.Member = random.choice(self.data[ctx.guild.id][lobby]["queue"])
         self.data[ctx.guild.id][lobby]["orange_cap"] = orange_cap
         self.data[ctx.guild.id][lobby]["queue"].remove(orange_cap)
 
@@ -41,7 +41,7 @@ class QueueCog(commands.Cog):
         # // If pick phase is diabled, create random teams
         for _ in range(len(self.data[ctx.guild.id][lobby]["queue"]) // 2):
             # // Get a random user from the queue
-            user = random.choice(self.data[ctx.guild.id][lobby]["queue"])
+            user: discord.Member = random.choice(self.data[ctx.guild.id][lobby]["queue"])
 
             # // Add the user to the orange team
             self.data[ctx.guild.id][lobby]['orange_team'].append(user)
@@ -60,7 +60,7 @@ class QueueCog(commands.Cog):
         # // Else, pick a random map
         else:
             # // Get the maps
-            maps = Lobby.get(ctx.guild.id, lobby, "maps")
+            maps: list = Lobby.get(ctx.guild.id, lobby, "maps")
             self.data[ctx.guild.id][lobby]["map"] = "None"
             
             # // If there are maps
@@ -92,7 +92,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // If the user isn't registered
-        if not User.exists(ctx.guild.id, user.id):
+        if not Users.exists(ctx.guild.id, user.id):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{user.mention} is not registered",
@@ -111,7 +111,7 @@ class QueueCog(commands.Cog):
         for l in self.data[ctx.guild.id]:
             if user in self.data[ctx.guild.id][l]["queue"]:
                 # // Get the channel
-                channel = ctx.guild.get_channel(int(l))
+                channel: discord.Channel = ctx.guild.get_channel(int(l))
                 if channel is not None:
                     return await ctx.send(embed = discord.Embed(
                         description = f"{user.mention} is already queued in {channel.mention}", 
@@ -126,7 +126,7 @@ class QueueCog(commands.Cog):
             await Bans.embed(ctx.guild.id, user)
 
         # // Get the queue sizes
-        queue_size = Lobby.get(ctx.guild.id, lobby, "queue_size")
+        queue_size: int = Lobby.get(ctx.guild.id, lobby, "queue_size")
         current_queue_size: int = len(self.data[ctx.guild.id][lobby]['queue'])
 
         # // Add the user to the queue
@@ -247,7 +247,7 @@ class QueueCog(commands.Cog):
             self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
 
             # // Get whether the map pick phase is enabled
-            map_pick_phase = Lobby.get(ctx.guild.id, ctx.channel.id, "map_pick_phase")
+            map_pick_phase: int = Lobby.get(ctx.guild.id, ctx.channel.id, "map_pick_phase")
 
             # // If the map pick phase is enabled
             if map_pick_phase == 1:
@@ -256,7 +256,7 @@ class QueueCog(commands.Cog):
             # // If the map pick phase is disabled
             else:
                 # // Get the maps
-                maps = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
+                maps: list = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
 
                 # // If there are maps
                 if len(maps) > 0:
@@ -304,7 +304,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Get the maps
-        maps = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
+        maps: list = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
 
         # // Check if the map is in the map pool
         for m in maps:
@@ -336,7 +336,7 @@ class QueueCog(commands.Cog):
             return
         
         # // Check if the user has the mod role
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -361,7 +361,7 @@ class QueueCog(commands.Cog):
             return
         
         # // Check if the author has the mod role
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -398,7 +398,7 @@ class QueueCog(commands.Cog):
             return
         
         # // Check if the user is a mod
-        if not User.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -437,8 +437,8 @@ class QueueCog(commands.Cog):
             ))
         
         # // Get the parties and max party size for the current lobby
-        parties = self.data[ctx.guild.id][ctx.channel.id]["parties"]
-        max_party_size = Lobby.get(ctx.guild.id, ctx.channel.id, "max_party_size")
+        parties: list = self.data[ctx.guild.id][ctx.channel.id]["parties"]
+        max_party_size: int = Lobby.get(ctx.guild.id, ctx.channel.id, "max_party_size")
 
         # // Invite a player to your party
         if action in ["invite", "inv"]:
@@ -458,7 +458,7 @@ class QueueCog(commands.Cog):
                 ))
             
             # // Check if the user is valid
-            user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+            user: discord.Member = ctx.guild.get_member(int(re.sub("\D","", args[0])))
             if user is None:
                 return await ctx.send(
                     embed = discord.Embed(
@@ -488,7 +488,7 @@ class QueueCog(commands.Cog):
                 ))
 
                 # // Send the party invite
-                message = await user.send(
+                message: discord.Message = await user.send(
                     embed = discord.Embed(
                         description=f"{ctx.author.mention} has invited you to join their party", 
                         color=33023), 
@@ -498,7 +498,7 @@ class QueueCog(commands.Cog):
                 ]])
 
                 # // Wait for the user to accept or decline the invite
-                res = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
+                res: discord.Interaction = await self.client.wait_for("button_click", check=lambda m: m.author == user and m.message.id == message.id, timeout=10)
 
                 # // If the user accepted the party invite
                 if res.component.id == "accept_party":
@@ -579,7 +579,7 @@ class QueueCog(commands.Cog):
                         continue
 
                     # // Verify the party leader
-                    member = await self.verify_member(ctx, party)
+                    member: discord.Member = await self.verify_member(ctx, party)
                     if member is None:
                         continue
 
@@ -601,7 +601,7 @@ class QueueCog(commands.Cog):
             # // Show another players party
             if "@" in args[0]:
                 # // Get the user from the mention
-                user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+                user: discord.Member = ctx.guild.get_member(int(re.sub("\D","", args[0])))
 
                 # // Find the party the user is in
                 for party in parties:
@@ -610,7 +610,7 @@ class QueueCog(commands.Cog):
                         continue
 
                     # // Verify the party leader
-                    member = await self.verify_member(ctx, party)
+                    member: discord.Member = await self.verify_member(ctx, party)
                     if member is None:
                         continue
 
@@ -668,7 +668,7 @@ class QueueCog(commands.Cog):
                 ))
             
             # // Get the user to kick and verify that they are not null
-            user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+            user: discord.Member = ctx.guild.get_member(int(re.sub("\D","", args[0])))
             if user is None:
                 return await ctx.send(
                     embed = discord.Embed(
@@ -700,7 +700,7 @@ class QueueCog(commands.Cog):
         
         # // If the user is trying to join or leave a queue
         if res.component.id in ["join_queue", "leave_queue"]:
-            lobby = res.guild.get_channel(int(res.message.embeds[0].footer.text))
+            lobby: discord.Channel = res.guild.get_channel(int(res.message.embeds[0].footer.text))
 
             # // Verify that the lobby exists
             if lobby is None:
@@ -721,14 +721,14 @@ class QueueCog(commands.Cog):
                     await self._leave(res, res.author, lobby.id)
                 
                 # // Get the players and store them in a string
-                players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
+                players: str = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
 
                 # // Get the queue size
-                queue_size = Lobby.get(res.guild.id, lobby.id, "queue_size")
+                queue_size: int = Lobby.get(res.guild.id, lobby.id, "queue_size")
 
                 # // Create the new embed
                 current_queue_size: int = len(self.data[res.guild.id][lobby.id]["queue"])
-                embed = discord.Embed(
+                embed: discord.Embed = discord.Embed(
                     title=f'[{current_queue_size}/{queue_size}] {lobby.name}', 
                     description = players, 
                     color=33023

@@ -185,11 +185,11 @@ class EloCog(commands.Cog):
             await Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
             
             # // Get the orange team
-            orange_team = match_data.get("orange_team")
+            orange_team: list = match_data.get("orange_team")
             orange_team.append(match_data["orange_cap"])
 
             # // Get the blue team
-            blue_team = match_data.get("blue_team")
+            blue_team: list = match_data.get("blue_team")
             blue_team.append(match_data["blue_cap"])
 
             # // If team is the winner
@@ -260,11 +260,11 @@ class EloCog(commands.Cog):
             await Matches.update(ctx.guild.id, match_id, status="ongoing", winner="none")
 
             # // Add the orange team and it's captains
-            orange_team = match_data.get("orange_team")
+            orange_team: list = match_data.get("orange_team")
             orange_team.append(match_data["orange_cap"])
             
             # // Add the blue team and it's captains
-            blue_team = match_data.get("blue_team")
+            blue_team: list = match_data.get("blue_team")
             blue_team.append(match_data["blue_cap"])
 
             # // Remove the win from the blue team
@@ -393,19 +393,19 @@ class EloCog(commands.Cog):
             orange_team[index] = user2.id
 
             # // Set the orange team captain
-            orange_team_str = ','.join(str(e) for e in orange_team)
+            orange_team_str: str = ','.join(str(e) for e in orange_team)
             
             # // Update the match
             await Matches.update(ctx.guild.id, lobby_id, match_id, orange_team=orange_team_str)
             
         # // Replace a player from the blue team
-        elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
+        elif user1.id in blue_team and user2.id not in blue_team:
             # // Replace the user1 with user2 in the blue team
             index: int = blue_team.index(user1.id)
             blue_team[index] = user2.id
 
             # // Set the blue team captain
-            blue_team_str = ','.join(str(e) for e in blue_team)
+            blue_team_str: str = ','.join(str(e) for e in blue_team)
             
             # // Update the match
             await Matches.update(ctx.guild.id, lobby_id, match_id, blue_team=blue_team_str)
@@ -867,11 +867,11 @@ class EloCog(commands.Cog):
                 continue
 
             # // Blue team
-            blue_team = match.get("blue_team")
+            blue_team: list = match.get("blue_team")
             blue_team.append(match["blue_cap"])
 
             # // Orange team
-            orange_team = match.get("orange_team")
+            orange_team: list = match.get("orange_team")
             orange_team.append(match["orange_cap"])
 
             # // Get the lobby id
