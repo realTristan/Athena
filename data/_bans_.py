@@ -22,7 +22,7 @@ class Bans:
 
     # // Get the ban of an user
     @staticmethod
-    def get(guild_id: int, user_id: int = None) -> dict:
+    def get(guild_id: int, user_id: int = None) -> any:
         if user_id is not None:
             return Cache.fetch("bans", guild_id)[user_id]
         return Cache.fetch("bans", guild_id)[user_id]

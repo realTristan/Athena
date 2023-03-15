@@ -4,7 +4,7 @@ import discord
 class Users:
     # // Get user info
     @staticmethod
-    def info(guild_id: int, user_id: int) -> dict:
+    def info(guild_id: int, user_id: int) -> any:
         return Cache.fetch("users", guild_id)[user_id]
 
     # // Show the users stats in an embed

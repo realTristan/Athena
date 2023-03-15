@@ -36,7 +36,7 @@ class Settings:
     
     # // Get a specific setting
     @staticmethod
-    def get(guild_id: int, key: str = None) -> dict:
+    def get(guild_id: int, key: str = None) -> any:
         if key is not None:
             return Cache.fetch("settings", guild_id=guild_id)[key]
         return Cache.fetch("settings", guild_id=guild_id)

@@ -9,7 +9,7 @@ class Matches:
     
     # // Get a match
     @staticmethod
-    def get(guild_id: int, match_id: int = None) -> dict:
+    def get(guild_id: int, match_id: int = None) -> any:
         if match_id is not None:
             return Cache.fetch("matches", guild_id)[match_id]
         return Cache.fetch("matches", guild_id)
@@ -17,7 +17,7 @@ class Matches:
     # // Delete a match category
     @staticmethod
     async def delete_category(guild: discord.Guild, match_id: int) -> None:
-        category = discord.utils.get(guild.categories, name=f"Match #{match_id}")
+        category: discord.Category = discord.utils.get(guild.categories, name=f"Match #{match_id}")
         
         # // If the category does not exist
         if not category:
@@ -45,20 +45,20 @@ class Matches:
             )
 
         # // Get the match winners and clean up the team name
-        match_winners = match_data["winners"][0].upper() + match_data["winners"][1:].lower()
-        match_status = match_data.get("status")
-        match_map = match_data.get("map")
+        match_winners: str = match_data["winners"][0].upper() + match_data["winners"][1:].lower()
+        match_status: str = match_data.get("status")
+        match_map: str = match_data.get("map")
 
         # // Get the orange team
-        orange_captain = match_data.get("orange_cap")
-        orange_team = match_data.get("orange_team")
+        orange_captain: int = match_data.get("orange_cap")
+        orange_team: list = match_data.get("orange_team")
 
         # // Get the blue team
-        blue_captain = match_data.get("blue_cap")
-        blue_team = match_data.get("blue_team")
+        blue_captain: int = match_data.get("blue_cap")
+        blue_team: list = match_data.get("blue_team")
 
         # // Create the embed
-        embed = discord.Embed(
+        embed: discord.Embed = discord.Embed(
             title = f"Match #{match_id} ┃ {match_status}", 
             description = f"**Map:** {match_map}\n**Winners:** {match_winners}", 
             color = 33023

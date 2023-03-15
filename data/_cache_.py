@@ -178,7 +178,6 @@ class Cache:
     @staticmethod
     @functools.lru_cache(maxsize=128)
     def fetch(table: str, guild_id: int = None) -> any:
-        # // Check if the guild exists in the cache table
         with Cache.lock.acquire():
             if guild_id not in cache[table]:
                 cache[table][guild_id] = {}

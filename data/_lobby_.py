@@ -22,12 +22,12 @@ class Lobby:
                 "loss_elo": 2,
                 "party_size": 1,
                 "negative_elo": 1,
-                "queue_size": 10
+                "queue_size": 10,
+                "maps": []
             }
         }, sqlcmds=[
             f"INSERT INTO lobbies (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({guild}, {lobby_id}, 0, 1, 5, 2, 1, 1, 10)"
         ])
-        await Cache.update("elo_roles", guild_id=guild_id, data={}, sqlcmds=[])
 
     # // Delete an elo role from the lobby
     @staticmethod
@@ -51,7 +51,7 @@ class Lobby:
 
     # // Get the lobby or data from the lobby
     @staticmethod
-    def get(guild_id: int, lobby_id: int, key: str = None) -> dict:
+    def get(guild_id: int, lobby_id: int, key: str = None) -> any:
         if key is not None:
             return Cache.fetch("lobbies", guild_id)[lobby_id][key]
         return Cache.fetch("lobbies", guild_id)[lobby_id]

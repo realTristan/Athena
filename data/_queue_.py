@@ -34,7 +34,7 @@ class Queue:
     # // Get the lobby data
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    def get_lobby(guild_id: int, lobby_id: int) -> dict:
+    def get_lobby(guild_id: int, lobby_id: int) -> any:
         return queue[guild_id][lobby_id]
     
     # // Get the lobby maps
@@ -46,7 +46,7 @@ class Queue:
     # // Check if channel is a valid queue lobby
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def is_valid_lobby(guild_id: int, lobby: int):
+    async def is_valid_lobby(guild_id: int, lobby: int) -> bool:
         with queue_lock.acquire():
             if guild_id not in queue:
                 queue[guild_id] = {}
@@ -63,7 +63,7 @@ class Queue:
     # // Add other party members to the queue
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def check_party(guild: discord.Guild, user: discord.Member, lobby: int):
+    async def check_party(guild: discord.Guild, user: discord.Member, lobby: int) -> bool:
         # // If the user isn't a party leader
         if user.id not in queue[guild.id][lobby]["parties"]:
             return True
@@ -84,7 +84,7 @@ class Queue:
             
         # // Add the party to the queue
         for party_member in queue[guild.id][lobby]["parties"][user.id][1:]:
-            party_member = await User.verify(guild, party_member)
+            party_member: discord.Member = await User.verify(guild, party_member)
 
             # // If the party member is in the guild and registered
             if party_member is not None:
@@ -96,13 +96,13 @@ class Queue:
     # // Get a value from the queue cache
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    def get(guild_id: int, lobby: int, key: str):
+    def get(guild_id: int, lobby: int, key: str) -> any:
         return queue[guild_id][lobby][key]
     
     # // Routing function to create a new match
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def new_match(guild_id: int, lobby: int):
+    async def new_match(guild_id: int, lobby: int) -> None:
         # // Get the orange team and their user ids
         orange_team: list = queue[guild_id][lobby].get("orange_team")
         orange_team = [user.id for user in orange_team]
@@ -116,7 +116,7 @@ class Queue:
         blue_cap: discord.Member = queue[guild_id][lobby].get("blue_cap")
 
         # // Get the count of matches
-        amount_of_matches = Matches.count(guild_id, lobby) + 1
+        amount_of_matches: int = Matches.count(guild_id, lobby) + 1
 
         # // Add the match to the database
         await Matches.add(guild_id, lobby, amount_of_matches, {
@@ -128,8 +128,8 @@ class Queue:
 
     # // Create the match category function
     @staticmethod
-    async def create_match_category(guild: discord.Guild, match_id: int, lobby: int):
-        match_categories = Settings(guild.id).get("match_categories")
+    async def create_match_category(guild: discord.Guild, match_id: int, lobby: int) -> None:
+        match_categories: int = Settings.get(guild.id, "match_categories")
 
         # // If the match categories are disabled
         if match_categories == 0:
@@ -140,7 +140,7 @@ class Queue:
             return
         
         # // Creating category and setting permissions
-        category = await guild.create_category(f'Match #{match_id}')
+        category: discord.Category = await guild.create_category(f'Match #{match_id}')
         await category.set_permissions(guild.default_role, connect = False, send_messages = False)
 
         # // Creating channels inside category
@@ -149,11 +149,11 @@ class Queue:
         await guild.create_voice_channel(f"🔸 Team " + queue[guild.id][lobby]['orange_cap'].name, category = category)
 
         # // Blue team
-        blue_team = queue[guild.id][lobby].get("blue_team")
+        blue_team: list = queue[guild.id][lobby].get("blue_team")
         blue_team.append(queue[guild.id][lobby]["blue_cap"])
 
         # // Orange team
-        orange_team = queue[guild.id][lobby].get("orange_team")
+        orange_team: list = queue[guild.id][lobby].get("orange_team")
         orange_team.append(queue[guild.id][lobby]["orange_cap"])
 
         # // Edit the permissions for each player in the teams
@@ -166,7 +166,7 @@ class Queue:
     # // Create team pick logic function
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def pick_logic(guild_id: int, lobby: int):
+    async def pick_logic(guild_id: int, lobby: int) -> None:
         with queue_lock.acquire():
             # // Get the queue size
             queue_size: int = len(queue[guild_id][lobby]["queue"])
@@ -190,15 +190,15 @@ class Queue:
     # // Send match logs to the given match logs channel
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def log_match(guild: discord.Guild, embed: discord.Embed):
-        match_logs = Settings.get(guild.id, "match_logs")
+    async def log_match(guild: discord.Guild, embed: discord.Embed) -> None:
+        match_logs: int = Settings.get(guild.id, "match_logs")
 
         # // If the match logs are disabled
         if match_logs == 0:
             return
         
         # // If the match logs are enabled
-        channel = guild.get_channel(match_logs)
+        channel: discord.Channel = guild.get_channel(match_logs)
 
         # // If the channel is not found, set the match logs to 0
         if channel is None:
@@ -217,9 +217,9 @@ class Queue:
     # // Embed generator function (for queue)
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def embed(guild: discord.Guild, lobby: int):
+    async def embed(guild: discord.Guild, lobby: int) -> discord.Embed:
         # // Get the lobby data
-        queue_state: dict = queue[guild.id][lobby]["state"]
+        queue_state: str = queue[guild.id][lobby]["state"]
 
         # // Queue phase embed
         if queue_state == "queue":
@@ -240,15 +240,15 @@ class Queue:
     # // Embed generator function (for queue)
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def state_queue_embed(guild: discord.Guild, lobby: int):
+    async def state_queue_embed(guild: discord.Guild, lobby: int) -> discord.Embed:
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]
 
         # // Get the count of matches
-        amount_of_matches = Matches.count(guild.id, lobby) + 1
+        amount_of_matches: int = Matches.count(guild.id, lobby) + 1
 
         # // Create the embed
-        embed = discord.Embed(
+        embed: discord.Embed = discord.Embed(
             title = f"Match #{amount_of_matches}", description = f"**Map:** {queue_data['map']}", 
             color = 33023
         )
@@ -272,15 +272,15 @@ class Queue:
     # // Embed generator function (for team picking)
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def state_pick_embed(guild: discord.Guild, lobby: int):
+    async def state_pick_embed(guild: discord.Guild, lobby: int) -> None:
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]
 
         # // Get the count of matches
-        amount_of_matches = Matches.count(guild.id, lobby) + 1
+        amount_of_matches: int = Matches.count(guild.id, lobby) + 1
 
         # // Create the embed
-        embed = discord.Embed(
+        embed: discord.Embed = discord.Embed(
             title = f"Match #{amount_of_matches}", description = f"**Map:** {queue_data['map']}", 
             color = 33023
         )
@@ -301,15 +301,15 @@ class Queue:
     # // Embed generator function (for map picking)
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def state_maps_embed(guild: discord.Guild, lobby: int):
+    async def state_maps_embed(guild: discord.Guild, lobby: int) -> None:
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]
 
         # // Get the count of matches
-        amount_of_matches = Matches.count(guild.id, lobby) + 1
+        amount_of_matches: int = Matches.count(guild.id, lobby) + 1
 
         # // Create the embed
-        embed = discord.Embed(
+        embed: discord.Embed = discord.Embed(
             title = f"Match #{amount_of_matches}", description = f"**Map:** {queue_data['map']}", 
             color = 33023
         )
@@ -331,15 +331,15 @@ class Queue:
     # // Embed generator function (for final match up)
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    async def state_final_embed(guild: discord.Guild, lobby: int):
+    async def state_final_embed(guild: discord.Guild, lobby: int) -> None:
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]
 
         # // Get the count of matches
-        amount_of_matches = Matches.count(guild.id, lobby) + 1
+        amount_of_matches: int = Matches.count(guild.id, lobby) + 1
 
         # // Create the embed
-        embed = discord.Embed(
+        embed: discord.Embed = discord.Embed(
             title = f"Match #{amount_of_matches}", 
             description = f"**Map:** {queue_data['map']}", 
             color = 33023
