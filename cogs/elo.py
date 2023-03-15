@@ -5,7 +5,7 @@ from data import *
 import discord, re
 
 # // Elo cog
-class Elo(commands.Cog):
+class EloCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
     
@@ -19,13 +19,20 @@ class Elo(commands.Cog):
 
         # // Add a new elo role
         if option in ["add", "create", "new"]:
-            role = ctx.guild.get_role(int(re.sub("\D","", args[0])))
-
             # // Check if the user has enough permissions
             if not User.is_admin(ctx.guild, ctx.author):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} you do not have enough permissions", 
+                        color = 15158588
+                ))
+            
+            # // Get the role
+            role: discord.Role = ctx.guild.get_role(int(re.sub("\D","", args[0])))
+            if role is None:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} please provide a valid role",
                         color = 15158588
                 ))
             
@@ -73,6 +80,15 @@ class Elo(commands.Cog):
                         description = f"{ctx.author.mention} you do not have enough permissions", 
                         color = 15158588
                 ))
+            
+            # // Get the role
+            role: discord.Role = ctx.guild.get_role(int(re.sub("\D","", args[0])))
+            if role is None:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} please provide a valid role",
+                        color = 15158588
+                ))
 
             # // If the role is not an elo role
             if role.id not in elo_roles:
@@ -96,6 +112,8 @@ class Elo(commands.Cog):
         # // List all of the elo roles
         if option in ["list", "show"]:
             description: str = ""
+
+            # // Get all of the elo roles
             elo_roles: list = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
             
             # // For each elo role
@@ -124,201 +142,190 @@ class Elo(commands.Cog):
     @commands.command(name="match", description='`=match report (match id) [blue/orange]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def match(self, ctx:commands.Context, action: str, match_id: int, *args):
-        if not ctx.author.bot:
-            # // Get the match from the cache and make sure it's not invalid
-            match_data: dict = Matches.find(ctx.guild.id, match_id)
+        if ctx.author.bot:
+            return
+        
+        # // Get the match from the cache and make sure it's not invalid
+        match_data: dict = Matches.find(ctx.guild.id, match_id)
 
-            # // If the match is invalid
-            if match_data is None:
-                return discord.Embed(
-                    description = f"We were unable to find **Match #{match_id}**", 
+        # // If the match is invalid
+        if match_data is None:
+            return discord.Embed(
+                description = f"We were unable to find **Match #{match_id}**", 
+                color = 15158588
+            )
+        
+        # // Get the lobby id from the match data
+        lobby_id: int = match_data["lobby_id"]
+        
+        # // Show the match
+        if action in ["show"]:
+            return await Matches.show(ctx.guild.id, match_id)
+        
+        # // Check if the user has the mod role
+        if not User.is_mod(ctx.guild, ctx.author):
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you do not have enough permissions", 
                     color = 15158588
-                )
+            ))
+        
+        # // REPORTING AN ONGOING MATCH
+        if action in ["report"]:
+            # // If the match is ongoing
+            if len(args) <= 0 and match_data["status"] != "ongoing":
+                return await ctx.send(
+                    embed = discord.Embed(
+                    description = f"{ctx.author.mention} this match has already been reported", 
+                    color = 15158588
+                ))
+
+            # // Update the match
+            Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
             
-            # // Show the match
-            if action in ["show"]:
-                return await Matches.show(ctx.guild.id, match_id)
-            
-            # // Check if the user has the mod role
-            if not User.is_mod(ctx.guild, ctx.author):
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-            
+            # // Get the orange team
+            orange_team = match_data["orange_team"]
+            orange_team.append(match_data["orange_cap"])
 
-            # // REPORTING AN ONGOING MATCH
-            if action in ["report"]:
-                lobby_settings: dict = Lobby(ctx.guild.id, ctx.channel.id).get()
+            # // Get the blue team
+            blue_team = match_data["blue_team"]
+            blue_team.append(match_data["blue_cap"])
 
-                # // If the match is ongoing
-                if len(args) <= 0 and match_data["status"] != "ongoing":
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+            # // If team is the winner
+            if "blue" in args[0]:
+                # // Add a loss for each orange team member
+                for user in orange_team:
+                    user: discord.Member = User.verify(ctx.guild, user)
+                    if user is not None:
+                        await User.lose(user, lobby_id)
 
-                # // Update the match
-                Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
-                
-                # // Get the orange team
-                orange_team = match_data["orange_team"]
-                orange_team.append(int(match_data["orange_cap"]))
+                # // Add a win for each blue team member
+                for user in blue_team:
+                    user: discord.Member = User.verify(ctx.guild, user)
+                    if user is not None:
+                        await User.win(user, lobby_id)
 
-                # // Get the blue team
-                blue_team = match_data["blue_team"]
-                blue_team.append(int(match_data["blue_cap"]))
+            # // If orange team is the winner
+            if "orange" in args[0]:
+                # // Add a win for each orange team member
+                for user in orange_team:
+                    user: discord.Member = User.verify(ctx.guild, user)
+                    if user is not None:
+                        await User.win(user, lobby_id)
 
-                # // If team is the winner
-                if "blue" in args[0]:
-                    # // Add a loss for each orange team member
-                    for _user in orange_team:
-                        member = await self._check_member(ctx, int(_user))
-                        if member is not None:
-                            await self._add_loss(ctx, member, lobby_settings)
-
-                    # // Add a win for each blue team member
-                    for user in blue_team:
-                        member = await self._check_member(ctx, int(user))
-                        if member is not None:
-                            await self._add_win(ctx, member, lobby_settings)
-
-                # // If orange team is the winner
-                if "orange" in args[0]:
-                    # // Add a win for each orange team member
-                    for _user in orange_team:
-                        member = await self._check_member(ctx, int(_user))
-                        if member is not None:
-                            await self._add_win(ctx, member, lobby_settings)
-
-                    # // Add a win for each blue team member
-                    for user in blue_team:
-                        member = await self._check_member(ctx, int(user))
-                        if member is not None:
-                            await self._add_loss(ctx, member, lobby_settings)
-                            
-                # // Send the match info the current channel
-                await self._match_show(ctx, match_id)
-                # // Delete the match channels
-                return await self._delete_channels(ctx, match_id)
-
-
-            # // CANCELLING AN ONGOING MATCH
-            elif action in ["cancel"]:
-                # // Make sure the match is valid
-                if match_data is not None:
-                    if await self.check_mod_role(ctx):
-                        # // Check if the match is currently ongoing (eg: not already reported, etc.)
-                        if match_data[6] in ["ongoing"]:
-                            match_data[6] = "cancelled"
-                            match_data[7] = "none"
-                            
-                            # // Update the cache and database
-                            await Cache.update(
-                                table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
-                                sqlcmds=[
-                                    f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}",
-                                    f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"
-                                ]
-                            )
-                            # // Send the match info embed
-                            await self._match_show(ctx, match_id)
-                            # // Delete the match channels
-                            return await self._delete_channels(ctx, match_id)
+                # // Add a win for each blue team member
+                for user in blue_team:
+                    user: discord.Member = User.verify(ctx.guild, user)
+                    if user is not None:
+                        await User.lose(user, lobby_id)
                         
-                        # // Send error embeds (all below)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid match id", color=15158588))
-                
-                
-            # // UNDOING A REPORTED MATCH
-            elif action in ["undo"]:
-                if await self.check_mod_role(ctx):
-                    # // Make sure match is valid
-                    if match_data is not None:
-                        if match_data[6] in ["reported", "cancelled"]:
-                            # // Update the match status and winners
-                            match_data[6] = "ongoing"
-                            match_data[7] = "none"
-                            
-                            # // Update the cache and database
-                            await Cache.update(
-                                table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
-                                sqlcmds=[
-                                    f"UPDATE matches SET status = 'ongoing' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}",
-                                    f"UPDATE matches SET winners = 'none' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"
-                                ]
-                            )
-                            
-                            # // Add the blue team and it's captains
-                            blue_team = match_data[5].split(",")
-                            blue_team.append(match_data[4])
-                            # // Add the orange team and it's captains
-                            orange_team = match_data[5].split(",")
-                            orange_team.append(match_data[4])
+            # // Send the match info the current channel
+            await ctx.send(Matches.show(ctx.guild.id, match_id))
 
-                            # // REMOVE WIN FROM BLUE TEAM
-                            if match_data[7] == "blue":
-                                await self._undo_win(ctx, match_data[0], blue_team, orange_team)
-                                
-                            # // REMOVE LOSS FROM BLUE TEAM
-                            if match_data[7] == "orange":
-                                await self._undo_win(ctx, match_data[0], orange_team, blue_team)
-                            
-                            # // Send the embeds
-                            return await self._match_show(ctx, match_id)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match hasn't been reported yet", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid match id", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-            raise Exception("Invalid option")
+            # // Delete the match channels
+            return await Matches.delete_category(ctx.guild.id, match_id)
+
+
+        # // CANCELLING AN ONGOING MATCH
+        elif action == "cancel":
+            # // Check if the match is currently ongoing (eg: not already reported, etc.)
+            if match_data["status"] != "ongoing":
+                return await ctx.send(
+                    embed = discord.Embed(
+                    description = f"{ctx.author.mention} this match has already been reported", 
+                    color = 15158588
+                ))
+            
+            # // Update the match data
+            Matches.update(ctx.guild.id, match_id, status="cancelled", winner="none")
+            
+            # // Send the match info embed
+            await ctx.send(Matches.show(ctx.guild.id, match_id))
+
+            # // Delete the match channels
+            return await Matches.delete_category(ctx.guild.id, match_id)
+        
+    
+        # // UNDOING A REPORTED MATCH
+        elif action in ["undo"]:
+            if match_data["status"] not in ["reported", "cancelled"]:
+                return await ctx.send(
+                    embed = discord.Embed(
+                    description = f"{ctx.author.mention} this match hasn't been reported yet", 
+                    color = 15158588
+                ))
+            
+            # // Update the match status and winners
+            Matches.update(ctx.guild.id, match_id, status="ongoing", winner="none")
+
+            # // Add the orange team and it's captains
+            orange_team = match_data["orange_team"]
+            orange_team.append(match_data["orange_cap"])
+            
+            # // Add the blue team and it's captains
+            blue_team = match_data["blue_team"]
+            blue_team.append(match_data["blue_cap"])
+
+            # // Remove the win from the blue team
+            if match_data["winners"] == "blue":
+                await Matches.undo(ctx, lobby_id, blue_team, orange_team)
+                
+            # // Remove the win from the orange team
+            if match_data["winners"] == "orange":
+                await Matches.undo(ctx, lobby_id, orange_team, blue_team)
+            
+            # // Send the match embed
+            return await ctx.send(Matches.show(ctx.guild.id, match_id))
 
 
     # // SET PLAYERS STATS COMMAND
     # /////////////////////////////////
     @commands.command(name="set", description='`=set elo (@user) (amount)`**,** `=set wins (@user) (amount)`**,** `=set losses (@user) (amount)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def set(self, ctx:commands.Context, action:str, user:discord.Member, amount:int):
-        if not ctx.author.bot:
-            # // Check if the cmd author has the mod role
-            if await self.check_mod_role(ctx):
-                user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=user.id)
-                if user_data is not None:
-                    # // SET A PLAYERS ELO
-                    if action in ["elo", "points"]:
-                        user_data[1] = amount
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="users", guild=ctx.guild.id, key=user.id, data=user_data, 
-                            sqlcmds=[f"UPDATE users SET elo = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"]
-                        )
-                        # // Edit the users nickname
-                        await self._user_edit(user, nick=f"{user_data[0]} [{amount}]")
-                        
-                    # // SET A PLAYERS WINS
-                    elif action in ["wins", "win"]:
-                        # // Set the users wins
-                        user_data[2] = amount
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="users", guild=ctx.guild.id, key=user.id, data=user_data, 
-                            sqlcmds=[f"UPDATE users SET wins = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"]
-                        )
-                        
-                    # // SET A PLAYERS LOSSES
-                    elif action in ["losses", "lose", "loss"]:
-                        # // Set the users losses
-                        user_data[3] = amount
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="users", guild=ctx.guild.id, key=user.id, data=user_data, 
-                            sqlcmds=[f"UPDATE users SET loss = {amount} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"]
-                        )
-                    # // Return an invalid option exception
-                    else: raise Exception("Invalid option")
-                    # // Send the user's stats embed
-                    return await self._stats(ctx, user)
+    async def set(self, ctx: commands.Context, action: str, user: discord.Member, amount: int):
+        if ctx.author.bot:
+            return
+        
+        # // Check if the cmd author has the mod role
+        if not User.is_mod(ctx.guild, ctx.author):
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you do not have enough permissions", 
+                    color = 15158588
+            ))
+        
+        # // Get the users data from the cache
+        if not Users.exists(ctx.guild.id, user.id):
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{user.mention} is not registered", 
+                    color = 15158588
+            ))
+        
+        # // SET A PLAYERS ELO
+        if action in ["elo", "points"]:
+            # // Set the users elo
+            await Users.update(ctx.guild.id, user.id, elo=amount)
+
+            # // Get the users nick_name from the cache
+            nick_name: str = Users.info(ctx.guild.id, user.id)["nick_name"]
+
+            # // Edit the users nickname
+            await Users.change_nickname(ctx.guild, user, f"{nick_name} [{amount}]")
             
-                # // Send error embeds (all below)
-                return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        # // SET A PLAYERS WINS
+        elif action in ["wins", "win"]:
+            # // Set the users wins
+            await Users.update(ctx.guild.id, user.id, wins=amount)
+            
+        # // SET A PLAYERS LOSSES
+        elif action in ["losses", "lose", "loss"]:
+            # // Set the users losses
+            await Users.update(ctx.guild.id, user.id, losses=amount)
+
+        # // Send the user's stats embed
+        return await ctx.send(embed=Users.stats(user))
+    
 
 
     # // SHOW THE LAST MATCH PLAYED COMMAND
@@ -326,9 +333,12 @@ class Elo(commands.Cog):
     @commands.command(name="lastmatch", aliases=["lm"], description='`=lastmatch`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def lastmatch(self, ctx:commands.Context):
-        if not ctx.author.bot:
-            count = Cache.fetch(table="matches", guild=ctx.guild.id)
-            return await self._match_show(ctx, len(count))
+        if ctx.author.bot:
+            return
+        
+        # // Get the last match id
+        match_id: int = Matches.count(ctx.guild.id)
+        return await ctx.send(embed=Matches.show(ctx.guild.id, match_id))
 
 
     # // REPLACE / SUB TWO PLAYERS COMMAND
@@ -336,71 +346,86 @@ class Elo(commands.Cog):
     @commands.command(name="replace", aliases=["sub", "swap"], description='`=replace (@user to be replaced) (@user replacing) (match id)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def replace(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, match_id:int):
-        if not ctx.author.bot:
-            if await self.check_mod_role(ctx):
-                match_data = Cache.fetch(table="users", guild=ctx.guild.id, key=match_id)
-                
-                # // Check match status
-                if "reported" not in match_data[6] and "cancelled" not in match_data[6] and "rollbacked" not in match_data[6]:
-                    # // Get the blue and orange teams
-                    blue_team = str(match_data[5]).split(",")
-                    orange_team = str(match_data[3]).split(",")
+        if ctx.author.bot:
+            return
+        
+        # // Check if the cmd author has the mod role
+        if not User.is_mod(ctx.guild, ctx.author):
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} you do not have enough permissions",
+                    color = 15158588
+            ))
+        
+        # // Get the match data from the cache
+        match_data: dict = Matches.info(ctx.guild.id, match_id)
+        
+        # // Check match status
+        if match_data["status"] in ["reported", "cancelled", "rollbacked"]:
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} this match has already been reported",
+                    color = 15158588
+            ))
+        
+        # // Get the blue and orange teams
+        blue_team: list = match_data["blue_team"]
+        orange_team: list = match_data["orange_team"]
 
-                    # // REPLACE USER FROM ORANGE CAPTAIN
-                    if str(user1.id) in str(match_data[2]) and str(user2.id) not in str(match_data[2]):
-                        # // Set the orange team captain
-                        match_data[2] = user2.id
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
-                            sqlcmds=[f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
-                        )
-                        
-                    # // REPLACE USER FROM BLUE CAPTAIN
-                    elif str(user1.id) in str(match_data[4]) and str(user2.id) not in str(match_data[4]):
-                        # // Set the blue team captain
-                        match_data[4] = user2.id
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
-                            sqlcmds=[f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
-                        )
-                        
-                    
-                    # // REPLACE USER FROM ORANGE TEAM
-                    elif str(user1.id) in orange_team and str(user2.id) not in orange_team:
-                        # // Replace the user1 with user2 in the orange team
-                        orange_team[orange_team.index(str(user1.id))] = str(user2.id)
-                        # // Set the orange team captain
-                        match_data[3] = ','.join(str(e) for e in orange_team)
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
-                            sqlcmds=[f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
-                        )
-                        
-                    # // REPLACE USER FROM BLUE TEAM
-                    elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
-                        # // Replace the user1 with user2 in the blue team
-                        blue_team[blue_team.index(str(user1.id))] = str(user2.id)
-                        # // Set the orange team captain
-                        match_data[5] = ','.join(str(e) for e in blue_team)
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
-                            sqlcmds=[f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
-                        )
-                    
-                    # // Send error embeds (all below)
-                    else:
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player(s) not found/error", color=15158588))
-                    return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+        # // REPLACE USER FROM ORANGE CAPTAIN
+        if str(user1.id) in str(match_data[2]) and str(user2.id) not in str(match_data[2]):
+            # // Set the orange team captain
+            match_data[2] = user2.id
+            
+            # // Update the cache and database
+            await Cache.update(
+                table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
+                sqlcmds=[f"UPDATE matches SET orange_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
+            )
+            
+        # // REPLACE USER FROM BLUE CAPTAIN
+        elif str(user1.id) in str(match_data[4]) and str(user2.id) not in str(match_data[4]):
+            # // Set the blue team captain
+            match_data[4] = user2.id
+            
+            # // Update the cache and database
+            await Cache.update(
+                table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
+                sqlcmds=[f"UPDATE matches SET blue_cap = '{user2.id}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
+            )
+            
+        
+        # // REPLACE USER FROM ORANGE TEAM
+        elif str(user1.id) in orange_team and str(user2.id) not in orange_team:
+            # // Replace the user1 with user2 in the orange team
+            orange_team[orange_team.index(str(user1.id))] = str(user2.id)
+            # // Set the orange team captain
+            match_data[3] = ','.join(str(e) for e in orange_team)
+            
+            # // Update the cache and database
+            await Cache.update(
+                table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
+                sqlcmds=[f"UPDATE matches SET orange_team = '{','.join(str(e) for e in orange_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
+            )
+            
+        # // REPLACE USER FROM BLUE TEAM
+        elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
+            # // Replace the user1 with user2 in the blue team
+            blue_team[blue_team.index(str(user1.id))] = str(user2.id)
+            # // Set the orange team captain
+            match_data[5] = ','.join(str(e) for e in blue_team)
+            
+            # // Update the cache and database
+            await Cache.update(
+                table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
+                sqlcmds=[f"UPDATE matches SET blue_team = '{','.join(str(e) for e in blue_team)}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"]
+            )
+        
+        # // Send error embeds (all below)
+        else:
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player(s) not found/error", color=15158588))
+        return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
+    
 
 
     # SHOW THE PAST 10 MATCHES PLAYED
@@ -497,7 +522,7 @@ class Elo(commands.Cog):
         # // Register the mentioned user
         if len(args) > 0 and "@" in args[0]:
             # // Check if the user has the mod role
-            if not User(ctx.guild.id, ctx.author.id).has_role(ctx.guild, "mod"):
+            if not User.is_mod(ctx.author):
                 user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
                 if user is not None:
                     # // Make sure user is not a bot
@@ -859,4 +884,4 @@ class Elo(commands.Cog):
 
 # // Setup the cog
 def setup(client: commands.Bot):
-    client.add_cog(Elo(client))
+    client.add_cog(EloCog(client))

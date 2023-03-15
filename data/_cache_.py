@@ -1,4 +1,4 @@
-from ._sql_ import *
+from ._sql_ import SqlData
 import threading
 
 # // The Global Cache Variable

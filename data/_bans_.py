@@ -21,11 +21,13 @@ class Bans:
         Cache.delete_ban(guild_id, user_id)
 
     # // Get the ban of an user
+    @staticmethod
     def get(guild_id: int, user_id: int = None):
         if user_id is not None:
             return Cache.fetch("bans", guild_id)[user_id]
         return Cache.fetch("bans", guild_id)[user_id]
     
     # // Check if a user is banned
+    @staticmethod
     def is_banned(guild_id: int, user_id: int):
         return user_id in Cache.fetch("bans", guild_id)

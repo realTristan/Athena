@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord, datetime
 
-class ErrorHandling(commands.Cog):
+class ErrorCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
         self.client_cmds = {}
@@ -103,4 +103,4 @@ class ErrorHandling(commands.Cog):
             raise error
 
 def setup(client: commands.Bot):
-    client.add_cog(ErrorHandling(client))
+    client.add_cog(ErrorCog(client))

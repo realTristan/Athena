@@ -1,12 +1,10 @@
-from ._cache_ import Cache
+from data._cache_ import Cache
 
 class Settings:
-    def __init__(self, guild_id: int):
-        self.guild_id = guild_id
-
     # // Setup default settings and cache
-    async def setup(self):
-        await Cache.update("settings", guild=self.guild_id, data={
+    @staticmethod
+    async def setup(guild_id: int):
+        await Cache.update("settings", guild=guild_id, data={
             "reg_role": 0,
             "match_categories": 0,
             "reg_channel": 0,
@@ -16,39 +14,41 @@ class Settings:
             "self_rename": 1,
             "elo_roles": {}
         }, sqlcmds=[
-            f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({self.guild_id}, 0, 0, 0, 0, 0, 0, 1)"
-            # // guild_id BIGINT, reg_role BIGINT, match_categories BIGINT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename BIGINT
+            f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({guild_id}, 0, 0, 0, 0, 0, 0, 1)"
         ])
 
         # // Add guild to the lobby settings cache
-        await Cache.update("lobbies", guild=self.guild_id, data={})
+        await Cache.update("lobbies", guild=guild_id, data={})
 
         # // Add the guild to the bans cache
-        await Cache.update("bans", guild=self.guild_id, data={})
+        await Cache.update("bans", guild=guild_id, data={})
 
         # // Add the guild to the matches cache
-        await Cache.update("matches", guild=self.guild_id, data={})
+        await Cache.update("matches", guild=guild_id, data={})
 
         # // Add the guild to the users cache
-        await Cache.update("users", guild=self.guild_id, data={})
+        await Cache.update("users", guild=guild_id, data={})
 
 
     # // Check if the settings exist
-    async def exists(self):
-        return self.guild_id in Cache.fetch("settings")
+    @staticmethod
+    def exists(guild_id: int):
+        return guild_id in Cache.fetch("settings")
     
 
     # // Get a specific setting
-    def get(self, key: str = None):
+    @staticmethod
+    def get(guild_id: int, key: str = None):
         if key is not None:
-            return Cache.fetch("settings", guild=self.guild_id)[key]
-        return Cache.fetch("settings", guild=self.guild_id)
+            return Cache.fetch("settings", guild=guild_id)[key]
+        return Cache.fetch("settings", guild=guild_id)
     
 
     # // Add an elo role to the lobby
-    async def add_elo_role(self, role_id: int, elo_level: int, win_elo: int, lose_elo: int):
+    @staticmethod
+    async def add_elo_role(guild_id: int, role_id: int, elo_level: int, win_elo: int, lose_elo: int):
         # // Fetch the elo roles
-        settings = Cache.fetch("settings", self.guild_id)
+        settings = Cache.fetch("settings", guild_id)
         settings["elo_roles"][role_id] = {
             "elo_level": elo_level, 
             "win_elo": win_elo, 
@@ -56,56 +56,58 @@ class Settings:
         }
 
         # // Update the cache and the database
-        await Cache.update("settings", guild=self.guild_id, data=settings, sqlcmds=[
+        await Cache.update("settings", guild=guild_id, data=settings, sqlcmds=[
             # // role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT
-            f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({self.guild}, {role_id}, {elo_level}, {win_elo}, {lose_elo})"
+            f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({guild_id}, {role_id}, {elo_level}, {win_elo}, {lose_elo})"
         ])
 
     # // Delete an elo role from the lobby
-    async def delete_elo_role(self, role_id: int):
-        Cache.delete_elo_role(self.guild, role_id)
+    @staticmethod
+    async def delete_elo_role(guild_id: int, role_id: int):
+        Cache.delete_elo_role(guild_id, role_id)
 
     # // Add a setting to the lobby
-    async def update(self, reg_role=None, match_categories=None, reg_channel=None, match_logs=None, mod_role=None, admin_role=None, self_rename=None):
+    @staticmethod
+    async def update(guild_id: int, reg_role=None, match_categories=None, reg_channel=None, match_logs=None, mod_role=None, admin_role=None, self_rename=None):
         # // Update reg role
         if reg_role is not None:
-            await Cache.update("settings", guild=self.guild_id, data={"reg_role": reg_role}, sqlcmds=[
-                f"UPDATE settings SET reg_role = {reg_role} WHERE guild_id = {self.guild_id}"
+            await Cache.update("settings", guild=guild_id, data={"reg_role": reg_role}, sqlcmds=[
+                f"UPDATE settings SET reg_role = {reg_role} WHERE guild_id = {guild_id}"
             ])
         
         # // Update match categories
         if match_categories is not None:
-            await Cache.update("settings", guild=self.guild_id, data={"match_categories": match_categories}, sqlcmds=[
-                f"UPDATE settings SET match_categories = {match_categories} WHERE guild_id = {self.guild_id}"
+            await Cache.update("settings", guild=guild_id, data={"match_categories": match_categories}, sqlcmds=[
+                f"UPDATE settings SET match_categories = {match_categories} WHERE guild_id = {guild_id}"
             ])
 
         # // Update reg channel
         if reg_channel is not None:
-            await Cache.update("settings", guild=self.guild_id, data={"reg_channel": reg_channel}, sqlcmds=[
-                f"UPDATE settings SET reg_channel = {reg_channel} WHERE guild_id = {self.guild_id}"
+            await Cache.update("settings", guild=guild_id, data={"reg_channel": reg_channel}, sqlcmds=[
+                f"UPDATE settings SET reg_channel = {reg_channel} WHERE guild_id = {guild_id}"
             ])
 
         # // Update match logs
         if match_logs is not None:
-            await Cache.update("settings", guild=self.guild_id, data={"match_logs": match_logs}, sqlcmds=[
-                f"UPDATE settings SET match_logs = {match_logs} WHERE guild_id = {self.guild_id}"
+            await Cache.update("settings", guild=guild_id, data={"match_logs": match_logs}, sqlcmds=[
+                f"UPDATE settings SET match_logs = {match_logs} WHERE guild_id = {guild_id}"
             ])
 
         # // Update mod role
         if mod_role is not None:
-            await Cache.update("settings", guild=self.guild_id, data={"mod_role": mod_role}, sqlcmds=[
-                f"UPDATE settings SET mod_role = {mod_role} WHERE guild_id = {self.guild_id}"
+            await Cache.update("settings", guild=guild_id, data={"mod_role": mod_role}, sqlcmds=[
+                f"UPDATE settings SET mod_role = {mod_role} WHERE guild_id = {guild_id}"
             ])
 
         # // Update admin role
         if admin_role is not None:
-            await Cache.update("settings", guild=self.guild_id, data={"admin_role": admin_role}, sqlcmds=[
-                f"UPDATE settings SET admin_role = {admin_role} WHERE guild_id = {self.guild_id}"
+            await Cache.update("settings", guild=guild_id, data={"admin_role": admin_role}, sqlcmds=[
+                f"UPDATE settings SET admin_role = {admin_role} WHERE guild_id = {guild_id}"
             ])
 
         # // Update self rename
         if self_rename is not None:
-            await Cache.update("settings", guild=self.guild_id, data={"self_rename": self_rename}, sqlcmds=[
-                f"UPDATE settings SET self_rename = {self_rename} WHERE guild_id = {self.guild_id}"
+            await Cache.update("settings", guild=guild_id, data={"self_rename": self_rename}, sqlcmds=[
+                f"UPDATE settings SET self_rename = {self_rename} WHERE guild_id = {guild_id}"
             ])
         

@@ -3,7 +3,7 @@ from discord.ext import commands
 from datetime import datetime
 import discord
 
-class Help(commands.Cog):
+class HelpCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
@@ -108,8 +108,5 @@ class Help(commands.Cog):
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
                 return await res.author.send(embed=self.administrator_embed)
 
-
-
-
 def setup(client: commands.Bot):
-    client.add_cog(Help(client))
+    client.add_cog(HelpCog(client))

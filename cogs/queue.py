@@ -6,7 +6,7 @@ import datetime as datetime
 from functools import *
 from data import *
 
-class Queue(commands.Cog):
+class QueueCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
         self.data = {}
@@ -127,18 +127,23 @@ class Queue(commands.Cog):
     # // Match logging function
     async def new_match(self, ctx:commands.Context, lobby: int):
         # // Get the teams
-        orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['orange_team'])
-        blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['blue_team'])
+        orange_team: list = self.data[ctx.guild.id][lobby]['orange_team']
+        blue_team: list = self.data[ctx.guild.id][lobby]['blue_team']
 
         # // Get the team captains
-        orange_cap = self.data[ctx.guild.id][lobby]['orange_cap']
-        blue_cap = self.data[ctx.guild.id][lobby]['blue_cap']
+        orange_cap: discord.Member = self.data[ctx.guild.id][lobby]['orange_cap']
+        blue_cap: discord.Member = self.data[ctx.guild.id][lobby]['blue_cap']
 
         # // Get the count of matches
         amount_of_matches = Matches.count(ctx.guild.id, lobby) + 1
 
         # // Add the match to the database
-        await Matches.add(ctx.guild.id, amount_of_matches, orange_cap, orange_team, blue_cap, blue_team, "ongoing", "none")
+        await Matches.add(ctx.guild.id, lobby, amount_of_matches, {
+            "orange_team": orange_team,
+            "blue_team": blue_team,
+            "orange_cap": orange_cap.id,
+            "blue_cap": blue_cap.id
+        })
 
 
     # // Create team pick logic function
@@ -378,7 +383,7 @@ class Queue(commands.Cog):
             ))
         
         # // If the user isn't registered
-        if not User(ctx.guild.id, user.id).exists():
+        if not User.exists(ctx.guild.id, user.id):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{user.mention} is not registered",
@@ -1024,4 +1029,4 @@ class Queue(commands.Cog):
                 
 
 def setup(client: commands.Bot):
-    client.add_cog(Queue(client))
+    client.add_cog(QueueCog(client))

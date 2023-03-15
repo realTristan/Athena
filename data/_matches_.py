@@ -1,4 +1,4 @@
-from ._cache_ import Cache, Lobby, User
+from data import Cache, Lobby, User
 import discord
 
 class Matches:
@@ -49,7 +49,7 @@ class Matches:
 
     # // Show the match
     @staticmethod
-    async def show(guild_id: int, match_id: int):
+    def show(guild_id: int, match_id: int):
         # // Fetch the match data
         match_data: dict = Matches.find(guild_id, match_id)
 
@@ -91,10 +91,14 @@ class Matches:
         # // Return the embed
         return embed
         
-
     # // Add a match to the lobby
     @staticmethod
     async def add(guild_id: int, lobby_id: int, match_id: int, match_data: dict):
+        # // Convert the match teams to strings
+        orange_team_str: str = ','.join(str(user.id) for user in match_data["orange_team"])
+        blue_team_str: str = ','.join(str(user.id) for user in match_data["blue_team"])
+
+        # // Add the match to the cache
         await Cache.update("matches", guild=guild_id, lobby=lobby_id, data={
             match_id: {
                 "lobby_id": lobby_id, 
@@ -110,11 +114,10 @@ class Matches:
             f"""
             INSERT INTO matches (guild_id, match_id, lobby_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) 
             VALUES (
-                {guild_id}, {match_id}, {lobby_id}, '{match_data["map"]}', '{match_data["orange_cap"]}', '{match_data["orange_team"]}', 
-                '{match_data["blue_cap"]}', '{match_data["blue_team"]}', '{match_data["status"]}', '{match_data["winners"]}'
+                {guild_id}, {match_id}, {lobby_id}, '{match_data["map"]}', '{match_data["orange_cap"]}', '{orange_team_str}', 
+                '{match_data["blue_cap"]}', '{blue_team_str}', '{match_data["status"]}', '{match_data["winners"]}'
             )"""
         ])
-
 
     # // Delete a match from the lobby
     @staticmethod
@@ -150,7 +153,7 @@ class Matches:
             user: discord.Member = await guild.get_member(user)
             await User.add_elo_roles(guild, user, new_elo)
 
-        
+    
         # // Remove the win from the winners
         for user in winners:
             # // Verify the user
@@ -174,7 +177,6 @@ class Matches:
             user: discord.Member = await guild.get_member(user)
             await User.remove_elo_roles(guild, user, new_elo)
             
-    
     # // Update a match
     @staticmethod
     async def update(guild_id: int, lobby_id: int, match_id: int, status: str = None, winners: list = None):

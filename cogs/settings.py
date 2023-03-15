@@ -2,10 +2,10 @@ from discord_components import *
 from discord.ext import commands
 import discord, asyncio, re
 from functools import *
-from _sql import *
+from data import *
 
 # // Settings cog
-class Settings(commands.Cog):
+class SettingsCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
     
@@ -810,4 +810,4 @@ class Settings(commands.Cog):
                 return await res.send(embed=discord.Embed(description=f"{res.author.mention} you did not respond in time", color=15158588))
                 
 def setup(client: commands.Bot):
-    client.add_cog(Settings(client))
+    client.add_cog(SettingsCogs(client))
