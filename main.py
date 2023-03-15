@@ -20,8 +20,8 @@ CLIENT: commands.Bot = commands.Bot(
 # //////////////////////////////////////////////////////////////
 @CLIENT.event
 async def on_member_remove(member: discord.Member):
-    if User(member.guild.id, member.id).exists():
-        User(member.guild.id, member.id).delete()
+    if Users.exists(member.guild.id, member.id):
+        Users.delete(member.guild.id, member.id)
 
 # // ON GUILD JOIN
 # ////////////////////
@@ -32,7 +32,11 @@ async def on_guild_join(guild: discord.Guild):
         Settings(guild.id).setup()
 
     # // Update server count
-    await CLIENT.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{len(CLIENT.guilds)} Servers"))
+    await CLIENT.change_presence(
+        activity = discord.Activity(
+            type = discord.ActivityType.watching, 
+            name = f"{len(CLIENT.guilds)} Servers"
+    ))
     
 # // ON BOT LAUNCH
 # ///////////////////
