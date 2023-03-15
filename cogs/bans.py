@@ -39,9 +39,9 @@ class BansCog(commands.Cog):
             ban_data = Bans.get(ctx.guild.id, user.id)
 
             # // If the users ban time hasn't expired yet
-            if ban_data["length"] - time.time() > 0:
+            if ban_data.get("length") - time.time() > 0:
                 # // Get the ban length
-                length: datetime.timedelta = datetime.timedelta(seconds = ban_data["length"])
+                length: datetime.timedelta = datetime.timedelta(seconds = ban_data.get("length"))
 
                 # // Send the embed
                 return await ctx.send(

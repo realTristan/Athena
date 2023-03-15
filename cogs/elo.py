@@ -157,7 +157,7 @@ class EloCog(commands.Cog):
             )
         
         # // Get the lobby id from the match data
-        lobby_id: int = match_data["lobby_id"]
+        lobby_id: int = match_data.get("lobby_id")
         
         # // Show the match
         if action in ["show"]:
@@ -185,11 +185,11 @@ class EloCog(commands.Cog):
             await Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
             
             # // Get the orange team
-            orange_team = match_data["orange_team"]
+            orange_team = match_data.get("orange_team")
             orange_team.append(match_data["orange_cap"])
 
             # // Get the blue team
-            blue_team = match_data["blue_team"]
+            blue_team = match_data.get("blue_team")
             blue_team.append(match_data["blue_cap"])
 
             # // If team is the winner
@@ -248,7 +248,7 @@ class EloCog(commands.Cog):
         
     
         # // UNDOING A REPORTED MATCH
-        elif action in ["undo"]:
+        elif action == "undo":
             if match_data["status"] not in ["reported", "cancelled"]:
                 return await ctx.send(
                     embed = discord.Embed(
@@ -260,11 +260,11 @@ class EloCog(commands.Cog):
             await Matches.update(ctx.guild.id, match_id, status="ongoing", winner="none")
 
             # // Add the orange team and it's captains
-            orange_team = match_data["orange_team"]
+            orange_team = match_data.get("orange_team")
             orange_team.append(match_data["orange_cap"])
             
             # // Add the blue team and it's captains
-            blue_team = match_data["blue_team"]
+            blue_team = match_data.get("blue_team")
             blue_team.append(match_data["blue_cap"])
 
             # // Remove the win from the blue team
@@ -309,7 +309,7 @@ class EloCog(commands.Cog):
             await Users.update(ctx.guild.id, user.id, elo=amount)
 
             # // Get the users nick_name from the cache
-            nick_name: str = Users.info(ctx.guild.id, user.id)["nick_name"]
+            nick_name: str = Users.info(ctx.guild.id, user.id).get("nick_name")
 
             # // Edit the users nickname
             await Users.change_nickname(user, f"{nick_name} [{amount}]")
@@ -374,12 +374,16 @@ class EloCog(commands.Cog):
         blue_team: list = match_data.get("blue_team")
         orange_team: list = match_data.get("orange_team")
 
+        # // Get the captains
+        blue_cap: int = match_data.get("blue_cap")
+        orange_cap: int = match_data.get("orange_cap")
+
         # // Replace the orange team captain
-        if user1.id == match_data["orange_cap"] and user2.id != match_data["orange_cap"]:
+        if user1.id == orange_cap and user2.id != orange_cap:
             await Matches.update(ctx.guild.id, lobby_id, match_id, orange_cap=user2.id)
             
         # // Replace the blue team captain
-        elif user1.id == match_data["blue_cap"] and user2.id != match_data["blue_cap"]:
+        elif user1.id == blue_cap and user2.id != blue_cap:
             await Matches.update(ctx.guild.id, lobby_id, match_id, blue_cap=user2.id)
             
         # // Replace a player from the orange team
@@ -774,7 +778,7 @@ class EloCog(commands.Cog):
         elif "<@" in args:
             # // Get the user
             user: discord.Member= ctx.guild.get_member(int(re.sub("\D","", args)))
-            user_name: str = Users.info(ctx.guild.id, user.id).get("name")
+            user_name: str = Users.info(ctx.guild.id, user.id).get("user_sname")
             
             # // Make sure user is not invalid
             if user_name is None:
@@ -863,12 +867,12 @@ class EloCog(commands.Cog):
                 continue
 
             # // Blue team
-            blue_team = match["blue_team"]
-            blue_team.append(match[4])
+            blue_team = match.get("blue_team")
+            blue_team.append(match["blue_cap"])
 
             # // Orange team
-            orange_team = match["orange_team"]
-            orange_team.append(match[5])
+            orange_team = match.get("orange_team")
+            orange_team.append(match["orange_cap"])
 
             # // Get the lobby id
             lobby_id: int = match.get("lobby_id")
@@ -926,7 +930,7 @@ class EloCog(commands.Cog):
             match_data: dict = Matches.get(res.guild.id, match_id)
 
             # // Check match status
-            if match_data["status"] != "ongoing":
+            if match_data.get("status") != "ongoing":
                 await res.send(
                     embed = discord.Embed(
                         description = f"{res.author.mention} this match has already been reported", 
