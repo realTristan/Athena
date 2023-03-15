@@ -1,4 +1,4 @@
-import threading, discord, functools, random
+import asyncio, discord, functools, random
 from discord_components import *
 from cache import Lobby, User, Matches, Settings, Users, Bans
 
@@ -6,7 +6,7 @@ from cache import Lobby, User, Matches, Settings, Users, Bans
 queue: dict = {}
 
 # // Queue Lock
-queue_lock: threading.Lock = threading.Lock()
+queue_lock: asyncio.Lock = asyncio.Lock()
 
 # // Queue Class
 class Queue:

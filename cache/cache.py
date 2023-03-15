@@ -1,5 +1,5 @@
 from .database import SqlData
-import threading, functools
+import asyncio, functools
 
 # // The Global Cache Variable
 cache: dict[str, dict] = {
@@ -9,7 +9,7 @@ cache: dict[str, dict] = {
 
 # // The Cache Class that contains all the cache functions
 class Cache:
-    lock: threading.Lock = threading.Lock()
+    lock: asyncio.Lock = asyncio.Lock()
 
     # // Add all MySQL Data into a cached map
     @staticmethod
