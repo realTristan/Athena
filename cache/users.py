@@ -26,7 +26,7 @@ class Users:
             )
         
         # // Create an embed
-        embed = discord.Embed(
+        embed: discord.Embed = discord.Embed(
             description = f"**Elo:** {user_elo}\n**Wins:** {user_wins}\n**Losses:** {user_losses}\n**Matches:** {user_matches}", 
             color = 33023
         )
@@ -107,7 +107,6 @@ class Users:
             if role not in user.roles:
                 await Users.add_role(user, role)
     
-
     # // Remove an elo role from the user
     @staticmethod
     async def remove_elo_role(user: discord.Member, elo: int) -> None:
@@ -119,7 +118,7 @@ class Users:
         
         # // Iterate over the roles
         for role_id in roles:
-            role = user.guild.get_role(role_id[0])
+            role: discord.Role = user.guild.get_role(role_id[0])
 
             # // Add the role to the user
             if role in user.roles:
@@ -143,7 +142,7 @@ class Users:
             return True
         
         # // Else, check for whether the user has mod role
-        mod_role = Settings.get(user.guild.id, "mod_role")
+        mod_role: int = Settings.get(user.guild.id, "mod_role")
         return user.guild.get_role(mod_role) in user.roles
     
     
@@ -151,18 +150,17 @@ class Users:
     @staticmethod
     def is_admin(user: discord.Member) -> bool:
         # // Get the admin role from settings
-        admin_role = Settings.get(user.guild.id, "admin_role")
+        admin_role: int = Settings.get(user.guild.id, "admin_role")
         
         # // Check admin permissions
         if admin_role == 0 or user.guild_permissions.administrator:
             return user.guild_permissions.administrator
         return user.guild.get_role(admin_role) in user.roles
     
-
     # // Check if member is still in the server
     @staticmethod
     async def verify(guild: discord.Guild, user_id: int) -> discord.Member:
-        member = guild.get_member(user_id)
+        member: discord.Member = guild.get_member(user_id)
         
         # // If the member is not valid (meaning they left the server, etc.)
         if member is not None:
@@ -178,12 +176,11 @@ class Users:
         # // Return None
         return None
     
-
     # // Give an user a win
     @staticmethod
     async def win(user: discord.Member, lobby: int) -> discord.Embed:
         # // Get the user data
-        user_info = Users.info(user.guild.id, user.id)
+        user_info: dict = Users.info(user.guild.id, user.id)
         user_wins: int = user_info.get("wins")
         user_elo: int = user_info.get("elo")
 
@@ -216,12 +213,11 @@ class Users:
             color = 3066993
         )
     
-
     # // Give an user a loss
     @staticmethod
     async def lose(user: discord.Member, lobby: int) -> discord.Embed:
         # // Get the user data
-        user_info = Users.info(user.guild.id, user.id)
+        user_info: dict = Users.info(user.guild.id, user.id)
         user_losses: int = user_info.get("losses")
         user_elo: int = user_info.get("elo")
 
@@ -250,10 +246,9 @@ class Users:
 
         # // Return the success embed
         return discord.Embed(
-            description = f"{user.mention} has lost and removed **{loss_elo}** elo", 
+            description = f"{user.mention} has lost and lost **{loss_elo}** elo", 
             color = 15158332
         )
-
 
     # // Update user data
     @staticmethod
