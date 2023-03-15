@@ -21,7 +21,7 @@ class SqlData:
             cur.execute("CREATE TABLE users (guild_id BIGINT, user_id BIGINT, user_name VARCHAR(50), elo INT, wins INT, losses INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // SETTINGS TABLE
-            cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE settings (guild_id BIGINT, is_premium INT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // LOBBY SETTINGS
             cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby_id BIGINT, map_pick_phase INT, team_pick_phase INT, win_elo INT, loss_elo INT, party_size INT, negative_elo INT, queue_size INT, id INT PRIMARY KEY AUTO_INCREMENT)")
