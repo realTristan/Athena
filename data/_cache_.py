@@ -72,12 +72,16 @@ class Cache:
         for row in rows:
             # // If the guild does not exist in the cache
             guild: int = row[0]
-            if guild not in cache["elo_roles"]:
-                cache["elo_roles"][guild] = {}
+            if guild not in cache["settings"]:
+                cache["settings"][guild] = {}
+
+            # // If the elo roles do not exist in the cache
+            if "elo_roles" not in cache["settings"][guild]:
+                cache["settings"][guild]["elo_roles"] = {}
 
             # // Add the elo roles to the cache
             role_id: int = row[1]
-            cache["elo_roles"][guild][role_id] = {
+            cache["settings"][guild]["elo_roles"][role_id] = {
                 "role_id": role_id, 
                 "elo_level": row[2], 
                 "win_elo": row[3], 
@@ -100,11 +104,12 @@ class Cache:
                 "match_id": match_id, 
                 "lobby_id": row[2], 
                 "map": row[3], 
-                "team_1": row[4], 
-                "team_2": row[5], 
-                "team_1_score": row[6], 
-                "team_2_score": row[7], 
-                "winner": row[8]
+                "orange_cap": row[4], 
+                "orange_team": row[5].split(","), 
+                "blue_cap": row[6], 
+                "blue_team": row[7].split(","), 
+                "status": row[8],
+                "winner": row[9]
             }
 
     # // Load bans into the sql cache
@@ -268,7 +273,7 @@ class Cache:
     async def delete_elo_role(guild: int, role_id: int):
         # // Delete the elo role from the cache
         with Cache.lock.acquire():
-            cache["elo_roles"][guild].remove(role_id)
+            del cache["settings"][guild]["elo_roles"][role_id]
 
         # // Delete the elo role from the database
         await SqlData.execute(f"DELETE FROM elo_roles WHERE guild_id = {guild} AND role_id = {role_id}")
