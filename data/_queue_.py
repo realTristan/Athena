@@ -5,6 +5,8 @@ from data import Lobby, User, Matches, Settings
 # // Store the queue data in a cache map
 queue: dict = {}
 
+# // Queue Lock
+queue_lock: threading.Lock = threading.Lock()
 
 # // TODO
 # // - Convert the join() function
@@ -12,11 +14,10 @@ queue: dict = {}
 # // - Convert the pick() function
 # // - Convert the start() function
 
-
 # // Queue Class
 class Queue:
     def reset(guild_id: int, lobby_id: int):
-        with threading.Lock():
+        with queue_lock.acquire():
             queue[guild_id][lobby_id] = {
                 "queue": [], 
                 "blue_cap": "", 
@@ -42,8 +43,9 @@ class Queue:
     # // Check if channel is a valid queue lobby
     @staticmethod
     async def is_valid_lobby(guild_id: int, lobby: int):
-        if guild_id not in queue:
-            queue[guild_id] = {}
+        with queue_lock.acquire():
+            if guild_id not in queue:
+                queue[guild_id] = {}
         
         # // Check if the lobby exists
         if not Lobby.exists(guild_id, lobby):
@@ -153,23 +155,24 @@ class Queue:
     # // Create team pick logic function
     @staticmethod
     async def pick_logic(guild_id: int, lobby: int):
-        # // Get the queue size
-        queue_size: int = len(queue[guild_id][lobby]["queue"])
+        with queue_lock.acquire():
+            # // Get the queue size
+            queue_size: int = len(queue[guild_id][lobby]["queue"])
 
-        # // Get the team captains
-        blue_captain: discord.Member = queue[guild_id][lobby]["blue_cap"]
-        orange_captain: discord.Member = queue[guild_id][lobby]["orange_cap"]
+            # // Get the team captains
+            blue_captain: discord.Member = queue[guild_id][lobby]["blue_cap"]
+            orange_captain: discord.Member = queue[guild_id][lobby]["orange_cap"]
 
-        # // Iterate over the queue size
-        for _ in range(queue_size // 2):
-            # // Add the captains to the pick logic
-            queue[guild_id][lobby]["pick_logic"].append(blue_captain)
-            queue[guild_id][lobby]["pick_logic"].append(orange_captain)
+            # // Iterate over the queue size
+            for _ in range(queue_size // 2):
+                # // Add the captains to the pick logic
+                queue[guild_id][lobby]["pick_logic"].append(blue_captain)
+                queue[guild_id][lobby]["pick_logic"].append(orange_captain)
 
-        # // If the queue size is odd
-        if queue_size % 2 != 0:
-            # // Add the blue captain to the pick logic
-            queue[guild_id][lobby]["pick_logic"].append(blue_captain)
+            # // If the queue size is odd
+            if queue_size % 2 != 0:
+                # // Add the blue captain to the pick logic
+                queue[guild_id][lobby]["pick_logic"].append(blue_captain)
 
 
     # // Send match logs to the given match logs channel
