@@ -3,7 +3,7 @@ from data._cache_ import Cache
 class Settings:
     # // Setup default settings and cache
     @staticmethod
-    async def setup(guild_id: int):
+    async def setup(guild_id: int) -> None:
         await Cache.update("settings", guild=guild_id, data={
             "reg_role": 0,
             "match_categories": 0,
@@ -32,13 +32,13 @@ class Settings:
 
     # // Check if the settings exist
     @staticmethod
-    def exists(guild_id: int):
+    def exists(guild_id: int) -> bool:
         return guild_id in Cache.fetch("settings")
     
 
     # // Get a specific setting
     @staticmethod
-    def get(guild_id: int, key: str = None):
+    def get(guild_id: int, key: str = None) -> dict:
         if key is not None:
             return Cache.fetch("settings", guild=guild_id)[key]
         return Cache.fetch("settings", guild=guild_id)
@@ -46,7 +46,7 @@ class Settings:
 
     # // Add an elo role to the lobby
     @staticmethod
-    async def add_elo_role(guild_id: int, role_id: int, elo_level: int, win_elo: int, lose_elo: int):
+    async def add_elo_role(guild_id: int, role_id: int, elo_level: int, win_elo: int, lose_elo: int) -> None:
         # // Fetch the elo roles
         settings = Cache.fetch("settings", guild_id)
         settings["elo_roles"][role_id] = {
@@ -63,12 +63,12 @@ class Settings:
 
     # // Delete an elo role from the lobby
     @staticmethod
-    async def delete_elo_role(guild_id: int, role_id: int):
+    async def delete_elo_role(guild_id: int, role_id: int) -> None:
         Cache.delete_elo_role(guild_id, role_id)
 
     # // Add a setting to the lobby
     @staticmethod
-    async def update(guild_id: int, reg_role=None, match_categories=None, reg_channel=None, match_logs=None, mod_role=None, admin_role=None, self_rename=None):
+    async def update(guild_id: int, reg_role=None, match_categories=None, reg_channel=None, match_logs=None, mod_role=None, admin_role=None, self_rename=None) -> None:
         # // Update reg role
         if reg_role is not None:
             await Cache.update("settings", guild=guild_id, data={"reg_role": reg_role}, sqlcmds=[

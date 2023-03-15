@@ -1,9 +1,10 @@
 from ._cache_ import Cache
+import time, datetime, discord
 
 class Bans:
     # // Add a ban to the lobby
     @staticmethod
-    async def ban(guild_id: int, user_id: int, length: int, reason: str, banned_by: str):
+    async def ban(guild_id: int, user_id: int, length: int, reason: str, banned_by: str) -> None:
         # // Update the cache and the database
         await Cache.update("bans", guild=guild_id, data={
             user_id: {
@@ -17,17 +18,44 @@ class Bans:
 
     # // Delete a ban from the lobby
     @staticmethod
-    async def unban(guild_id: int, user_id: str):
+    async def unban(guild_id: int, user_id: str) -> None:
         Cache.delete_ban(guild_id, user_id)
 
     # // Get the ban of an user
     @staticmethod
-    def get(guild_id: int, user_id: int = None):
+    def get(guild_id: int, user_id: int = None) -> dict:
         if user_id is not None:
             return Cache.fetch("bans", guild_id)[user_id]
         return Cache.fetch("bans", guild_id)[user_id]
     
     # // Check if a user is banned
     @staticmethod
-    def is_banned(guild_id: int, user_id: int):
+    def is_banned(guild_id: int, user_id: int) -> bool:
         return user_id in Cache.fetch("bans", guild_id)
+    
+    # // Create a ban embed
+    @staticmethod
+    async def embed(guild_id: int, user: discord.Member) -> discord.Embed:
+        if not Bans.is_banned(guild_id, user.id):
+            return discord.Embed(
+                title = f"{user.name} is not banned", 
+                description = "This user is not banned", 
+                color = 15158588
+            )
+        
+        # // Get the users ban info
+        ban_data: dict = Bans.get(guild_id, user.id)
+
+        # // If the ban has expired, then unban the user
+        if ban_data[0] - time.time() <= 0:
+            await Bans.unban(guild_id, user.id)
+
+        # // If the ban is still active, then...
+        ban_length: datetime.timedelta = datetime.timedelta(seconds=int(ban_data[0] - time.time()))
+
+        # // Return the embed
+        return discord.Embed(
+            title = f"{user.name} is banned", 
+            description = f"**Length:** {ban_length}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", 
+            color = 15158588
+        )

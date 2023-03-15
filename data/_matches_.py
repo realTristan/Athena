@@ -4,19 +4,19 @@ import discord
 class Matches:
     # // Get the number of matches in the lobby
     @staticmethod
-    def count(guild_id: int):
+    def count(guild_id: int) -> int:
         return len(Cache.fetch("matches", guild_id))
     
     # // Get a match
     @staticmethod
-    def get(guild_id: int, match_id: int = None):
+    def get(guild_id: int, match_id: int = None) -> dict:
         if match_id is not None:
             return Cache.fetch("matches", guild_id)[match_id]
         return Cache.fetch("matches", guild_id)
 
     # // Delete a match category
     @staticmethod
-    async def delete_category(guild: discord.Guild, match_id: int):
+    async def delete_category(guild: discord.Guild, match_id: int) -> None:
         category = discord.utils.get(guild.categories, name=f"Match #{match_id}")
         
         # // If the category does not exist
@@ -32,7 +32,7 @@ class Matches:
 
     # // Produce a match embed
     @staticmethod
-    def embed(guild_id: int, match_id: int):
+    def embed(guild_id: int, match_id: int) -> discord.Embed:
         # // Fetch the match data
         match_data: dict = Matches.find(guild_id, match_id)
 
@@ -76,7 +76,7 @@ class Matches:
         
     # // Add a match to the lobby
     @staticmethod
-    async def add(guild_id: int, lobby_id: int, match_id: int, match_data: dict):
+    async def add(guild_id: int, lobby_id: int, match_id: int, match_data: dict) -> None:
         # // Convert the match teams to strings
         orange_team_str: str = ','.join(str(user.id) for user in match_data["orange_team"])
         blue_team_str: str = ','.join(str(user.id) for user in match_data["blue_team"])
@@ -105,15 +105,15 @@ class Matches:
 
     # // Delete a match from the lobby
     @staticmethod
-    async def delete(guild_id: int, match_id: int):
+    async def delete(guild_id: int, match_id: int) -> None:
         Cache.delete_match(guild_id, match_id)
 
     # // Undo a match result
     @staticmethod
-    async def undo(guild: discord.Guild, lobby_id: int, winners: list, losers: list):
+    async def undo(guild: discord.Guild, lobby_id: int, winners: list, losers: list) -> None:
         # // Fetch the lobby settings
-        lobby_settings: dict = Lobby(guild.id, lobby_id).get()
-        negative_elo: bool = lobby_settings["negative_elo"] == 1
+        lobby_settings: dict = Lobby.get(guild.id, lobby_id)
+        negative_elo: int = lobby_settings["negative_elo"]
         win_elo: int = lobby_settings["win_elo"]
         loss_elo: int = lobby_settings["loss_elo"]
 
@@ -150,7 +150,7 @@ class Matches:
             new_elo: int = user_elo - win_elo
 
             # // If negative elo is enabled, set the users new elo to 0
-            if not negative_elo and (user_elo - win_elo) < 0:
+            if negative_elo != 1 and (user_elo - win_elo) < 0:
                 new_elo = 0
             
             # // Update the users elo and wins
@@ -167,7 +167,7 @@ class Matches:
         orange_cap: int = None, orange_team: str = None, 
         blue_cap: int = None, blue_team: str = None, 
         status: str = None, winners: list = None
-    ):
+    ) -> None:
         # // Update the match status
         if status is not None:
             Cache.update("matches", guild=guild_id, key=match_id, data={"status": status}, sqlcmds=[

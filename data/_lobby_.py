@@ -3,17 +3,17 @@ from ._cache_ import Cache
 class Lobby:
     # // Get all the lobbies in the guild
     @staticmethod
-    def get_all(guild: int):
+    def get_all(guild: int) -> dict:
         return Cache.fetch("lobbies", guild)
     
     # // Check if a lobby exists for the guild
     @staticmethod
-    def exists(guild: int, lobby_id: int):
+    def exists(guild: int, lobby_id: int) -> bool:
         return lobby_id in Cache.fetch("lobbies", guild)
 
     # // Create a new lobby
     @staticmethod
-    async def create(guild: int, lobby_id: int):
+    async def create(guild: int, lobby_id: int) -> None:
         await Cache.update("lobbies", guild=guild, data={
             lobby_id: {
                 "map_pick_phase": 0,
@@ -31,29 +31,24 @@ class Lobby:
 
     # // Delete an elo role from the lobby
     @staticmethod
-    async def delete_elo_role(guild_id: int, role_id: int):
+    async def delete_elo_role(guild_id: int, role_id: int) -> None:
         Cache.delete_elo_role(guild_id, role_id)
 
     # // Delete a map from the lobby
     @staticmethod
-    async def delete_map(guild_id: int, lobby_id: int, map: str):
+    async def delete_map(guild_id: int, lobby_id: int, map: str) -> None:
         Cache.delete_map(guild_id, lobby_id, map)
 
     # // Add a map to the lobby
     @staticmethod
-    async def add_map(guild_id: int, lobby_id: int, map: str):
+    async def add_map(guild_id: int, lobby_id: int, map: str) -> None:
         Cache.add_map(guild_id, lobby_id, map)
     
     # // Delete the lobby
     @staticmethod
-    async def delete(guild_id: int, lobby_id: int):
+    async def delete(guild_id: int, lobby_id: int) -> None:
         Cache.delete_lobby(guild_id, lobby_id)
 
-    # // Get the lobby maps
-    @staticmethod
-    def get_maps(guild_id: int, lobby_id: int):
-        return Cache.fetch("lobbies", guild_id)[lobby_id]["maps"]
-    
     # // Get the lobby or data from the lobby
     @staticmethod
     def get(guild_id: int, lobby_id: int, key: str = None) -> dict:
@@ -63,7 +58,7 @@ class Lobby:
 
     # // Update lobby settings
     @staticmethod
-    async def update(guild_id: int, lobby_id: int, map_pick_phase=None, team_pick_phase=None, win_elo=None, loss_elo=None, party_size=None, negative_elo=None, queue_size=None):
+    async def update(guild_id: int, lobby_id: int, map_pick_phase=None, team_pick_phase=None, win_elo=None, loss_elo=None, party_size=None, negative_elo=None, queue_size=None) -> None:
         # // Update map pick phase
         if map_pick_phase is not None:
             await Cache.update("lobbies", guild=guild_id, key=lobby_id, data={"map_pick_phase": map_pick_phase}, sqlcmds=[

@@ -1,287 +1,22 @@
-import discord, random, time, asyncio, re
+import discord, random, asyncio, re
 from discord_components import *
 from discord.ext import commands
-from discord.utils import get
-import datetime as datetime
 from functools import *
 from data import *
 
 class QueueCog(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        self.data = {}
-
-    # Reset guilds variables function
-    def _reset(self, ctx: commands.Context, lobby):
-        self.data[ctx.guild.id][lobby] = {
-            "queue": [], 
-            "blue_cap": "", 
-            "blue_team": [], 
-            "orange_cap": "", 
-            "orange_team": [], 
-            "pick_logic": [], 
-            "map": "None", 
-            "parties": {}, 
-            "state": "queue"
-        }
 
     # // Clean a players name to look more professional
-    def clean_name(self, name):
+    def clean_name(self, name: str):
         return str(name[0]).upper() + str(name[1:]).lower()
-    
-    # // Check if channel is a valid queue lobby
-    async def is_valid_lobby(self, ctx:commands.Context, lobby: int):
-        if ctx.guild.id not in self.data:
-            self.data[ctx.guild.id] = {}
-        
-        # // Check if the lobby exists
-        if not Lobby.exists(ctx.guild.id, lobby):
-            return False
-        
-        # // Check if the lobby is in the cache
-        if lobby not in self.data[ctx.guild.id]:
-            self._reset(ctx, lobby)
-        return True
-    
-
-    # // Add other party members to the queue
-    async def check_party(self, ctx: commands.Context, user: discord.Member, lobby: int):
-        # // Check if the user is in a party
-        for party in self.data[ctx.guild.id][lobby]["parties"]:
-            if user.id in self.data[ctx.guild.id][lobby]["parties"][party] and party != user.id:
-                return False
-        
-        if user.id in self.data[ctx.guild.id][lobby]["parties"]:
-            queue_size: int = Lobby(ctx.guild.id, lobby).get("queue_size")
-            # // Check if the party can join the queue
-            if len(self.data[ctx.guild.id][lobby]["parties"][user.id]) + len(self.data[ctx.guild.id][lobby]["queue"]) <= queue_size:
-                # // Add the party to the queue
-                for player in self.data[ctx.guild.id][lobby]["parties"][user.id][1:]:
-                    member = await User.verify(ctx.guild, player)
-                    if member is not None:
-                        await self._join(ctx, member, lobby)
-                return True
-            return False
-        return True
-    
-    
-    # // Send match logs to the given match logs channel
-    async def log_match(self, ctx: commands.Context, embed: discord.Embed):
-        match_logs = Settings(ctx.guild.id).get("match_logs")
-
-        # // If the match logs are disabled
-        if match_logs == 0:
-            return
-        
-        # // If the match logs are enabled
-        channel = ctx.guild.get_channel(match_logs)
-
-        # // If the channel is not found, set the match logs to 0
-        if channel is None:
-            return await Settings(ctx.guild.id).update(match_logs=0)
-        
-        # // Else, send the embed to the channel
-        return await channel.send(
-            embed = embed,
-            components = [[
-                Button(style=ButtonStyle.blue, label="Blue", custom_id='blue_report'),
-                Button(style=ButtonStyle.blue, label="Orange", custom_id='orange_report'),
-                Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
-            ]])
-                
-
-    # // Create the match category function
-    async def match_category(self, ctx:commands.Context, match_id, lobby):
-        match_categories = Settings(ctx.guild.id).get("match_categories")
-
-        # // If the match categories are disabled
-        if match_categories == 0:
-            return
-        
-        # // Else, create the match category
-        if not get(ctx.guild.categories, name=f'Match #{match_id}'):
-            # // Creating category and setting permissions
-            category = await ctx.guild.create_category(f'Match #{match_id}')
-            await category.set_permissions(ctx.guild.default_role, connect=False, send_messages=False)
-
-            # // Creating channels inside category
-            await ctx.guild.create_text_channel(f"match-{match_id}", category=category)
-            await ctx.guild.create_voice_channel(f'🔹 Team ' + self.data[ctx.guild.id][lobby]["blue_cap"].name, category=category)
-            await ctx.guild.create_voice_channel(f"🔸 Team " + self.data[ctx.guild.id][lobby]['orange_cap'].name, category=category)
-
-            # // Create the teams
-            blue_team = self.data[ctx.guild.id][lobby]["blue_team"]
-            blue_team.append(self.data[ctx.guild.id][lobby]["blue_cap"])
-            orange_team = self.data[ctx.guild.id][lobby]["orange_team"]
-            orange_team.append(self.data[ctx.guild.id][lobby]["orange_cap"])
-            self._reset(ctx, lobby)
-
-            # // Edit the permissions for each player in the teams
-            for user in orange_team:
-                await category.set_permissions(user, connect=True, send_messages=True)
-
-            for _user in blue_team:
-                await category.set_permissions(_user, connect=True, send_messages=True)
-
-
-    # // Match logging function
-    async def new_match(self, ctx:commands.Context, lobby: int):
-        # // Get the teams
-        orange_team: list = self.data[ctx.guild.id][lobby]['orange_team']
-        blue_team: list = self.data[ctx.guild.id][lobby]['blue_team']
-
-        # // Get the team captains
-        orange_cap: discord.Member = self.data[ctx.guild.id][lobby]['orange_cap']
-        blue_cap: discord.Member = self.data[ctx.guild.id][lobby]['blue_cap']
-
-        # // Get the count of matches
-        amount_of_matches = Matches.count(ctx.guild.id, lobby) + 1
-
-        # // Add the match to the database
-        await Matches.add(ctx.guild.id, lobby, amount_of_matches, {
-            "orange_team": orange_team,
-            "blue_team": blue_team,
-            "orange_cap": orange_cap.id,
-            "blue_cap": blue_cap.id
-        })
-
-
-    # // Create team pick logic function
-    async def _pick_logic(self, ctx:commands.Context, lobby):
-        for _ in range(round(len(self.data[ctx.guild.id][lobby]["queue"]) / 2)):
-            self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["blue_cap"])
-            self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["orange_cap"])
-
-        if len(self.data[ctx.guild.id][lobby]["queue"]) > len(self.data[ctx.guild.id][lobby]["pick_logic"]):
-            self.data[ctx.guild.id][lobby]["pick_logic"].append(self.data[ctx.guild.id][lobby]["orange_cap"])
-
-
-    # // Embed generator function (for queue)
-    async def _embeds(self, ctx:commands.Context, lobby: int):
-        # // Get the lobby data
-        lobby_data = self.data[ctx.guild.id][lobby]
-
-        # // Queue phase embed
-        if lobby_data["state"] == "queue":
-            current_queue = "None"
-
-            # // Get the current queue and store it in a string
-            if len(lobby_data["queue"]) != 0:
-                current_queue = '\n'.join(str(e.mention) for e in lobby_data["queue"])
-
-            # // Get the lobby settings
-            current_queue_size = len(lobby_data['queue'])
-            queue_size = Lobby(ctx.guild.id, lobby).get("queue_size")
-
-            # // Send the embed
-            return await ctx.send(
-                embed = discord.Embed(
-                    title = f"[{current_queue_size}/{queue_size}] {ctx.channel.name}", 
-                    description = current_queue, 
-                    color = 33023
-            ))
-
-        # // Team picking phase embed
-        if lobby_data["state"] == "pick":
-            # // Get the orange team
-            orange_team = "None"
-            if len(lobby_data["orange_team"]) != 0:
-                orange_team = '\n'.join(str(e.mention) for e in lobby_data["orange_team"])
-
-            # // Get the blue team
-            blue_team = "None"
-            if len(lobby_data["blue_team"]) != 0:
-                blue_team = '\n'.join(str(e.mention) for e in lobby_data["blue_team"])
-
-            # // Create the embed
-            embed = discord.Embed(
-                title = "Team Picking Phase", 
-                color = 33023
-            )
-
-            # // Captains
-            embed.add_field(name = "Orange Captain", value = lobby_data["orange_cap"].mention)
-            embed.add_field(name = "\u200b", value = "\u200b")
-            embed.add_field(name = "Blue Captain", value = lobby_data["blue_cap"].mention)
-
-            # // Teams
-            embed.add_field(name = "Orange Team", value = orange_team)
-            embed.add_field(name = "\u200b", value = "\u200b")
-            embed.add_field(name = "Blue Team", value = blue_team)
-
-            # // Available players
-            embed.add_field(name="Available Players", value = "\n".join(str(e.mention) for e in lobby_data["queue"]))
-            
-            # // Send the embed
-            await ctx.send(embed=embed)
-            return await ctx.send(f"**{lobby_data['pick_logic'][0].mention} it is your turn to pick (=pick [@user])**")
-
-        # // Map picking phase embed
-        if lobby_data["state"] == "maps":
-            # // Get the maps
-            maps = Lobby(ctx.guild.id, lobby).get_maps()
-
-            # // Create the embed
-            embed = discord.Embed(
-                title = "Map Picking Phase", 
-                color = 33023
-            )
-
-            # // Captains
-            embed.add_field(name = "Orange Captain", value = lobby_data["orange_cap"].mention)
-            embed.add_field(name = "\u200b", value = "\u200b")
-            embed.add_field(name = "Blue Captain", value = lobby_data["blue_cap"].mention)
-
-            # // Teams
-            embed.add_field(name = "Orange Team", value = '\n'.join(str(p.mention) for p in lobby_data["orange_team"]))
-            embed.add_field(name = "\u200b", value = "\u200b")
-            embed.add_field(name = "Blue Team", value = '\n'.join(str(p.mention) for p in lobby_data["blue_team"]))
-
-            # // Available maps
-            embed.add_field(name="Available Maps", value="\n".join(m for m in maps))
-
-            # // Send the embed
-            await ctx.send(embed=embed)
-            return await ctx.send(f"**{lobby_data['blue_cap'].mention} select a map to play (=pickmap [map])**")
-
-        # // Final match up embed
-        if lobby_data["state"] == "final":
-            # // Get the count of matches
-            amount_of_matches = Matches.count(ctx.guild.id, lobby) + 1
-
-            # // Create the embed
-            embed = discord.Embed(
-                title = f"Match #{amount_of_matches}", description = f"**Map:** {lobby_data['map']}", 
-                color = 33023
-            )
-
-            # // Captains
-            embed.add_field(name = "Orange Captain", value = lobby_data["orange_cap"].mention)
-            embed.add_field(name = "\u200b", value = "\u200b")
-            embed.add_field(name = "Blue Captain", value = lobby_data["blue_cap"].mention)
-
-            # // Teams
-            embed.add_field(name = "Orange Team", value = '\n'.join(str(e.mention) for e in lobby_data["orange_team"]))
-            embed.add_field(name = "\u200b", value = "\u200b")
-            embed.add_field(name = "Blue Team", value = '\n'.join(str(e.mention) for e in lobby_data["blue_team"]))
-
-            # // Set the footer to the lobby id
-            embed.set_footer(text = str(lobby))
-
-            # // Send the embed
-            await ctx.send(embed = embed)
-
-            # // Match functions
-            await self.new_match(ctx, lobby)
-            await self.log_match(ctx, embed)
-            await self.match_category(ctx, amount_of_matches, lobby)
-            self._reset(ctx, lobby)
 
 
     # // When the queue reaches max capacity function
     async def _start(self, ctx:commands.Context, lobby: int):
         # // Get the lobby settings
-        lobby = Lobby(ctx.guild.id, lobby).get()
+        lobby = Lobby.get(ctx.guild.id, lobby)
 
         # // Create team captains (blue)
         blue_cap = random.choice(self.data[ctx.guild.id][lobby]["queue"])
@@ -325,7 +60,7 @@ class QueueCog(commands.Cog):
         # // Else, pick a random map
         else:
             # // Get the maps
-            maps = Lobby(ctx.guild.id, lobby).get_maps()
+            maps = Lobby.get(ctx.guild.id, lobby, "maps")
             self.data[ctx.guild.id][lobby]["map"] = "None"
             
             # // If there are maps
@@ -337,32 +72,6 @@ class QueueCog(commands.Cog):
 
         # // Send the embed
         return await self._embeds(ctx, lobby)
-
-
-    # // Check if user is banned function
-    async def _ban_check(self, ctx:commands.Context, user):
-        if Bans(ctx.guild.id).is_banned(user.id):
-            # // Get the users ban info
-            ban_data = Bans(ctx.guild.id).get(user.id)
-
-            # // If the ban has expired, then unban the user
-            if ban_data[0] - time.time() <= 0:
-                await Bans(ctx.guild.id).unban(user.id)
-
-            # // If the ban is still active, then...
-            # // Get the ban length
-            ban_length = datetime.timedelta(seconds=int(ban_data[0] - time.time()))
-
-            # // Send the embed
-            await ctx.channel.send(
-                embed = discord.Embed(
-                    title = f"{user.name} is banned", 
-                    description = f"**Length:** {ban_length}\n**Reason:** {ban_data[1]}\n**Banned by:** {ban_data[2]}", 
-                    color = 15158588
-            ))
-            return False
-        return True
-
 
     # // When an user joins the queue function
     async def _join(self, ctx:commands.Context, user, lobby):
@@ -413,24 +122,26 @@ class QueueCog(commands.Cog):
                 del self.data[ctx.guild.id][l]
 
         # // Check if the user is banned
-        if await self._ban_check(ctx, user):
-            # // Get the queue sizes
-            queue_size = Lobby(ctx.guild.id, lobby).get("queue_size")
-            current_queue_size: int = len(self.data[ctx.guild.id][lobby]['queue'])
+        if Bans.is_banned(ctx.guild.id, user.id):
+            await Bans.embed(ctx.guild.id, user)
 
-            # // Add the user to the queue
-            self.data[ctx.guild.id][lobby]["queue"].append(user)
+        # // Get the queue sizes
+        queue_size = Lobby.get(ctx.guild.id, lobby, "queue_size")
+        current_queue_size: int = len(self.data[ctx.guild.id][lobby]['queue'])
 
-            # // If the queue is full, then start the game
-            if current_queue_size == queue_size:
-                return await self._start(ctx, lobby)
-            
-            # // Send the queue embed
-            return await ctx.send(
-                embed = discord.Embed(
-                    description = f"**[{current_queue_size + 1}/{queue_size}]** {user.mention} has joined the queue", 
-                    color = 33023
-            ))
+        # // Add the user to the queue
+        self.data[ctx.guild.id][lobby]["queue"].append(user)
+
+        # // If the queue is full, then start the game
+        if current_queue_size == queue_size:
+            return await self._start(ctx, lobby)
+        
+        # // Send the queue embed
+        return await ctx.send(
+            embed = discord.Embed(
+                description = f"**[{current_queue_size + 1}/{queue_size}]** {user.mention} has joined the queue", 
+                color = 33023
+        ))
         
     
     # // When an user leaves the queue function
@@ -460,7 +171,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Get the queue sizes
-        queue_size: int = Lobby(ctx.guild.id, lobby).get("queue_size")
+        queue_size: int = Lobby.get(ctx.guild.id, lobby, "queue_size")
         current_queue_size: int = len(self.data[ctx.guild.id][lobby]['queue'])
 
         # // Remove the user from the queue
@@ -536,7 +247,7 @@ class QueueCog(commands.Cog):
             self.data[ctx.guild.id][ctx.channel.id]["queue"].remove(self.data[ctx.guild.id][ctx.channel.id]["queue"][0])
 
             # // Get whether the map pick phase is enabled
-            map_pick_phase = Lobby(ctx.guild.id, ctx.channel.id).get("map_pick_phase")
+            map_pick_phase = Lobby.get(ctx.guild.id, ctx.channel.id, "map_pick_phase")
 
             # // If the map pick phase is enabled
             if map_pick_phase == 1:
@@ -545,7 +256,7 @@ class QueueCog(commands.Cog):
             # // If the map pick phase is disabled
             else:
                 # // Get the maps
-                maps = Lobby(ctx.guild.id, ctx.channel.id).get_maps()
+                maps = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
 
                 # // If there are maps
                 if len(maps) > 0:
@@ -593,7 +304,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Get the maps
-        maps = Lobby(ctx.guild.id, ctx.channel.id).get_maps()
+        maps = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
 
         # // Check if the map is in the map pool
         for m in maps:
@@ -727,7 +438,7 @@ class QueueCog(commands.Cog):
         
         # // Get the parties and max party size for the current lobby
         parties = self.data[ctx.guild.id][ctx.channel.id]["parties"]
-        max_party_size = Lobby(ctx.guild.id, ctx.channel.id).get("max_party_size")
+        max_party_size = Lobby.get(ctx.guild.id, ctx.channel.id, "max_party_size")
 
         # // Invite a player to your party
         if action in ["invite", "inv"]:
@@ -1013,7 +724,7 @@ class QueueCog(commands.Cog):
                 players = "\n".join(str(e.mention) for e in self.data[res.guild.id][lobby.id]["queue"])
 
                 # // Get the queue size
-                queue_size = Lobby(res.guild.id, lobby.id).get("queue_size")
+                queue_size = Lobby.get(res.guild.id, lobby.id, "queue_size")
 
                 # // Create the new embed
                 current_queue_size: int = len(self.data[res.guild.id][lobby.id]["queue"])
