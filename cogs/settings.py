@@ -11,40 +11,10 @@ class SettingsCog(commands.Cog):
     
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    def _guild_settings_status(self, option, row):
-        # // MATCH CATEGORIES
-        if option == "match_category":
-            if row[2] == 1: # true
-                return ["🟢", "Disable"]
-            return ["🔴", "Enable"]
-
-        # // MATCH LOGGING
-        if option == "match_logging":
-            if row[4] == 1: # false
-                return ["🟢", "Disable"]
-            return ["🔴", "Enable"]
-        
-        # // SELF RENAME
-        if option == "self_rename":
-            if row[7] == 1:
-                return ["🟢", "Disable"]
-            return ["🔴", "Enable"]
-
-
-    # // RETURN CORRESPONDING EMOJI TO SETTING
-    # /////////////////////////////////////////
-    def _lobby_settings_get(self, option: str, settings):
-        # // MAP PICKING PHASE
-        if option == "map_pick_phase":
-            if settings[2] == 1: # true
-                return ["🟢", "Disable"]
-            return ["🔴", "Enable"]
-
-        # // TEAM PICKING PHASE
-        if option == "team_pick_phase":
-            if settings[3] == 1: # true
-                return ["🟢", "Disable"]
-            return ["🔴", "Enable"]
+    def get_settings_option(self, option: str, settings: dict):
+        if settings[option] == 1:
+            return ["🟢", "Disable"]
+        return ["🔴", "Enable"]
         
     # // CONVERT 0-1 TO ENABLED/DISABLED
     # /////////////////////////////////////
@@ -305,9 +275,9 @@ class SettingsCog(commands.Cog):
                 ))
 
             lobby_settings: dict = Lobby.get(ctx.guild.id, ctx.channel.id)
-            team_pick_phase = self._lobby_settings_get("team_pick_phase", lobby_settings)
-            map_pick_phase = self._lobby_settings_get("map_pick_phase", lobby_settings)
-            negative_elo = self._lobby_settings_get("negative_elo", lobby_settings)
+            team_pick_phase = self.get_settings_option("team_pick_phase", lobby_settings)
+            map_pick_phase = self.get_settings_option("map_pick_phase", lobby_settings)
+            negative_elo = self.get_settings_option("negative_elo", lobby_settings)
 
             
             # // Send the lobby settings menu
@@ -563,9 +533,9 @@ class SettingsCog(commands.Cog):
         
         # // Get the guild settings
         settings: dict = Settings.get(ctx.guild.id)
-        match_category = self._guild_settings_status("match_category", settings)
-        match_logging = self._guild_settings_status("match_logging", settings)
-        self_rename = self._guild_settings_status("self_rename", settings)
+        match_categories: list = self.get_settings_option("match_categories", settings)
+        match_logs: list = self.get_settings_option("match_loggs", settings)
+        self_rename: list = self.get_settings_option("self_rename", settings)
 
         # // Send the settings menu
         await ctx.send(
@@ -583,8 +553,8 @@ class SettingsCog(commands.Cog):
                         SelectOption(emoji=f'🔵', label="Change Register Role", value="change_reg_role"),
                         SelectOption(emoji=f'🔵', label="Change Register Channel", value="change_reg_channel"),
                         SelectOption(emoji=f'{self_rename[0]}', label=f"{self_rename[1]} Self Rename", value="self_rename"),
-                        SelectOption(emoji=f'{match_logging[0]}', label=f"{match_logging[1]} Match Logging", value="match_logging"),
-                        SelectOption(emoji=f'{match_category[0]}', label=f"{match_category[1]} Match Categories", value="match_category")
+                        SelectOption(emoji=f'{match_logs[0]}', label=f"{match_logs[1]} Match Logging", value="match_logging"),
+                        SelectOption(emoji=f'{match_categories[0]}', label=f"{match_categories[1]} Match Categories", value="match_category")
         ])])
 
 
