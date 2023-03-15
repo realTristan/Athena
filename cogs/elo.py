@@ -181,7 +181,7 @@ class EloCog(commands.Cog):
                 ))
 
             # // Update the match
-            Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
+            await Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
             
             # // Get the orange team
             orange_team = match_data["orange_team"]
@@ -237,7 +237,7 @@ class EloCog(commands.Cog):
                 ))
             
             # // Update the match data
-            Matches.update(ctx.guild.id, match_id, status="cancelled", winner="none")
+            await Matches.update(ctx.guild.id, match_id, status="cancelled", winner="none")
             
             # // Send the match info embed
             await ctx.send(Matches.embed(ctx.guild.id, match_id))
@@ -256,7 +256,7 @@ class EloCog(commands.Cog):
                 ))
             
             # // Update the match status and winners
-            Matches.update(ctx.guild.id, match_id, status="ongoing", winner="none")
+            await Matches.update(ctx.guild.id, match_id, status="ongoing", winner="none")
 
             # // Add the orange team and it's captains
             orange_team = match_data["orange_team"]
@@ -890,112 +890,107 @@ class EloCog(commands.Cog):
         if res.author.bot:
             return
         
+        # // Check if the button is in the list
         if res.component.id in ['blue_report', 'orange_report', 'match_cancel']:
             # // Check if the user has the mod role
-            if await self.check_mod_role(res):
-                # // GETTING THE MATCH ID
-                match_id = int(str(res.message.embeds[0].title).replace("Match #", ""))
-                lobby_id = int(res.message.embeds[0].footer.text)
-                
-                # // GETTING THE ROWS FROM DATABASE
-                match_data = Cache.fetch(table="matches", guild=res.guild.id, key=match_id)
-                lobby_settings = Cache.fetch(table="lobby_settings", guild=res.guild.id, key=lobby_id)
+            if not Users.is_mod(res.author):
+                return await res.send(
+                    embed = discord.Embed(
+                        description = f"{res.author.mention} you do not have enough permissions", 
+                        color = 15158588
+                ))
+            
+            # // Get the match id
+            match_id: int = int(str(res.message.embeds[0].title).replace("Match #", ""))
+            lobby_id: int = int(res.message.embeds[0].footer.text)
+            
+            # // get the match data and lobby settings
+            match_data: dict = Matches.get(res.guild.id, match_id)
+            lobby_settings: dict = Lobby.get(res.guild.id, lobby_id)
 
-                # // Check match status
-                if match_data[6] not in ["ongoing"]:
-                    # // Send error embed
-                    await res.send(embed=discord.Embed(description=f"{res.author.mention} this match has already been reported", color=15158588))
-                else:
-                    # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
-                    blue_team = res.message.embeds[0].fields[5].value.split("\n")
-                    blue_team.append(int(re.sub("\D","", res.message.embeds[0].fields[2].value)))
+            # // Check match status
+            if match_data["status"] != "ongoing":
+                await res.send(
+                    embed = discord.Embed(
+                        description = f"{res.author.mention} this match has already been reported", 
+                        color = 15158588
+                ))
 
-                    # // CREATE TEAM LIST AND APPEND TEAM CAPTAIN
-                    orange_team = res.message.embeds[0].fields[3].value.split("\n")
-                    orange_team.append(int(re.sub("\D","", res.message.embeds[0].fields[0].value)))
-
-                    # // CANCEL THE MATCH
-                    if res.component.id == "match_cancel":
-                        await res.send(embed=discord.Embed(description=f"{res.author.mention} has cancelled **Match #{match_id}**", color=3066992))
-                        # // Update the match status and winners
-                        match_data[6] = "reported"
-                        match_data[7] = "none"
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="matches", guild=res.guild.id, key=match_id, data=match_data, 
-                            sqlcmds=[
-                                f"UPDATE matches SET status = 'cancelled' WHERE guild_id = {res.guild.id} AND match_id = {match_id}",
-                                f"UPDATE matches SET winners = 'none' WHERE guild_id = {res.guild.id} AND match_id = {match_id}"
-                            ]
-                        )
-
-                    # // REPORT BLUE TEAM WIN
-                    if res.component.id == 'blue_report':
-                        await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
-                        
-                        # // Update the match status and winners
-                        match_data[6] = "reported"
-                        match_data[7] = "blue"
-                        
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="matches", guild=res.guild.id, key=match_id, data=match_data, 
-                            sqlcmds=[
-                                f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}",
-                                f"UPDATE matches SET winners = 'blue' WHERE guild_id = {res.guild.id} AND match_id = {match_id}"
-                            ]
-                        )
-                        
-                        # // Add a win to each blue team member
-                        for user in blue_team:
-                            member = await self._check_member(res, int(re.sub("\D","", user)))
-                            if member is not None:
-                                await self._add_win(res.channel, member, lobby_settings)
-
-                        # // Add a loss to each orange team member
-                        for _user in orange_team:
-                            member = await self._check_member(res, int(re.sub("\D","", _user)))
-                            if member is not None:
-                                await self._add_loss(res.channel, member, lobby_settings)
-
-                    
-                    # // REPORT ORANGE TEAM WIN
-                    if res.component.id == 'orange_report':
-                        # // Send reported embed
-                        await res.send(embed=discord.Embed(description=f"{res.author.mention} has reported **Match #{match_id}**", color=3066992))
-
-                        # // Update the match status and winners
-                        match_data[6] = "reported"
-                        match_data[7] = "orange"
-                        # // Update the cache and database
-                        await Cache.update(
-                            table="matches", guild=res.guild.id, key=match_id, data=match_data, 
-                            sqlcmds=[
-                                f"UPDATE matches SET status = 'reported' WHERE guild_id = {res.guild.id} AND match_id = {match_id}",
-                                f"UPDATE matches SET winners = 'orange' WHERE guild_id = {res.guild.id} AND match_id = {match_id}"
-                            ]
-                        )
-                        # // Add a loss to each blue team member
-                        for user in blue_team:
-                            member = await self._check_member(res, int(re.sub("\D","", user)))
-                            if member is not None:
-                                await self._add_loss(res.channel, member, lobby_settings)
-
-                        # // Add a win to each orange team member
-                        for _user in orange_team:
-                            member = await self._check_member(res, int(re.sub("\D","", _user)))
-                            if member is not None:
-                                await self._add_win(res.channel, member, lobby_settings)
-                
                 # // Delete the original embed
                 await res.message.delete()
+
                 # // Show the new match data
-                await self._match_show(res.channel, match_id)
+                await res.channel.send(embed = await Matches.embed(res.guild.id, match_id))
+
                 # // Delete the match channels
-                return await self._delete_channels(res.channel, match_id)
-            # // Permissions error embed
-            return await res.send(embed=discord.Embed(description=f"{res.author.mention} you do not have enough permissions", color=15158588))
+                return await Matches.delete_category(res.guild, match_id)
+
+            # // Create the blue team list and append the team captain
+            blue_team: list = res.message.embeds[0].fields[5].value.split("\n")
+            blue_team.append(int(re.sub("\D","", res.message.embeds[0].fields[2].value)))
+
+            # // Create the orange team list and append the team captain
+            orange_team: list = res.message.embeds[0].fields[3].value.split("\n")
+            orange_team.append(int(re.sub("\D","", res.message.embeds[0].fields[0].value)))
+
+            # // CANCEL THE MATCH
+            if res.component.id == "match_cancel":
+                await res.send(
+                    embed = discord.Embed(
+                        description = f"{res.author.mention} has cancelled **Match #{match_id}**", 
+                        color = 3066992
+                ))
+
+                # // Update the match status and winners
+                await Matches.update(res.guild.id, lobby_id, match_id, status="cancelled", winners="none")
+
+            # // REPORT BLUE TEAM WIN
+            if res.component.id == 'blue_report':
+                await res.send(
+                    embed = discord.Embed(
+                        description = f"{res.author.mention} has reported **Match #{match_id}**", 
+                        color = 3066992
+                ))
+                
+                # // Update the match status and winners
+                await Matches.update(res.guild.id, lobby_id, match_id, status="reported", winners="blue")
+                
+                # // Add a win to each blue team member
+                for user in blue_team:
+                    user: discord.Member = Users.verify(res.guild, user)
+                    if user is not None:
+                        await Users.win(user, lobby_id)
+
+                # // Add a loss to each orange team member
+                for user in orange_team:
+                    user: discord.Member = Users.verify(res.guild, user)
+                    if user is not None:
+                        await Users.lose(user, lobby_id)
+
+            
+            # // REPORT ORANGE TEAM WIN
+            if res.component.id == 'orange_report':
+                # // Send reported embed
+                await res.send(
+                    embed = discord.Embed(
+                        description = f"{res.author.mention} has reported **Match #{match_id}**", 
+                        color = 3066992
+                ))
+
+                # // Update the match status and winners
+                await Matches.update(res.guild.id, lobby_id, match_id, status="reported", winners="orange")
+
+                # // Add a win to each orange team member
+                for user in orange_team:
+                    user: discord.Member = Users.verify(res.guild, user)
+                    if user is not None:
+                        await Users.win(user, lobby_id)
+
+                # // Add a loss to each blue team member
+                for user in blue_team:
+                    user: discord.Member = Users.verify(res.guild, user)
+                    if user is not None:
+                        await Users.lose(user, lobby_id)
 
 
 # // Setup the cog
