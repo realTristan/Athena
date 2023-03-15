@@ -694,7 +694,7 @@ class QueueCog(commands.Cog):
 
     # // Listen to the queue embed buttons
     @commands.Cog.listener()
-    async def on_button_click(self, res:Interaction):
+    async def on_button_click(self, res: discord.Interaction):
         if res.author.bot:
             return
         

@@ -376,11 +376,11 @@ class EloCog(commands.Cog):
 
         # // Replace the orange team captain
         if user1.id == match_data["orange_cap"] and user2.id != match_data["orange_cap"]:
-            await Matches.update(ctx.guild.id, match_id, orange_cap=user2.id)
+            await Matches.update(ctx.guild.id, lobby_id, match_id, orange_cap=user2.id)
             
         # // Replace the blue team captain
         elif user1.id == match_data["blue_cap"] and user2.id != match_data["blue_cap"]:
-            await Matches.update(ctx.guild.id, match_id, blue_cap=user2.id)
+            await Matches.update(ctx.guild.id, lobby_id, match_id, blue_cap=user2.id)
             
         # // Replace a player from the orange team
         elif user1.id in orange_team and user2.id not in orange_team:
@@ -854,8 +854,8 @@ class EloCog(commands.Cog):
                     color = 15158588
             ))
         
-        # // Get the matches from the database
-        matches = Matches.get(ctx.guild.id)
+        # // Get all of the matches by the guild
+        matches: dict = Matches.get(ctx.guild.id)
 
         # // For each match
         for match in matches:
@@ -870,18 +870,21 @@ class EloCog(commands.Cog):
             orange_team = match["orange_team"]
             orange_team.append(match[5])
 
+            # // Get the lobby id
+            lobby_id: int = match.get("lobby_id")
+
             # // Check if the user is in either of the teams
             if user in blue_team or user in orange_team:
                 # // Check the match winners (in this case it's orange)
                 if match["winners"] == "orange" and user in orange_team:
-                    await Matches.undo(ctx.guild.id, match["lobby_id"], orange_team, blue_team)
+                    await Matches.undo(ctx.guild.id, lobby_id, orange_team, blue_team)
                 
                 # // Check the match winners (in this case it's blue)
                 if match["winners"] == "blue" and user in blue_team:
-                    await Matches.undo(ctx.guild.id, match["lobby_id"], blue_team, orange_team)
+                    await Matches.undo(ctx.guild.id, lobby_id, blue_team, orange_team)
                 
                 # // Update the match status
-                await Matches.update(ctx.guild.id, match["lobby_id"], match["match_id"], status="rollbacked")
+                await Matches.update(ctx.guild.id, lobby_id, match["match_id"], status="rollbacked")
                 
                 # // Send match rollback embed
                 await ctx.send(
@@ -901,7 +904,7 @@ class EloCog(commands.Cog):
     # // BUTTON CLICK LISTENER
     # /////////////////////////////////////////
     @commands.Cog.listener()
-    async def on_button_click(self, res:Interaction):
+    async def on_button_click(self, res: discord.Interaction):
         if res.author.bot:
             return
         
@@ -919,9 +922,8 @@ class EloCog(commands.Cog):
             match_id: int = int(str(res.message.embeds[0].title).replace("Match #", ""))
             lobby_id: int = int(res.message.embeds[0].footer.text)
             
-            # // get the match data and lobby settings
+            # // Get the match data and lobby settings
             match_data: dict = Matches.get(res.guild.id, match_id)
-            lobby_settings: dict = Lobby.get(res.guild.id, lobby_id)
 
             # // Check match status
             if match_data["status"] != "ongoing":

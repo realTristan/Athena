@@ -4,7 +4,7 @@ import time, datetime, discord, functools
 class Bans:
     # // Add a ban to the lobby
     @staticmethod
-    async def ban(guild_id: int, user_id: int, length: int, reason: str, banned_by: str) -> None:
+    async def ban(guild_id: int, user_id: int, length: int, reason: str, banned_by: int) -> None:
         await Cache.update("bans", guild_id=guild_id, data={
             user_id: {
                 "length": length, 
@@ -12,12 +12,12 @@ class Bans:
                 "banned_by": banned_by
             }
         }, sqlcmds=[
-            f"INSERT INTO bans (guild_id, user_id, length, reason, banned_by) VALUES ({guild_id}, {user_id}, {length}, '{reason}', '{banned_by}')"
+            f"INSERT INTO bans (guild_id, user_id, length, reason, banned_by) VALUES ({guild_id}, {user_id}, {length}, '{reason}', {banned_by})"
         ])
 
     # // Delete a ban from the lobby
     @staticmethod
-    async def unban(guild_id: int, user_id: str) -> None:
+    async def unban(guild_id: int, user_id: int) -> None:
         Cache.delete_ban(guild_id, user_id)
 
     # // Get the ban of an user
