@@ -8,445 +8,193 @@ import discord, re
 class Elo(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        
-    # // Check if member is still in the server
-    # //////////////////////////////////////////
-    async def _check_member(self, ctx:commands.Context, member_id:int):
-        member = ctx.guild.get_member(member_id)
-        
-        # // If the member is not valid (meaning they left the server, etc.)
-        if member is None:
-            if Cache.exists(table="users", guild=ctx.guild.id, key=member_id):
-                await Cache.delete(
-                    table="users", guild=ctx.guild.id, key=member_id, 
-                    sqlcmds=[f"DELETE FROM users WHERE guild_id = {ctx.guild.id} AND user_id = {member_id}"]
-                )
-        return member
-        
-    # // Check mod role or mod permissions
-    # //////////////////////////////////////////
-    async def check_mod_role(self, ctx: commands.Context):
-        # // If the user has admin role, return true
-        if await self.check_admin_role(ctx):
-            return True
-        
-        # // Else, check for whether the user has mod role
-        mod_role = Cache.fetch(table="settings", guild=ctx.guild.id, key=4)
-        return ctx.guild.get_role(mod_role) in ctx.author.roles
-    
-    
-    # // Check admin role or admin permissions
-    # //////////////////////////////////////////
-    async def check_admin_role(self, ctx: commands.Context):
-        # // Get the admin role from settings
-        admin_role = Cache.fetch(table="settings", guild=ctx.guild.id, key=5)
-        
-        # // Check admin permissions
-        if admin_role == 0 or ctx.author.guild_permissions.administrator:
-            return ctx.author.guild_permissions.administrator
-        return ctx.guild.get_role(admin_role) in ctx.author.roles
-    
-    
-    # // DELETE TEAM CAPTAIN VOICE CHANNELS FUNCTION
-    # ///////////////////////////////////////////////
-    async def _delete_channels(self, ctx:commands.Context, match_id:int):
-        _category = discord.utils.get(ctx.guild.categories, name=f"Match #{match_id}")
-        
-        # // If the category exists
-        if _category:
-            for channel in _category.channels:
-                await channel.delete()
-
-            # // Delete the category
-            return await _category.delete()
-
-
-    # RESET AN USERS STATS
-    # ///////////////////////////////////////
-    async def _reset_stats(self, ctx:commands.Context, user:discord.Member):
-        user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=user.id)
-        columns = ["wins", "loss", "elo"]
-        
-        # // Set the users wins loss and elo to 0
-        for i in range(1, 3):
-            user_data[i] = 0
-            # // Update the cache and the database
-            await Cache.update(
-                table="users", guild=ctx.guild.id, key=user.id, data=user_data, 
-                sqlcmds=[f"UPDATE users SET {columns[i]} = 0 WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"]
-            )
-        
-        
-    # // REGISTER USER INTO THE DATABASE FUNCTION
-    # ///////////////////////////////////////////////
-    async def _register_user(self, ctx:commands.Context, user:discord.Member, name:str, role:discord.Role):
-        # // Add the user to the cache and database
-        await Cache.update(
-            sqlcmds=[f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({ctx.guild.id}, {user.id}, '{name}', 0, 0, 0)"],
-            table="users", guild=ctx.guild.id, 
-            data=[name, 0, 0, 0]
-        )
-        # // Add the register role to the user
-        if role is not None and role not in user.roles:
-            await self._user_edit(user, role=role)
-
-
-    # // EDIT AN USERS NAME OR ROLE FUNCTION
-    # ////////////////////////////////////////
-    async def _user_edit(self, user:discord.Member, nick:str=None, role:discord.Role=None, remove_role:discord.Role=None):
-        
-        # // Change the users nickname
-        if nick is not None:
-            try: await user.edit(nick=nick)
-            except Exception: pass
-
-        # // Add a role to the user
-        if role is not None:
-            try: await user.add_roles(role)
-            except Exception: pass
-        
-        # // Remove a role from the user
-        if remove_role is not None:
-            try: await user.remove_roles(remove_role)
-            except Exception: pass
-
-
-    # // EDIT AN USERS ELO ROLE
-    # /////////////////////////////////////////
-    async def edit_elo_role(self, ctx:commands.Context, user:discord.Member, elo_amount:int, option:str):
-        roles = []
-        
-        # // Get the roles 
-        if option == "remove":
-            # Elo roles greater than the provided elo amount
-            roles = await SqlData.select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo_amount} AND guild_id = {ctx.guild.id}")
-        else:
-            # Opposite of above
-            roles = await SqlData.select_all(f"SELECT role_id FROM elo_roles WHERE elo_level <= {elo_amount} AND guild_id = {ctx.guild.id}")
-            
-        # // Check roles and add them
-        if len(roles) > 0:
-            for _role in roles:
-                role = ctx.guild.get_role(_role[0])
-                # // If the option is remove
-                if option == "remove":
-                    if role in user.roles:
-                        await self._user_edit(user, remove_role=role)
-                else:
-                    # // else if the user has the role
-                    if role not in user.roles:
-                        # // add the role
-                        await self._user_edit(user, role=role)
-
-
-    # // GIVE AN USER A WIN FUNCTION
-    # /////////////////////////////////////////
-    async def _add_win(self, ctx:commands.Context, user:discord.Member, lobby_settings:list):
-        # // Get the user data
-        user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=user.id)
-        
-        # // Make sure the user is in the cache, if they aren't it will return None
-        if user_data is not None:
-            # // Update users elo and wins
-            user_data[1] = user_data[1] + lobby_settings[2]
-            user_data[2] = user_data[2] + 1
-            
-            # // Update the cache and SQL Database
-            await Cache.update(
-                table="users", guild=ctx.guild.id, key=user.id, data=user_data, 
-                sqlcmds=[
-                    f"UPDATE users SET elo = {user_data[1]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}",
-                    f"UPDATE users SET wins = {user_data[2]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"
-                ]
-            )
-            # // Edit the users elo roles
-            await self.edit_elo_role(ctx, user, user_data[1], "add")
-            
-            # // Edit the users nickname
-            return await self._user_edit(user, nick=f"{user_data[0]} [{user_data[1]}]")
-        return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
-
-
-    # // GIVE AN USER A LOSS FUNCTION
-    # /////////////////////////////////////////
-    async def _add_loss(self, ctx:commands.Context, user:discord.Member, lobby_settings:list):
-        # // Get the user data from the cache
-        user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=user.id)
-        
-        # // Make sure the user is in the cache, if they aren't it will return None
-        if user_data is not None:
-            member = await self._check_member(ctx, int(user.id))
-            if member is not None:
-                # // Check if negative elo is disabled
-                if lobby_settings[5] == 0 and (user_data[1] - lobby_settings[3]) < 0:
-                    # // Set the users elo
-                    user_data[1] = 0
-                else:
-                    user_data[1] = user_data[3] - lobby_settings[3]
-                # // Update the users losses
-                user_data[3] = user_data[3] + 1
-                
-                # // Update the users elo in the cache and the database
-                await Cache.update(
-                    table="users", guild=ctx.guild.id, key=user.id, data=user_data, 
-                    sqlcmds=[
-                        f"UPDATE users SET elo = {user_data[1]} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}",
-                        f"UPDATE users SET loss = {user_data[3]+1} WHERE guild_id = {ctx.guild.id} AND user_id = {user.id}"
-                    ]
-                )
-                # // Change the users nickname
-                await self._user_edit(user, nick=f"{user_data[0]} [{user_data[1]}]")
-            
-            # // Edit the users elo role
-            return await self.edit_elo_role(ctx, user, user_data[1], "remove")
-        return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
-
-
-    # // LOG A MATCH TO THE DATABASE FUNCTION
-    # /////////////////////////////////////////
-    async def _match_show(self, ctx:commands.Context, match_id:int):
-        row = Cache.fetch(table="matches", guild=ctx.guild.id, key=match_id)
-        
-        # // Check to make sure the match is valid
-        if row is not None:
-            embed=discord.Embed(title=f"Match #{match_id} ┃ {row[8].upper()}", description=f"**Map:** {row[3]}\n**Winners:** {row[9][0].upper()+row[9][1:]}", color=33023)
-            embed.add_field(name="Orange Captain", value=f"<@{row[4]}>")
-            embed.add_field(name="\u200b", value="\u200b")
-            embed.add_field(name="Blue Captain", value=f"<@{row[6]}>")
-            embed.add_field(name="Orange Team", value='\n'.join(f"<@{e}>" for e in row[5].split(",")))
-            embed.add_field(name="\u200b", value="\u200b")
-            embed.add_field(name="Blue Team", value='\n'.join(f"<@{e}>" for e in row[7].split(",")))
-            
-            # // Send the embeds
-            return await ctx.send(embed=embed)
-        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} we were unable to find **Match #{match_id}**", color=15158588))
-
-
-    # // SHOW THE USERS STATS FUNCTION
-    # /////////////////////////////////////////
-    async def _stats(self, ctx:commands.Context, user:discord.Member):
-        row = Cache.fetch(table="matches", guild=ctx.guild.id, key=user.id)
-        
-        # // Make sure the match exists
-        if row is not None:
-            # // Create an embed
-            embed = discord.Embed(description=f"**Elo:** {row[3]}\n**Wins:** {row[4]}\n**Losses:** {row[5]}\n**Matches:** {row[5]+row[4]}", color=33023)
-            embed.set_author(name=row[2], icon_url=user.avatar_url)
-        
-            # // Send the embeds
-            return await ctx.send(embed=embed)
-        return await ctx.send(embed=discord.Embed(description=f"{user.mention} is not registered", color=15158588))
-
-
-    # // UNDO A WIN FOR THE ORANGE TEAM
-    # ////////////////////////////////////
-    async def _undo_win(self, ctx:commands.Context, lobby_id:int, winners:list, losers:list):
-        lobby_settings = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=lobby_id)
-
-        # // REMOVE LOSS FROM LOSERS
-        for _user_id in losers:
-            # // Check if member is valid
-            member = await self._check_member(ctx, int(_user_id))
-            if member is not None:
-                user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=_user_id)
-                # // Update users elo
-                user_data[1] = user_data[1] + lobby_settings[2]
-                # // Update users losses
-                user_data[3] = user_data[3] - 1
-                
-                # // Update the cache and SQL Database
-                await Cache.update(
-                    table="users", guild=ctx.guild.id, key=_user_id, data=user_data, 
-                    sqlcmds=[
-                        f"UPDATE users SET elo = {user_data[1]} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}",
-                        f"UPDATE users SET loss = {user_data[3]} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}"
-                    ]
-                )
-                # // Add elo roles
-                await self.edit_elo_role(ctx, member, user_data[1], "add")
-        
-        # // REMOVE WIN FROM WINNERS
-        for user_id in winners:
-            # // Check to make sure the member is valid
-            member = await self._check_member(ctx, int(user_id))
-            if member is not None:
-                user_data = Cache.fetch(table="users", guild=ctx.guild.id, key=user_id)
-                
-                # // Check whether negative elo is disabled
-                # // Updating the users elo..
-                if lobby_settings[5] == 0 and (user_data[1] - lobby_settings[2]) < 0:
-                    user_data[1] = 0
-                else:
-                    user_data[1] = user_data[1] - lobby_settings[2]
-                # // Update users losses
-                user_data[3] = user_data[3]-1
-                
-                # // Update the cache and SQL Database
-                await Cache.update(
-                    table="users", guild=ctx.guild.id, key=_user_id, data=user_data, 
-                    sqlcmds=[
-                        f"UPDATE users SET elo = {user_data[1]} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}",
-                        f"UPDATE users SET wins = {user_data[3]} WHERE guild_id = {ctx.guild.id} AND user_id = {_user_id}"
-                    ]
-                )
-                    
-                # // Remove elo roles
-                await self.edit_elo_role(ctx, member, user_data[1], "remove")
-            
     
     # // ADD / REMOVE A NEW ELO ROLE
     # /////////////////////////////////
     @commands.command(name="elorole", description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def elorole(self, ctx:commands.Context, option:str, *args):
-        if option in ["add", "create", "new", "remove", "delete", "del"]:
-            role = ctx.guild.get_role(int(re.sub("\D","", args[0])))
-        
-        # // ADD AN ELO ROLE
+    async def elorole(self, ctx: commands.Context, option: str, *args):
+        # // Get the current elo roles and check to make sure the server has under 20
+        elo_roles: dict = await Settings(ctx.guild.id).get("elo_roles")
+
+        # // Add a new elo role
         if option in ["add", "create", "new"]:
-            if await self.check_admin_role(ctx):
-                # // Check if the new elorole is below their own
-                if role.position < ctx.author.top_role.position or ctx.author.guild_permissions.administrator:
-                    # // Get the current elo roles and check to make sure the server has under 20
-                    elo_roles = Cache.fetch(table="elo_roles", guild=ctx.guild.id)
-                    if len(elo_roles) < 20:
-                        if not Cache.exists(table="elo_roles", guild=ctx.guild.id, key=role.id):
-                            elo_roles[0] = int(args[1])
-                            elo_roles[1] = 5
-                            elo_roles[2] = 2
-                            
-                            # // Add the new elo role into the cache and database
-                            await Cache.update(
-                                table="elo_roles", guild=ctx.guild.id, key=role.id, data=elo_roles, 
-                                sqlcmds=[f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({ctx.guild.id}, {role.id}, {int(args[1])}, 5, 2)"]
-                            )
-                            # // Send the success embed
-                            return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)+1}/20]** {ctx.author.mention} {role.mention} will now be given at **{int(args[1])} elo**", color=3066992))
+            role = ctx.guild.get_role(int(re.sub("\D","", args[0])))
+
+            # // Check if the user has enough permissions
+            if not User.is_admin(ctx.guild, ctx.author):
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} you do not have enough permissions", 
+                        color = 15158588
+                ))
             
-                        # // Send error embeds (all below)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} already exists", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} please choose a role lower than {ctx.author.top_role.mention}", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            # // Check if the new elorole is below their own
+            if role.position >= ctx.author.top_role.position or not ctx.author.guild_permissions.administrator:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} please choose a role lower than {ctx.author.top_role.mention}", 
+                        color = 15158588
+                ))
+            
+            # // Check if the server has reached the maximum amount of roles
+            if len(elo_roles) >= 20:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"**[20/20]** {ctx.author.mention} maximum amount of roles reached", 
+                        color=15158588
+                ))
+            
+            # // Check if the elo role already exists
+            if role.id in elo_roles:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} {role.mention} already exists", 
+                        color = 15158588
+                ))
+            
+            # // Add the new elo role into the database
+            Settings(ctx.guild.id).add_elo_role(role.id, int(args[1]), 5, 2)
+            
+            # // Send the success embed
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"**[{len(elo_roles) + 1}/20]** {ctx.author.mention} {role.mention} will now be given at **{int(args[1])} elo**", 
+                    color = 3066992
+            ))
 
-        # // REMOVE AN ELO ROLE
+            
+        # // Delete an existing elo role
         if option in ["remove", "delete", "del"]:
-            if await self.check_admin_role(ctx):
-                if Cache.exists(table="elo_roles", guild=ctx.guild.id, key=role.id):
-                    elo_roles = Cache.fetch(table="elo_roles", guild=ctx.guild.id)
-                    
-                    # // Delete the elo role from the cache and database
-                    await Cache.delete(
-                        table="guild_id", guild=ctx.guild.id, key=role.id, 
-                        sqlcmds=[f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {role.id}"]
-                    )
-                    # // Return the success embed
-                    return await ctx.send(embed=discord.Embed(description=f"**[{len(elo_roles)-1}/20]** {ctx.author.mention} {role.mention} has been removed", color=3066992))
+            # // Check if the user has enough permissions
+            if not User.is_admin(ctx.guild, ctx.author):
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} you do not have enough permissions", 
+                        color = 15158588
+                ))
 
-                # // Return error embeds (all below)
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {role.mention} is not an elo role", color=15158588))
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            # // If the role is not an elo role
+            if role.id not in elo_roles:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} {role.mention} is not an elo role", 
+                        color = 15158588
+                ))
+            
+            # // Delete the elo role from the cache and database
+            await Settings(ctx.guild.id).delete_elo_role(ctx.guild.id, role.id)
+
+            # // Return the success embed
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"**[{len(elo_roles) - 1}/20]** {ctx.author.mention} {role.mention} has been removed", 
+                    color = 3066992
+            ))
+
         
-        # // SLIST ALL THE ELO ROLES
+        # // List all of the elo roles
         if option in ["list", "show"]:
-            description = ""
-            rows = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
+            description: str = ""
+            elo_roles: list = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
             
             # // For each elo role
-            for i in range(len(rows)):
-                role = ctx.guild.get_role(rows[i][1])
+            for i in range(len(elo_roles)):
+                role: discord.Role = ctx.guild.get_role(elo_roles[i][1])
                 
                 # // Add the role to the embed description
                 if role is not None:
-                    description += f'**{i+1}:** {role.mention} [**{rows[i][2]}**]\n'
-                else:
-                    # // Delete the elo role from the cache and database
-                    await Cache.delete(
-                        table="guild_id", guild=ctx.guild.id, key=rows[i][1], 
-                        sqlcmds=[f"DELETE FROM elo_roles WHERE guild_id = {ctx.guild.id} AND role_id = {rows[i][1]}"]
-                    )
+                    description += f'**{i + 1}:** {role.mention} [**{elo_roles[i][2]}**]\n'
+                    continue
+
+                # // Delete the elo role from the cache and database
+                await Settings(ctx.guild.id).delete_elo_role(ctx.guild.id, elo_roles[i][1])
+
             # // Send the elo role list embed
-            return await ctx.send(embed=discord.Embed(title=f"Elo Roles ┃ {ctx.guild.name}", description=description, color=33023))
+            return await ctx.send(
+                embed = discord.Embed(
+                    title = f"Elo Roles ┃ {ctx.guild.name}", 
+                    description = description, 
+                    color = 33023
+            ))
         
         
     # // MATCH REPORT / CANCEL / UNDO / SHOW COMMAND
     # /////////////////////////////////////////
     @commands.command(name="match", description='`=match report (match id) [blue/orange]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def match(self, ctx:commands.Context, action:str, match_id:int, *args):
+    async def match(self, ctx:commands.Context, action: str, match_id: int, *args):
         if not ctx.author.bot:
             # // Get the match from the cache and make sure it's not invalid
-            match_data = Cache.fetch(table="matches", guild=ctx.guild.id, key=match_id)
-                    
-            # // SHOWING A LOGGED MATCH
-            if action in ["show"]:
-                return await self._match_show(ctx, match_id)
+            match_data: dict = Matches.find(ctx.guild.id, match_id)
+
+            # // If the match is invalid
+            if match_data is None:
+                return discord.Embed(
+                    description = f"We were unable to find **Match #{match_id}**", 
+                    color = 15158588
+                )
             
+            # // Show the match
+            if action in ["show"]:
+                return await Matches.show(ctx.guild.id, match_id)
+            
+            # // Check if the user has the mod role
+            if not User.is_mod(ctx.guild, ctx.author):
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+            
+
             # // REPORTING AN ONGOING MATCH
-            elif action in ["report"]:
-                if match_data is not None:
-                    # // Check if the user has the mod role
-                    if await self.check_mod_role(ctx):
-                        lobby_settings = Cache.fetch(table="lobby_settings", guild=ctx.guild.id, key=match_data[2])
+            if action in ["report"]:
+                lobby_settings: dict = Lobby(ctx.guild.id, ctx.channel.id).get()
 
-                        # // If the match is ongoing
-                        if len(args) > 0 and match_data[8] in ["ongoing"]:
-                            match_data[6] = "reported"
-                            match_data[7] = args[0]
+                # // If the match is ongoing
+                if len(args) <= 0 and match_data["status"] != "ongoing":
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
+
+                # // Update the match
+                Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
+                
+                # // Get the orange team
+                orange_team = match_data["orange_team"]
+                orange_team.append(int(match_data["orange_cap"]))
+
+                # // Get the blue team
+                blue_team = match_data["blue_team"]
+                blue_team.append(int(match_data["blue_cap"]))
+
+                # // If team is the winner
+                if "blue" in args[0]:
+                    # // Add a loss for each orange team member
+                    for _user in orange_team:
+                        member = await self._check_member(ctx, int(_user))
+                        if member is not None:
+                            await self._add_loss(ctx, member, lobby_settings)
+
+                    # // Add a win for each blue team member
+                    for user in blue_team:
+                        member = await self._check_member(ctx, int(user))
+                        if member is not None:
+                            await self._add_win(ctx, member, lobby_settings)
+
+                # // If orange team is the winner
+                if "orange" in args[0]:
+                    # // Add a win for each orange team member
+                    for _user in orange_team:
+                        member = await self._check_member(ctx, int(_user))
+                        if member is not None:
+                            await self._add_win(ctx, member, lobby_settings)
+
+                    # // Add a win for each blue team member
+                    for user in blue_team:
+                        member = await self._check_member(ctx, int(user))
+                        if member is not None:
+                            await self._add_loss(ctx, member, lobby_settings)
                             
-                            # // Update the cache and database
-                            await Cache.update(
-                                table="matches", guild=ctx.guild.id, key=match_id, data=match_data, 
-                                sqlcmds=[
-                                    f"UPDATE matches SET status = 'reported' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}",
-                                    f"UPDATE matches SET winners = '{args[0]}' WHERE guild_id = {ctx.guild.id} AND match_id = {match_id}"
-                                ]
-                            )
-                            
-                            # // Get the orange team
-                            orange_team = match_data[3].split(",")
-                            orange_team.append(int(match_data[2]))
-                            # // Get the blue team
-                            blue_team = match_data[5].split(",")
-                            blue_team.append(int(match_data[4]))
-
-                            # // If team is the winner
-                            if "blue" in args[0]:
-                                # // Add a loss for each orange team member
-                                for _user in orange_team:
-                                    member = await self._check_member(ctx, int(_user))
-                                    if member is not None:
-                                        await self._add_loss(ctx, member, lobby_settings)
-
-                                # // Add a win for each blue team member
-                                for user in blue_team:
-                                    member = await self._check_member(ctx, int(user))
-                                    if member is not None:
-                                        await self._add_win(ctx, member, lobby_settings)
-
-                            # // If orange team is the winner
-                            if "orange" in args[0]:
-                                # // Add a win for each orange team member
-                                for _user in orange_team:
-                                    member = await self._check_member(ctx, int(_user))
-                                    if member is not None:
-                                        await self._add_win(ctx, member, lobby_settings)
-
-                                # // Add a win for each blue team member
-                                for user in blue_team:
-                                    member = await self._check_member(ctx, int(user))
-                                    if member is not None:
-                                        await self._add_loss(ctx, member, lobby_settings)
-                                        
-                            # // Send the match info the current channel
-                            await self._match_show(ctx, match_id)
-                            # // Delete the match channels
-                            return await self._delete_channels(ctx, match_id)
-
-                        # // Send error embeds (all below)
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} this match has already been reported", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} invalid match id", color=15158588))
+                # // Send the match info the current channel
+                await self._match_show(ctx, match_id)
+                # // Delete the match channels
+                return await self._delete_channels(ctx, match_id)
 
 
             # // CANCELLING AN ONGOING MATCH
@@ -743,76 +491,52 @@ class Elo(commands.Cog):
     @commands.command(name="register", aliases=["reg"], description='`=register (name)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def register(self, ctx:commands.Context, *args):
-        if not ctx.author.bot:
-            settings = Cache.fetch(table="settings", guild=ctx.guild.id)
-            
-            # // GETTING THE REGISTER ROLE FROM SETTINGS
-            if settings[3] not in [0, ctx.channel.id]:
-                # // Get the register channel
-                channel = ctx.guild.get_channel(settings[3])
-                if channel is not None:
-                    # // Direct the user to the correct register channel
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} {channel.mention}", color=33023))
-                
-            # // If register role is not invalid
-            role = None
-            if settings[1] != 0:
-                role = ctx.guild.get_role(settings[1])
-                # // If the role is expire / invalid, remvoe it from the database
-                if role is None:
-                    settings[0] = 0
-                    
-                    # // Update the cache and database
-                    await Cache.update(
-                        table="settings", guild=ctx.guild.id, key=ctx.author.id, data=settings, 
-                        sqlcmds=[f"UPDATE settings SET reg_role = 0 WHERE guild_id = {ctx.guild.id}"]
-                    )
-                
+        if ctx.author.bot:
+            return 
         
-            # // REGISTER THE MENTIONED USER
-            if len(args) > 0 and "@" in args[0]:
-                # // Check if the user has the mod role
-                if await self.check_mod_role(ctx):
-                    user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
-                    if user is not None:
-                        # // Make sure user is not a bot
-                        if not user.bot:
-                            # // Check whether the user already exists
-                            if not Cache.exists(table="users", guild=ctx.guild.id, key=user.id):
-                                # // Modify the name
-                                name = user.name
-                                if len(args) > 1: name = args[1]
-                                    
-                                # // Register the user
-                                await self._register_user(ctx, user, name, role)
-                                # // Edit the users nickname
-                                await self._user_edit(user, nick=f"{name} [0]")
+        # // Register the mentioned user
+        if len(args) > 0 and "@" in args[0]:
+            # // Check if the user has the mod role
+            if not User(ctx.guild.id, ctx.author.id).has_role(ctx.guild, "mod"):
+                user = ctx.guild.get_member(int(re.sub("\D","", args[0])))
+                if user is not None:
+                    # // Make sure user is not a bot
+                    if not user.bot:
+                        # // Check whether the user already exists
+                        if not Cache.exists(table="users", guild=ctx.guild.id, key=user.id):
+                            # // Modify the name
+                            name = user.name
+                            if len(args) > 1: name = args[1]
                                 
-                                # // Send the embeds
-                                return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
-                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
-                        return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                            # // Register the user
+                            await self._register_user(ctx, user, name, role)
+                            # // Edit the users nickname
+                            await self._user_edit(user, nick=f"{name} [0]")
+                            
+                            # // Send the embeds
+                            return await ctx.send(embed=discord.Embed(description=f"{user.mention} has been registered as **{name}**", color=3066992))
+                        return await ctx.send(embed=discord.Embed(description=f"{user.mention} is already registered", color=15158588))
+                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you cannot register a bot", color=15158588))
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} unknown player", color=15158588))
 
 
-            # // REGISTER THE MESSAGE AUTHOR
-            else:
-                # // Mody the name
-                name = ctx.author.name
-                if len(args) > 0: name = args[0]
-                    
-                # // If the user doesn't already exist
-                if not Cache.exists(table="users", guild=ctx.guild.id, key=ctx.author.id):
-                    # // Register the user
-                    await self._register_user(ctx, ctx.author, name, role)
-                    # // Edit the users nickname
-                    await self._user_edit(ctx.author, nick=f"{name} [0]")
-                    
-                    # // Send the embeds
-                    return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
-    
+        # // REGISTER THE MESSAGE AUTHOR
+        else:
+            # // Mody the name
+            name = ctx.author.name
+            if len(args) > 0: name = args[0]
+                
+            # // If the user doesn't already exist
+            if not Cache.exists(table="users", guild=ctx.guild.id, key=ctx.author.id):
+                # // Register the user
+                await self._register_user(ctx, ctx.author, name, role)
+                # // Edit the users nickname
+                await self._user_edit(ctx.author, nick=f"{name} [0]")
+                
+                # // Send the embeds
+                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} has been registered as **{name}**", color=3066992))
+            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
+
     
     # // UNREGISTER AN USER FROM THE DATABASE COMMAND
     # ////////////////////////////////////////////////

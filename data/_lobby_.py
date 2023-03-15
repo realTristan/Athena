@@ -30,12 +30,6 @@ class Lobby:
         }, sqlcmds=[
             f"INSERT INTO lobbies (guild_id, lobby_id, map_pick_phase, team_pick_phase, win_elo, loss_elo, party_size, negative_elo, queue_size) VALUES ({guild}, {lobby_id}, 0, 1, 5, 2, 1, 1, 10)"
         ])
-        await Cache.update("elo_roles", guild=guild, data={}, sqlcmds=[])
-
-
-    # // Delete an elo role from the lobby
-    async def delete_elo_role(self, role_id: int):
-        Cache.delete_elo_role(self.guild, role_id)
 
     # // Delete a map from the lobby
     async def delete_map(self, map: str):

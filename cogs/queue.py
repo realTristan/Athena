@@ -26,64 +26,27 @@ class Queue(commands.Cog):
         }
 
     # // Clean a players name to look more professional
-    def _clean_name(self, name):
+    def clean_name(self, name):
         return str(name[0]).upper() + str(name[1:]).lower()
-    
-    # // Check if a member is still in the server
-    async def _check_member(self, ctx: commands.Context, member_id: int):
-        # // Get the member
-        member = ctx.guild.get_member(member_id)
-
-        # // If the member is still in the server, return the member
-        if member is not None:
-            return member
-        
-        # // If the member is not in the server, check if they are in the database
-        if User(ctx.guild.id, member_id).exists():
-            await User(ctx.guild.id, member_id).delete()
-
-        # // Return the member
-        return member
-    
     
     # // Check if channel is a valid queue lobby
     async def is_valid_lobby(self, ctx:commands.Context, lobby: int):
         if ctx.guild.id not in self.data:
             self.data[ctx.guild.id] = {}
         
-        if Lobby.exists(ctx.guild.id, lobby):
-            if lobby not in self.data[ctx.guild.id]:
-                self._reset(ctx, lobby)
-            return True
-        return False
-    
-    
-    # // Check mod role or mod permissions
-    # //////////////////////////////////////////
-    async def check_mod_role(self, ctx: commands.Context):
-        # // If the user has admin role, return true
-        if await self.check_admin_role(ctx):
-            return True
+        # // Check if the lobby exists
+        if not Lobby.exists(ctx.guild.id, lobby):
+            return False
         
-        # // Else, check for whether the user has mod role
-        mod_role = Settings(ctx.guild.id).get("mod_role")
-        return ctx.guild.get_role(mod_role) in ctx.author.roles
+        # // Check if the lobby is in the cache
+        if lobby not in self.data[ctx.guild.id]:
+            self._reset(ctx, lobby)
+        return True
     
-    
-    # // Check admin role or admin permissions
-    # //////////////////////////////////////////
-    async def check_admin_role(self, ctx: commands.Context):
-        # // Get the admin role from settings
-        admin_role = Settings(ctx.guild.id).get("admin_role")
-        
-        # // Check admin permissions
-        if admin_role == 0 or ctx.author.guild_permissions.administrator:
-            return ctx.author.guild_permissions.administrator
-        return ctx.guild.get_role(admin_role) in ctx.author.roles
-
 
     # // Add other party members to the queue
-    async def _check_party(self, ctx: commands.Context, user: discord.Member, lobby: int):
+    async def check_party(self, ctx: commands.Context, user: discord.Member, lobby: int):
+        # // Check if the user is in a party
         for party in self.data[ctx.guild.id][lobby]["parties"]:
             if user.id in self.data[ctx.guild.id][lobby]["parties"][party] and party != user.id:
                 return False
@@ -94,7 +57,7 @@ class Queue(commands.Cog):
             if len(self.data[ctx.guild.id][lobby]["parties"][user.id]) + len(self.data[ctx.guild.id][lobby]["queue"]) <= queue_size:
                 # // Add the party to the queue
                 for player in self.data[ctx.guild.id][lobby]["parties"][user.id][1:]:
-                    member = await self._check_member(ctx, player)
+                    member = await User.verify(ctx.guild, player)
                     if member is not None:
                         await self._join(ctx, member, lobby)
                 return True
@@ -103,7 +66,7 @@ class Queue(commands.Cog):
     
     
     # // Send match logs to the given match logs channel
-    async def _match_log(self, ctx: commands.Context, embed: discord.Embed):
+    async def log_match(self, ctx: commands.Context, embed: discord.Embed):
         match_logs = Settings(ctx.guild.id).get("match_logs")
 
         # // If the match logs are disabled
@@ -128,7 +91,7 @@ class Queue(commands.Cog):
                 
 
     # // Create the match category function
-    async def _match_category(self, ctx:commands.Context, match_id, lobby):
+    async def match_category(self, ctx:commands.Context, match_id, lobby):
         match_categories = Settings(ctx.guild.id).get("match_categories")
 
         # // If the match categories are disabled
@@ -162,7 +125,7 @@ class Queue(commands.Cog):
 
 
     # // Match logging function
-    async def _match(self, ctx:commands.Context, lobby: int):
+    async def new_match(self, ctx:commands.Context, lobby: int):
         # // Get the teams
         orange_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['orange_team'])
         blue_team = ','.join(str(e.id) for e in self.data[ctx.guild.id][lobby]['blue_team'])
@@ -304,9 +267,9 @@ class Queue(commands.Cog):
             await ctx.send(embed = embed)
 
             # // Match functions
-            await self._match(ctx, lobby)
-            await self._match_log(ctx, embed)
-            await self._match_category(ctx, amount_of_matches, lobby)
+            await self.new_match(ctx, lobby)
+            await self.log_match(ctx, embed)
+            await self.match_category(ctx, amount_of_matches, lobby)
             self._reset(ctx, lobby)
 
 
@@ -423,7 +386,7 @@ class Queue(commands.Cog):
             ))
         
         # // Check if the user is a party leader
-        if not await self._check_party(ctx, user, lobby):
+        if not await self.check_party(ctx, user, lobby):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you are not a party leader / party too full", 
@@ -630,7 +593,7 @@ class Queue(commands.Cog):
         # // Check if the map is in the map pool
         for m in maps:
             if map.lower() in m.lower():
-                self.data[ctx.guild.id][ctx.channel.id]["map"] = self._clean_name(map)
+                self.data[ctx.guild.id][ctx.channel.id]["map"] = self.clean_name(map)
                 self.data[ctx.guild.id][ctx.channel.id]["state"] = "final"
                 return await self._embeds(ctx, ctx.channel.id)
         
@@ -643,21 +606,21 @@ class Queue(commands.Cog):
             
         
     # // Join the queue command
-    @commands.command(name="join", aliases=["j"], description='`=join`')
+    @commands.command(name = "join", aliases = ["j"], description = '`=join`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def join(self, ctx:commands.Context):
         if not ctx.author.bot:
             return await self._join(ctx, ctx.author, ctx.channel.id)
 
     # // Force join an user to the queue command
-    @commands.command(name="forcejoin", aliases=["fj"], description='`=forcejoin (@user)`')
+    @commands.command(name = "forcejoin", aliases = ["fj"], description = '`=forcejoin (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def forcejoin(self, ctx:commands.Context, user:discord.Member):
+    async def forcejoin(self, ctx:commands.Context, user: discord.Member):
         if ctx.author.bot:
             return
         
         # // Check if the user has the mod role
-        if not await self.check_mod_role(ctx):
+        if not User.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -682,7 +645,7 @@ class Queue(commands.Cog):
             return
         
         # // Check if the author has the mod role
-        if not await self.check_mod_role(ctx):
+        if not User.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -719,7 +682,7 @@ class Queue(commands.Cog):
             return
         
         # // Check if the user is a mod
-        if not await self.check_mod_role(ctx):
+        if not User.is_mod(ctx.guild, ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -900,7 +863,7 @@ class Queue(commands.Cog):
                         continue
 
                     # // Verify the party leader
-                    member = await self._check_member(ctx, party)
+                    member = await self.verify_member(ctx, party)
                     if member is None:
                         continue
 
@@ -931,7 +894,7 @@ class Queue(commands.Cog):
                         continue
 
                     # // Verify the party leader
-                    member = await self._check_member(ctx, party)
+                    member = await self.verify_member(ctx, party)
                     if member is None:
                         continue
 
