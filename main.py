@@ -28,8 +28,8 @@ async def on_member_remove(member: discord.Member):
 @CLIENT.event
 async def on_guild_join(guild: discord.Guild):
     # // Create the settings
-    if not Settings(guild.id).exists():
-        Settings(guild.id).setup()
+    if not Settings.exists(guild.id):
+        Settings.setup(guild.id)
 
     # // Update server count
     await CLIENT.change_presence(
