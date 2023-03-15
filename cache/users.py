@@ -205,7 +205,7 @@ class Users:
         await Users.add_elo_role(user.guild, user, user_elo)
         
         # // Edit the users nickname
-        await Users.change_nickname(user, f"[{user_elo + win_elo}] {user.name}")
+        await Users.change_nickname(user, f"{user.name} [{user_elo + win_elo}]")
 
         # // Return the success embed
         return discord.Embed(
@@ -242,7 +242,7 @@ class Users:
         await Users.remove_elo_role(user.guild, user, user_elo)
         
         # // Edit the users nickname
-        await Users.change_nickname(user, f"[{user_elo - loss_elo}] {user.name}")
+        await Users.change_nickname(user, f"{user.name} [{user_elo - loss_elo}]")
 
         # // Return the success embed
         return discord.Embed(
