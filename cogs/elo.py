@@ -15,12 +15,12 @@ class EloCog(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def elorole(self, ctx: commands.Context, option: str, *args):
         # // Get the current elo roles and check to make sure the server has under 20
-        elo_roles: dict = await Settings(ctx.guild.id).get("elo_roles")
+        elo_roles: dict = await Settings.get(ctx.guild.id, "elo_roles")
 
         # // Add a new elo role
         if option in ["add", "create", "new"]:
             # // Check if the user has enough permissions
-            if not Users.is_admin(ctx.guild, ctx.author):
+            if not Users.is_admin(ctx.author):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -61,12 +61,13 @@ class EloCog(commands.Cog):
                 ))
             
             # // Add the new elo role into the database
-            Settings(ctx.guild.id).add_elo_role(role.id, int(args[1]), 5, 2)
+            elo_level: int = int(args[1])
+            Settings.add_elo_role(ctx.guild.id, role.id, elo_level, 5, 2)
             
             # // Send the success embed
             return await ctx.send(
                 embed = discord.Embed(
-                    description = f"**[{len(elo_roles) + 1}/20]** {ctx.author.mention} {role.mention} will now be given at **{int(args[1])} elo**", 
+                    description = f"**[{len(elo_roles) + 1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_level} elo**", 
                     color = 3066992
             ))
 
@@ -74,7 +75,7 @@ class EloCog(commands.Cog):
         # // Delete an existing elo role
         if option in ["remove", "delete", "del"]:
             # // Check if the user has enough permissions
-            if not Users.is_admin(ctx.guild, ctx.author):
+            if not Users.is_admin(ctx.author):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -99,7 +100,7 @@ class EloCog(commands.Cog):
                 ))
             
             # // Delete the elo role from the cache and database
-            await Settings(ctx.guild.id).delete_elo_role(ctx.guild.id, role.id)
+            await Settings.delete_elo_role(ctx.guild.id, role.id)
 
             # // Return the success embed
             return await ctx.send(
@@ -126,7 +127,7 @@ class EloCog(commands.Cog):
                     continue
 
                 # // Delete the elo role from the cache and database
-                await Settings(ctx.guild.id).delete_elo_role(ctx.guild.id, elo_roles[i][1])
+                await Settings.delete_elo_role(ctx.guild.id, elo_roles[i][1])
 
             # // Send the elo role list embed
             return await ctx.send(
@@ -146,7 +147,7 @@ class EloCog(commands.Cog):
             return
         
         # // Get the match from the cache and make sure it's not invalid
-        match_data: dict = Matches.find(ctx.guild.id, match_id)
+        match_data: dict = Matches.get(ctx.guild.id, match_id)
 
         # // If the match is invalid
         if match_data is None:
@@ -163,7 +164,7 @@ class EloCog(commands.Cog):
             return await Matches.embed(ctx.guild.id, match_id)
         
         # // Check if the user has the mod role
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -223,7 +224,7 @@ class EloCog(commands.Cog):
             await ctx.send(Matches.embed(ctx.guild.id, match_id))
 
             # // Delete the match channels
-            return await Matches.delete_category(ctx.guild.id, match_id)
+            return await Matches.delete_category(ctx.guild, match_id)
 
 
         # // CANCELLING AN ONGOING MATCH
@@ -243,7 +244,7 @@ class EloCog(commands.Cog):
             await ctx.send(Matches.embed(ctx.guild.id, match_id))
 
             # // Delete the match channels
-            return await Matches.delete_category(ctx.guild.id, match_id)
+            return await Matches.delete_category(ctx.guild, match_id)
         
     
         # // UNDOING A REPORTED MATCH
@@ -268,11 +269,11 @@ class EloCog(commands.Cog):
 
             # // Remove the win from the blue team
             if match_data["winners"] == "blue":
-                await Matches.undo(ctx, lobby_id, blue_team, orange_team)
+                await Matches.undo(ctx.guild, lobby_id, blue_team, orange_team)
                 
             # // Remove the win from the orange team
             if match_data["winners"] == "orange":
-                await Matches.undo(ctx, lobby_id, orange_team, blue_team)
+                await Matches.undo(ctx.guild, lobby_id, orange_team, blue_team)
             
             # // Send the match embed
             return await ctx.send(Matches.embed(ctx.guild.id, match_id))
@@ -287,7 +288,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the cmd author has the mod role
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -311,7 +312,7 @@ class EloCog(commands.Cog):
             nick_name: str = Users.info(ctx.guild.id, user.id)["nick_name"]
 
             # // Edit the users nickname
-            await Users.change_nickname(ctx.guild, user, f"{nick_name} [{amount}]")
+            await Users.change_nickname(user, f"{nick_name} [{amount}]")
             
         # // SET A PLAYERS WINS
         elif action in ["wins", "win"]:
@@ -345,12 +346,12 @@ class EloCog(commands.Cog):
     # /////////////////////////////////////////
     @commands.command(name="replace", aliases=["sub", "swap"], description='`=replace (@user to be replaced) (@user replacing) (match id)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def replace(self, ctx: commands.Context, user1:discord.Member, user2:discord.Member, match_id:int):
+    async def replace(self, ctx: commands.Context, user1: discord.Member, user2: discord.Member, match_id: int):
         if ctx.author.bot:
             return
         
         # // Check if the cmd author has the mod role
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions",
@@ -358,7 +359,8 @@ class EloCog(commands.Cog):
             ))
         
         # // Get the match data from the cache
-        match_data: dict = Matches.info(ctx.guild.id, match_id)
+        match_data: dict = Matches.get(ctx.guild.id, match_id)
+        lobby_id: int = match_data.get("lobby_id")
         
         # // Check match status
         if match_data["status"] in ["reported", "cancelled", "rollbacked"]:
@@ -390,7 +392,7 @@ class EloCog(commands.Cog):
             orange_team_str = ','.join(str(e) for e in orange_team)
             
             # // Update the match
-            await Matches.update(ctx.guild.id, match_id, orange_team=orange_team_str)
+            await Matches.update(ctx.guild.id, lobby_id, match_id, orange_team=orange_team_str)
             
         # // Replace a player from the blue team
         elif str(user1.id) in blue_team and str(user2.id) not in blue_team:
@@ -402,14 +404,23 @@ class EloCog(commands.Cog):
             blue_team_str = ','.join(str(e) for e in blue_team)
             
             # // Update the match
-            await Matches.update(ctx.guild.id, match_id, blue_team=blue_team_str)
+            await Matches.update(ctx.guild.id, lobby_id, match_id, blue_team=blue_team_str)
         
         # // If the user1 is not in the match
         else:
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player(s) not found/error", color=15158588))
+            return await ctx.send(
+                embed = discord.Embed(
+                    description = f"{ctx.author.mention} player(s) not found/error", 
+                    color = 15158588
+            ))
         
         # // Send the success embed
-        return await ctx.send(embed=discord.Embed(title=f"Match #{match_id}", description=f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", color=3066992))
+        return await ctx.send(
+            embed = discord.Embed(
+                title = f"Match #{match_id}", 
+                description = f"{ctx.author.mention} replaced {user1.mention} with {user2.mention}", 
+                color = 3066992
+        ))
     
     
     # // Modify your own nickname
@@ -420,7 +431,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user is not a mod nor admin
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             if Settings.get(ctx.guild.id, "self_rename") == 0:
                 return await ctx.send(
                     embed = discord.Embed(
@@ -441,7 +452,7 @@ class EloCog(commands.Cog):
         await Users.update(ctx.guild.id, ctx.author.id, user_name=name)
         
         # // Update the users nickname
-        await Users.change_nickname(ctx.guild, ctx.author, f"{name} [{user_info['elo']}]")
+        await Users.change_nickname(ctx.author, f"{name} [{user_info['elo']}]")
 
         # // Send the embeds
         return await ctx.send(
@@ -460,7 +471,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user has the mod role
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         # // Get the user info
@@ -476,7 +487,7 @@ class EloCog(commands.Cog):
         await Users.update(ctx.guild.id, user.id, user_name=name)
 
         # // Update the users nickname
-        await Users.change_nickname(ctx.guild, user, f"{name} [{user_info['elo']}]")
+        await Users.change_nickname(user, f"{name} [{user_info['elo']}]")
 
         # // Send the embeds
         return await ctx.send(
@@ -502,13 +513,17 @@ class EloCog(commands.Cog):
                 
             # // If the user doesn't already exist
             if await Users.exists(ctx.guild.id, ctx.author.id):
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} is already registered", color=15158588))
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} is already registered", 
+                        color = 15158588
+                ))
             
             # // Register the user
             await Users.register(user, name)
 
             # // Edit the users nickname
-            await Users.change_nickname(ctx.guild, user, f"{name} [0]")
+            await Users.change_nickname(user, f"{name} [0]")
             
             # // Send the embeds
             return await ctx.send(
@@ -555,7 +570,7 @@ class EloCog(commands.Cog):
             await Users.register(user, name)
 
             # // Edit the users nickname
-            await Users.change_nickname(ctx.guild, user, f"{name} [0]")
+            await Users.change_nickname(user, f"{name} [0]")
             
             # // Send the embeds
             return await ctx.send(
@@ -574,7 +589,7 @@ class EloCog(commands.Cog):
             return
         
         # // Check if the user has admin role
-        if not Users.is_admin(ctx.guild, ctx.author):
+        if not Users.is_admin(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 

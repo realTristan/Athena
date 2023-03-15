@@ -83,7 +83,7 @@ class Matches:
         blue_team_str: str = ','.join(str(user.id) for user in match_data["blue_team"])
 
         # // Add the match to the cache
-        await Cache.update("matches", guild=guild_id, data={
+        await Cache.update("matches", guild_id=guild_id, data={
             match_id: {
                 "match_id": match_id,
                 "lobby_id": lobby_id,
@@ -171,31 +171,31 @@ class Matches:
     ) -> None:
         # // Update the match status
         if status is not None:
-            await Cache.update("matches", guild=guild_id, key=match_id, data={"status": status}, sqlcmds=[
+            await Cache.update("matches", guild_id=guild_id, key=match_id, data={"status": status}, sqlcmds=[
                 f"UPDATE matches SET status = '{status}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
             ])
 
         # // Update the match winners
         if winners is not None:
-            await Cache.update("matches", guild=guild_id, key=match_id, data={"winners": winners}, sqlcmds=[
+            await Cache.update("matches", guild_id=guild_id, key=match_id, data={"winners": winners}, sqlcmds=[
                 f"UPDATE matches SET winners = '{winners}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
             ])
 
         # // Update the orange team captain
         if orange_cap is not None:
-            await Cache.update("matches", guild=guild_id, key=match_id, data={"orange_cap": orange_cap}, sqlcmds=[
+            await Cache.update("matches", guild_id=guild_id, key=match_id, data={"orange_cap": orange_cap}, sqlcmds=[
                 f"UPDATE matches SET orange_cap = '{orange_cap}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
             ])
         
         # // Update the blue team captain
         if blue_cap is not None:
-            await Cache.update("matches", guild=guild_id, key=match_id, data={"blue_cap": blue_cap}, sqlcmds=[
+            await Cache.update("matches", guild_id=guild_id, key=match_id, data={"blue_cap": blue_cap}, sqlcmds=[
                 f"UPDATE matches SET blue_cap = '{blue_cap}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
             ])
 
         # // Update the orange team
         if orange_team is not None:
-            await Cache.update("matches", guild=guild_id, key=match_id, data={
+            await Cache.update("matches", guild_id=guild_id, key=match_id, data={
                 "orange_team": orange_team.split(",", maxsplit=4)
             }, sqlcmds=[
                 f"UPDATE matches SET orange_team = '{orange_team}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
@@ -203,7 +203,7 @@ class Matches:
 
         # // Update the blue team
         if blue_team is not None:
-            await Cache.update("matches", guild=guild_id, key=match_id, data={
+            await Cache.update("matches", guild_id=guild_id, key=match_id, data={
                 "blue_team": blue_team.split(",", maxsplit=4)
             }, sqlcmds=[
                 f"UPDATE matches SET blue_team = '{blue_team}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"

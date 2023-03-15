@@ -5,7 +5,7 @@ class Bans:
     # // Add a ban to the lobby
     @staticmethod
     async def ban(guild_id: int, user_id: int, length: int, reason: str, banned_by: str) -> None:
-        await Cache.update("bans", guild=guild_id, data={
+        await Cache.update("bans", guild_id=guild_id, data={
             user_id: {
                 "length": length, 
                 "reason": reason, 

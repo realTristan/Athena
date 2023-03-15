@@ -44,7 +44,7 @@ class Users:
     @staticmethod
     async def register(user: discord.Member, user_name: str) -> None:
         # // Update the cache and the database
-        await Cache.update("users", guild=user.guild.id, data={
+        await Cache.update("users", guild_id=user.guild.id, data={
             user.id: {
                 "user_name": user_name, 
                 "elo": 0, 
@@ -128,16 +128,7 @@ class Users:
     # // Delete an user
     @staticmethod
     async def delete(guild_id: int, user_id: int) -> None:
-        # // Fetch the current users
-        users = Cache.fetch("users", guild_id)
-
-        # // Delete the user
-        del users[user_id]
-
-        # // Update the cache and the database
-        await Cache.set("users", guild=guild_id, data=users, sqlcmds=[
-            f"DELETE FROM users WHERE guild_id = {guild_id} AND user_id = {user_id}"
-        ])
+        await Cache.delete_user(guild_id, user_id)
 
     # // Reset an users stats
     @staticmethod
@@ -146,9 +137,9 @@ class Users:
         
     # // Check mod role or mod permissions
     @staticmethod
-    async def is_mod(user: discord.Member) -> bool:
+    def is_mod(user: discord.Member) -> bool:
         # // If the user has admin role, return true
-        if await Users.is_admin(user.guild, user):
+        if Users.is_admin(user.guild, user):
             return True
         
         # // Else, check for whether the user has mod role
@@ -158,7 +149,7 @@ class Users:
     
     # // Check admin role or admin permissions
     @staticmethod
-    async def is_admin(user: discord.Member) -> bool:
+    def is_admin(user: discord.Member) -> bool:
         # // Get the admin role from settings
         admin_role = Settings.get(user.guild.id, "admin_role")
         
@@ -265,24 +256,24 @@ class Users:
     async def update(guild_id: int, user_id: int, user_name = None, elo = None, wins = None, loss = None) -> None:
         # // Update user name
         if user_name is not None:
-            await Cache.update("users", guild=guild_id, data={"user_name": user_name}, sqlcmds=[
+            await Cache.update("users", guild_id=guild_id, data={"user_name": user_name}, sqlcmds=[
                 f"UPDATE users SET user_name = '{user_name}' WHERE guild_id = {guild_id} AND user_id = {user_id}"
             ])
 
         # // Update user elo
         if elo is not None:
-            await Cache.update("users", guild=guild_id, data={"elo": elo}, sqlcmds=[
+            await Cache.update("users", guild_id=guild_id, data={"elo": elo}, sqlcmds=[
                 f"UPDATE users SET elo = {elo} WHERE guild_id = {guild_id} AND user_id = {user_id}"
             ])
 
         # // Update user wins
         if wins is not None:
-            await Cache.update("users", guild=guild_id, data={"wins": wins}, sqlcmds=[
+            await Cache.update("users", guild_id=guild_id, data={"wins": wins}, sqlcmds=[
                 f"UPDATE users SET wins = {wins} WHERE guild_id = {guild_id} AND user_id = {user_id}"
             ])
 
         # // Update user losses
         if loss is not None:
-            await Cache.update("users", guild=guild_id, data={"loss": loss}, sqlcmds=[
+            await Cache.update("users", guild_id=guild_id, data={"loss": loss}, sqlcmds=[
                 f"UPDATE users SET loss = {loss} WHERE guild_id = {guild_id} AND user_id = {user_id}"
             ])
