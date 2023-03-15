@@ -1,4 +1,4 @@
-import threading, discord
+import threading, discord, functools
 from discord_components import *
 from data import Lobby, User, Matches, Settings
 
@@ -16,6 +16,7 @@ queue_lock: threading.Lock = threading.Lock()
 
 # // Queue Class
 class Queue:
+    @staticmethod
     def reset(guild_id: int, lobby_id: int):
         with queue_lock.acquire():
             queue[guild_id][lobby_id] = {
@@ -32,16 +33,19 @@ class Queue:
     
     # // Get the lobby data
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     def get_lobby(guild_id: int, lobby_id: int) -> dict:
         return queue[guild_id][lobby_id]
     
     # // Get the lobby maps
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     def get_lobby_maps(guild_id: int, lobby_id: int) -> list:
         return queue[guild_id][lobby_id]["maps"]
     
     # // Check if channel is a valid queue lobby
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def is_valid_lobby(guild_id: int, lobby: int):
         with queue_lock.acquire():
             if guild_id not in queue:
@@ -58,6 +62,7 @@ class Queue:
     
     # // Add other party members to the queue
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def check_party(guild: discord.Guild, user: discord.Member, lobby: int):
         # // If the user isn't a party leader
         if user.id not in queue[guild.id][lobby]["parties"]:
@@ -90,11 +95,13 @@ class Queue:
     
     # // Get a value from the queue cache
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     def get(guild_id: int, lobby: int, key: str):
         return queue[guild_id][lobby][key]
     
     # // Routing function to create a new match
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def new_match(guild_id: int, lobby: int):
         # // Get the teams
         orange_team: list = queue[guild_id][lobby].get("orange_team")
@@ -154,6 +161,7 @@ class Queue:
 
     # // Create team pick logic function
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def pick_logic(guild_id: int, lobby: int):
         with queue_lock.acquire():
             # // Get the queue size
@@ -177,6 +185,7 @@ class Queue:
 
     # // Send match logs to the given match logs channel
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def log_match(guild: discord.Guild, embed: discord.Embed):
         match_logs = Settings.get(guild.id, "match_logs")
 
@@ -203,6 +212,7 @@ class Queue:
 
     # // Embed generator function (for queue)
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def embed(guild: discord.Guild, lobby: int):
         # // Get the lobby data
         queue_state: dict = queue[guild.id][lobby]["state"]
@@ -225,6 +235,7 @@ class Queue:
 
     # // Embed generator function (for queue)
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def state_queue_embed(guild: discord.Guild, lobby: int):
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]
@@ -256,6 +267,7 @@ class Queue:
 
     # // Embed generator function (for team picking)
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def state_pick_embed(guild: discord.Guild, lobby: int):
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]
@@ -284,6 +296,7 @@ class Queue:
 
     # // Embed generator function (for map picking)
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def state_maps_embed(guild: discord.Guild, lobby: int):
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]
@@ -313,6 +326,7 @@ class Queue:
 
     # // Embed generator function (for final match up)
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def state_final_embed(guild: discord.Guild, lobby: int):
         # // Get the lobby data
         queue_data: dict = queue[guild.id][lobby]

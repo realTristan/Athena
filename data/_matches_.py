@@ -1,5 +1,5 @@
-from data import Cache, Lobby, User
-import discord
+from data import Cache, Lobby, Users
+import discord, functools
 
 class Matches:
     # // Get the number of matches in the lobby
@@ -32,6 +32,7 @@ class Matches:
 
     # // Produce a match embed
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     def embed(guild_id: int, match_id: int) -> discord.Embed:
         # // Fetch the match data
         match_data: dict = Matches.find(guild_id, match_id)
@@ -120,31 +121,31 @@ class Matches:
         # // Remove the loss from the losers
         for user in losers:
             # // Verify the user
-            if User(guild.id, user).verify() is None:
+            if Users.verify(guild.id, user) is None:
                 continue
             
             # // Get the user info
-            user_info: dict = User(guild.id, user).info()
+            user_info: dict = Users.info(guild.id, user)
             user_elo: int = user_info["elo"]
             user_losses: int = user_info["losses"]
             new_elo: int = user_elo + loss_elo
 
             # // Update the users elo and losses
-            User(guild.id, user).update(elo = new_elo, loss = user_losses - 1)
+            Users.update(guild.id, user, elo = new_elo, loss = user_losses - 1)
 
             # // Add any elo roles that were lost
             user: discord.Member = await guild.get_member(user)
-            await User.add_elo_roles(guild, user, new_elo)
+            await Users.add_elo_role(user, new_elo)
 
     
         # // Remove the win from the winners
         for user in winners:
             # // Verify the user
-            if User(guild.id, user).verify() is None:
+            if Users.verify(guild.id, user) is None:
                 continue
                 
             # // Get the user info
-            user_info: dict = User(guild.id, user).info()
+            user_info: dict = Users.info(guild.id, user)
             user_elo: int = user_info["elo"]
             user_wins: int = user_info["wins"]
             new_elo: int = user_elo - win_elo
@@ -154,11 +155,11 @@ class Matches:
                 new_elo = 0
             
             # // Update the users elo and wins
-            User(guild.id, user).update(elo = new_elo, win = user_wins - 1)
+            Users.update(guild.id, user, elo = new_elo, win = user_wins - 1)
 
             # // Remove any elo roles that were added
             user: discord.Member = await guild.get_member(user)
-            await User.remove_elo_roles(guild, user, new_elo)
+            await Users.remove_elo_role(user, new_elo)
             
     # // Update a match
     @staticmethod

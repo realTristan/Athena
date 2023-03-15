@@ -1,11 +1,10 @@
 from ._cache_ import Cache
-import time, datetime, discord
+import time, datetime, discord, functools
 
 class Bans:
     # // Add a ban to the lobby
     @staticmethod
     async def ban(guild_id: int, user_id: int, length: int, reason: str, banned_by: str) -> None:
-        # // Update the cache and the database
         await Cache.update("bans", guild=guild_id, data={
             user_id: {
                 "length": length, 
@@ -35,6 +34,7 @@ class Bans:
     
     # // Create a ban embed
     @staticmethod
+    @functools.lru_cache(maxsize=128)
     async def embed(guild_id: int, user: discord.Member) -> discord.Embed:
         if not Bans.is_banned(guild_id, user.id):
             return discord.Embed(
