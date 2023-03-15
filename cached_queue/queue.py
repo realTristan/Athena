@@ -8,17 +8,16 @@ queue: dict = {}
 # // Queue Lock
 queue_lock: threading.Lock = threading.Lock()
 
-# // TODO
-# // - Convert the join() function
-# // - Convert the leave() function
-# // - Convert the pick() function
-# // - Convert the start() function
-
 # // Queue Class
 class Queue:
     @staticmethod
     def reset(guild_id: int, lobby_id: int):
         with queue_lock.acquire():
+            # // Add the guild if it doesn't exist
+            if guild_id not in queue:
+                queue[guild_id] = {}
+
+            # // Reset the queue
             queue[guild_id][lobby_id] = {
                 "queue": [], 
                 "blue_cap": "", 
