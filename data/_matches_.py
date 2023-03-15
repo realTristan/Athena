@@ -4,16 +4,15 @@ import discord
 class Matches:
     # // Get the number of matches in the lobby
     @staticmethod
-    def count(guild_id: int, lobby_id: int):
-        return len(Cache.fetch("matches", guild_id)[lobby_id])
+    def count(guild_id: int):
+        return len(Cache.fetch("matches", guild_id))
     
     # // Get a match
     @staticmethod
-    def get(guild_id: int, lobby_id: int, match_id: int = None):
+    def get(guild_id: int, match_id: int = None):
         if match_id is not None:
-            return Cache.fetch("matches", guild_id)[lobby_id][match_id]
-        return Cache.fetch("matches", guild_id)[lobby_id]
-    
+            return Cache.fetch("matches", guild_id)[match_id]
+        return Cache.fetch("matches", guild_id)
 
     # // Delete a match category
     @staticmethod
@@ -30,22 +29,6 @@ class Matches:
 
         # // Delete the category
         return await category.delete()
-    
-    
-    # // Search through all lobbies to find a match
-    @staticmethod
-    def find(guild_id: int, match_id: int):
-        # // Get the matches
-        matches = Cache.fetch("matches", guild_id)
-
-        # // Search through the matches
-        for lobby_id in matches:
-            if match_id in matches[lobby_id]:
-                return matches[lobby_id]
-        
-        # // Return None if the match was not found
-        return None
-    
 
     # // Show the match
     @staticmethod
@@ -67,9 +50,9 @@ class Matches:
 
         # // Team variables
         orange_captain = match_data["orange_cap"]
-        orange_team = match_data["orange_team"].split(",")
+        orange_team = match_data["orange_team"].split(",", maxsplit=4)
         blue_captain = match_data["blue_cap"]
-        blue_team = match_data["blue_team"].split(",")
+        blue_team = match_data["blue_team"].split(",", maxsplit=4)
 
         # // Create the embed
         embed = discord.Embed(
@@ -99,9 +82,10 @@ class Matches:
         blue_team_str: str = ','.join(str(user.id) for user in match_data["blue_team"])
 
         # // Add the match to the cache
-        await Cache.update("matches", guild=guild_id, lobby=lobby_id, data={
+        await Cache.update("matches", guild=guild_id, data={
             match_id: {
-                "lobby_id": lobby_id, 
+                "match_id": match_id,
+                "lobby_id": lobby_id,
                 "map": match_data["map"], 
                 "orange_cap": match_data["orange_cap"], 
                 "orange_team": match_data["orange_team"],
@@ -121,8 +105,8 @@ class Matches:
 
     # // Delete a match from the lobby
     @staticmethod
-    async def delete(guild_id: int, lobby_id: int, match_id: str):
-        Cache.delete_match(guild_id, lobby_id, match_id)
+    async def delete(guild_id: int, match_id: int):
+        Cache.delete_match(guild_id, match_id)
 
     # // Undo a match result
     @staticmethod
@@ -132,7 +116,6 @@ class Matches:
         negative_elo: bool = lobby_settings["negative_elo"] == 1
         win_elo: int = lobby_settings["win_elo"]
         loss_elo: int = lobby_settings["loss_elo"]
-
 
         # // Remove the loss from the losers
         for user in losers:
@@ -147,7 +130,7 @@ class Matches:
             new_elo: int = user_elo + loss_elo
 
             # // Update the users elo and losses
-            User(guild.id, user).update_elo(elo = new_elo, loss = user_losses - 1)
+            User(guild.id, user).update(elo = new_elo, loss = user_losses - 1)
 
             # // Add any elo roles that were lost
             user: discord.Member = await guild.get_member(user)
@@ -171,7 +154,7 @@ class Matches:
                 new_elo = 0
             
             # // Update the users elo and wins
-            User(guild.id, user).update_elo(elo = new_elo, win = user_wins - 1)
+            User(guild.id, user).update(elo = new_elo, win = user_wins - 1)
 
             # // Remove any elo roles that were added
             user: discord.Member = await guild.get_member(user)
@@ -179,21 +162,49 @@ class Matches:
             
     # // Update a match
     @staticmethod
-    async def update(guild_id: int, lobby_id: int, match_id: int, status: str = None, winners: list = None):
-        # // Get the current match data
-        match_data: dict = Matches.get(guild_id, lobby_id)[match_id]
-
+    async def update(
+        guild_id: int, lobby_id: int, match_id: int, 
+        orange_cap: int = None, orange_team: str = None, 
+        blue_cap: int = None, blue_team: str = None, 
+        status: str = None, winners: list = None
+    ):
         # // Update the match status
         if status is not None:
-            match_data["status"] = status
-            Cache.update("matches", guild=guild_id, lobby=lobby_id, data={match_id: match_data}, sqlcmds=[
+            Cache.update("matches", guild=guild_id, key=match_id, data={"status": status}, sqlcmds=[
                 f"UPDATE matches SET status = '{status}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
             ])
 
         # // Update the match winners
         if winners is not None:
-            match_data["winners"] = winners
-            Cache.update("matches", guild=guild_id, lobby=lobby_id, data={match_id: match_data}, sqlcmds=[
+            Cache.update("matches", guild=guild_id, key=match_id, data={"winners": winners}, sqlcmds=[
                 f"UPDATE matches SET winners = '{winners}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+            ])
+
+        # // Update the orange team captain
+        if orange_cap is not None:
+            Cache.update("matches", guild=guild_id, key=match_id, data={"orange_cap": orange_cap}, sqlcmds=[
+                f"UPDATE matches SET orange_cap = '{orange_cap}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+            ])
+        
+        # // Update the blue team captain
+        if blue_cap is not None:
+            Cache.update("matches", guild=guild_id, key=match_id, data={"blue_cap": blue_cap}, sqlcmds=[
+                f"UPDATE matches SET blue_cap = '{blue_cap}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+            ])
+
+        # // Update the orange team
+        if orange_team is not None:
+            Cache.update("matches", guild=guild_id, key=match_id, data={
+                "orange_team": orange_team.split(",", maxsplit=4)
+            }, sqlcmds=[
+                f"UPDATE matches SET orange_team = '{orange_team}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+            ])
+
+        # // Update the blue team
+        if blue_team is not None:
+            Cache.update("matches", guild=guild_id, key=match_id, data={
+                "blue_team": blue_team.split(",", maxsplit=4)
+            }, sqlcmds=[
+                f"UPDATE matches SET blue_team = '{blue_team}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
             ])
        

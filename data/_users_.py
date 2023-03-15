@@ -9,7 +9,7 @@ class Users:
 
     # // Show the users stats in an embed
     @staticmethod
-    async def stats(user: discord.Member) -> discord.Embed:
+    def stats(user: discord.Member) -> discord.Embed:
         # // Get the user info
         user_info: dict = Users.info(user.guild, user.id)
         user_name: str = user_info["user_name"]

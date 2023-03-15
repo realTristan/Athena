@@ -105,9 +105,9 @@ class Cache:
                 "lobby_id": row[2], 
                 "map": row[3], 
                 "orange_cap": row[4], 
-                "orange_team": row[5].split(","), 
+                "orange_team": row[5].split(",", maxsplit=4), 
                 "blue_cap": row[6], 
-                "blue_team": row[7].split(","), 
+                "blue_team": row[7].split(",", maxsplit=4), 
                 "status": row[8],
                 "winner": row[9]
             }
