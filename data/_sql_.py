@@ -8,35 +8,35 @@ db = mysql.connector.connect(
 class SqlData:
     def __init__(self):
         pass
-        #with closing(db.cursor()) as cur:
-            # cur.execute(f"DROP TABLE bans")
-            #cur.execute(f"DROP TABLE maps")
-            # cur.execute(f"DROP TABLE matches")
-            #cur.execute(f"DROP TABLE settings")
-            # cur.execute(f"DROP TABLE users")
-            #cur.execute(f"DROP TABLE lobbies")
-            #cur.execute(f"DROP TABLE lobby_settings")
+        with closing(db.cursor()) as cur:
+            cur.execute(f"DROP TABLE bans")
+            cur.execute(f"DROP TABLE maps")
+            cur.execute(f"DROP TABLE matches")
+            cur.execute(f"DROP TABLE settings")
+            cur.execute(f"DROP TABLE users")
+            cur.execute(f"DROP TABLE lobbies")
+            cur.execute(f"DROP TABLE lobby_settings")
 
             # // USERS TABLE
-            # cur.execute("CREATE TABLE users (guild_id BIGINT, user_id BIGINT, user_name VARCHAR(50), elo INT, wins INT, loss INT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE users (guild_id BIGINT, user_id BIGINT, user_name VARCHAR(50), elo INT, wins INT, losses INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // SETTINGS TABLE
-            #cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE settings (guild_id BIGINT, reg_role BIGINT, match_categories INT, reg_channel BIGINT, match_logs BIGINT, mod_role BIGINT, admin_role BIGINT, self_rename INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // LOBBY SETTINGS
-            #cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby_id BIGINT, map_pick_phase INT, team_pick_phase INT, win_elo INT, loss_elo INT, party_size INT, negative_elo INT, queue_size INT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE lobbies (guild_id BIGINT, lobby_id BIGINT, map_pick_phase INT, team_pick_phase INT, win_elo INT, loss_elo INT, party_size INT, negative_elo INT, queue_size INT, id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // MATCHES TABLE
-            # cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id INT, lobby_id BIGINT, map VARCHAR(50), orange_cap BIGINT, orange_team VARCHAR(200), blue_cap BIGINT, blue_team VARCHAR(200), status VARCHAR(20), winners VARCHAR(10), id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE matches (guild_id BIGINT, match_id INT, lobby_id BIGINT, map VARCHAR(30), orange_cap BIGINT, orange_team VARCHAR(200), blue_cap BIGINT, blue_team VARCHAR(200), status VARCHAR(10), winners VARCHAR(6), id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // MAPS TABLES
-            #cur.execute("CREATE TABLE maps (guild_id BIGINT, lobby_id BIGINT, map VARCHAR(30), id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE maps (guild_id BIGINT, lobby_id BIGINT, map VARCHAR(30), id INT PRIMARY KEY AUTO_INCREMENT)")
 
             # // BANS TABLE
-            # cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by BIGINT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE bans (guild_id BIGINT, user_id BIGINT, length BIGINT, reason VARCHAR(50), banned_by BIGINT, id INT PRIMARY KEY AUTO_INCREMENT)")
             
             # // ELO ROLE TABLE
-            # cur.execute("CREATE TABLE elo_roles (guild_id BIGINT, role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT, id INT PRIMARY KEY AUTO_INCREMENT)")
+            cur.execute("CREATE TABLE elo_roles (guild_id BIGINT, role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT, id INT PRIMARY KEY AUTO_INCREMENT)")
     
     # Connect to the database
     @staticmethod

@@ -35,7 +35,7 @@ class Matches:
     @functools.lru_cache(maxsize=128)
     def embed(guild_id: int, match_id: int) -> discord.Embed:
         # // Fetch the match data
-        match_data: dict = Matches.find(guild_id, match_id)
+        match_data: dict = Matches.get(guild_id, match_id)
 
         # // Check to make sure the match is valid
         if match_data is None:
@@ -45,15 +45,17 @@ class Matches:
             )
 
         # // Get the match winners and clean up the team name
-        match_winners = match_data["winners"][0].upper() + match_data["winners"][1:]
-        match_status = match_data["status"]
-        match_map = match_data["map"]
+        match_winners = match_data["winners"][0].upper() + match_data["winners"][1:].lower()
+        match_status = match_data.get("status")
+        match_map = match_data.get("map")
 
-        # // Team variables
-        orange_captain = match_data["orange_cap"]
-        orange_team = match_data["orange_team"].split(",", maxsplit=4)
-        blue_captain = match_data["blue_cap"]
-        blue_team = match_data["blue_team"].split(",", maxsplit=4)
+        # // Get the orange team
+        orange_captain = match_data.get("orange_cap")
+        orange_team = match_data.get("orange_team")
+
+        # // Get the blue team
+        blue_captain = match_data.get("blue_cap")
+        blue_team = match_data.get("blue_team")
 
         # // Create the embed
         embed = discord.Embed(
@@ -78,29 +80,42 @@ class Matches:
     # // Add a match to the lobby
     @staticmethod
     async def add(guild_id: int, lobby_id: int, match_id: int, match_data: dict) -> None:
+        # // Get the teams
+        orange_team: list = match_data.get("orange_team")
+        blue_team: list = match_data.get("blue_team")
+
         # // Convert the match teams to strings
-        orange_team_str: str = ','.join(str(user.id) for user in match_data["orange_team"])
-        blue_team_str: str = ','.join(str(user.id) for user in match_data["blue_team"])
+        orange_team_str: str = ','.join(str(user.id) for user in orange_team)
+        blue_team_str: str = ','.join(str(user.id) for user in blue_team)
+
+        # // Define variables for the match data
+        match_map: str = match_data.get("map", "none")
+        match_status: str = match_data.get("status", "ongoing")
+        match_winners: str = match_data.get("winners", "none")
+
+        # // Team Captains
+        orange_cap: int = match_data.get("orange_cap")
+        blue_cap: int = match_data.get("blue_cap")
 
         # // Add the match to the cache
         await Cache.update("matches", guild_id=guild_id, data={
             match_id: {
                 "match_id": match_id,
                 "lobby_id": lobby_id,
-                "map": match_data["map"], 
-                "orange_cap": match_data["orange_cap"], 
-                "orange_team": match_data["orange_team"],
-                "blue_cap": match_data["blue_cap"],
-                "blue_team": match_data["blue_team"], 
-                "status": match_data["status"],
-                "winners": match_data["winners"]
+                "map": match_map, 
+                "orange_cap": orange_cap, 
+                "orange_team": orange_team,
+                "blue_cap": blue_cap,
+                "blue_team": blue_team, 
+                "status": match_status,
+                "winners": match_winners
             }
         }, sqlcmds=[
             f"""
             INSERT INTO matches (guild_id, match_id, lobby_id, map, orange_cap, orange_team, blue_cap, blue_team, status, winners) 
             VALUES (
-                {guild_id}, {match_id}, {lobby_id}, '{match_data["map"]}', '{match_data["orange_cap"]}', '{orange_team_str}', 
-                '{match_data["blue_cap"]}', '{blue_team_str}', '{match_data["status"]}', '{match_data["winners"]}'
+                {guild_id}, {match_id}, {lobby_id}, '{match_map}', '{orange_cap}', '{orange_team_str}', 
+                '{blue_cap}', '{blue_team_str}', '{match_status}', '{match_winners}'
             )"""
         ])
 
@@ -114,9 +129,9 @@ class Matches:
     async def undo(guild: discord.Guild, lobby_id: int, winners: list, losers: list) -> None:
         # // Fetch the lobby settings
         lobby_settings: dict = Lobby.get(guild.id, lobby_id)
-        negative_elo: int = lobby_settings["negative_elo"]
-        win_elo: int = lobby_settings["win_elo"]
-        loss_elo: int = lobby_settings["loss_elo"]
+        negative_elo: int = lobby_settings.get("negative_elo")
+        win_elo: int = lobby_settings.get("win_elo")
+        loss_elo: int = lobby_settings.get("loss_elo")
 
         # // Remove the loss from the losers
         for user in losers:
@@ -126,8 +141,8 @@ class Matches:
             
             # // Get the user info
             user_info: dict = Users.info(guild.id, user)
-            user_elo: int = user_info["elo"]
-            user_losses: int = user_info["losses"]
+            user_elo: int = user_info.get("elo")
+            user_losses: int = user_info.get("losses")
             new_elo: int = user_elo + loss_elo
 
             # // Update the users elo and losses
@@ -146,8 +161,8 @@ class Matches:
                 
             # // Get the user info
             user_info: dict = Users.info(guild.id, user)
-            user_elo: int = user_info["elo"]
-            user_wins: int = user_info["wins"]
+            user_elo: int = user_info.get("elo")
+            user_wins: int = user_info.get("wins")
             new_elo: int = user_elo - win_elo
 
             # // If negative elo is enabled, set the users new elo to 0

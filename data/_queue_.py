@@ -103,9 +103,13 @@ class Queue:
     @staticmethod
     @functools.lru_cache(maxsize=128)
     async def new_match(guild_id: int, lobby: int):
-        # // Get the teams
+        # // Get the orange team and their user ids
         orange_team: list = queue[guild_id][lobby].get("orange_team")
+        orange_team = [user.id for user in orange_team]
+
+        # // Get the blue team and their user ids
         blue_team: list = queue[guild_id][lobby].get("blue_team")
+        blue_team = [user.id for user in blue_team]
 
         # // Get the team captains
         orange_cap: discord.Member = queue[guild_id][lobby].get("orange_cap")

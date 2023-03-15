@@ -12,11 +12,11 @@ class Users:
     def stats(user: discord.Member) -> discord.Embed:
         # // Get the user info
         user_info: dict = Users.info(user.guild, user.id)
-        user_name: str = user_info["user_name"]
-        user_elo: int = user_info["elo"]
-        user_wins: int = user_info["wins"]
-        user_loss: int = user_info["loss"]
-        user_matches: int = user_wins + user_loss
+        user_name: str = user_info.get("user_name")
+        user_elo: int = user_info.get("elo")
+        user_wins: int = user_info.get("wins")
+        user_losses: int = user_info.get("losses")
+        user_matches: int = user_wins + user_losses
         
         # // Make sure the match exists
         if user_info is None:
@@ -27,7 +27,7 @@ class Users:
         
         # // Create an embed
         embed = discord.Embed(
-            description = f"**Elo:** {user_elo}\n**Wins:** {user_wins}\n**Losses:** {user_loss}\n**Matches:** {user_matches}", 
+            description = f"**Elo:** {user_elo}\n**Wins:** {user_wins}\n**Losses:** {user_losses}\n**Matches:** {user_matches}", 
             color = 33023
         )
         embed.set_author(name = user_name, icon_url = user.avatar_url)
@@ -49,10 +49,10 @@ class Users:
                 "user_name": user_name, 
                 "elo": 0, 
                 "wins": 0, 
-                "loss": 0
+                "losses": 0
             }
         }, sqlcmds=[
-            f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, loss) VALUES ({user.guild.id}, {user.id}, '{user_name}', 0, 0, 0)"
+            f"INSERT INTO users (guild_id, user_id, user_name, elo, wins, losses) VALUES ({user.guild.id}, {user.id}, '{user_name}', 0, 0, 0)"
         ])
 
         # // Add the register role to the user
@@ -133,7 +133,7 @@ class Users:
     # // Reset an users stats
     @staticmethod
     async def reset(guild_id: int, user_id: int) -> None:
-        await Users.update(guild_id, user_id, elo=0, wins=0, loss=0)
+        await Users.update(guild_id, user_id, elo=0, wins=0, losses=0)
         
     # // Check mod role or mod permissions
     @staticmethod
@@ -184,6 +184,8 @@ class Users:
     async def win(user: discord.Member, lobby: int) -> discord.Embed:
         # // Get the user data
         user_info = Users.info(user.guild.id, user.id)
+        user_wins: int = user_info.get("wins")
+        user_elo: int = user_info.get("elo")
 
         # // Get the lobby settings
         win_elo: int = Lobby(user.guild.id, lobby).get("win_elo")
@@ -198,15 +200,15 @@ class Users:
         # // Update the user
         await Users.update(
             user.guild.id, user.id, 
-            elo = user_info["elo"] + win_elo, 
-            wins = user_info["wins"] + 1
+            elo = user_elo + win_elo, 
+            wins = user_wins + 1
         )
 
         # // Edit the users elo roles
-        await Users.add_elo_role(user.guild, user, user_info["elo"])
+        await Users.add_elo_role(user.guild, user, user_elo)
         
         # // Edit the users nickname
-        await Users.change_nickname(user, f"[{user_info['elo'] + win_elo}] {user.name}")
+        await Users.change_nickname(user, f"[{user_elo + win_elo}] {user.name}")
 
         # // Return the success embed
         return discord.Embed(
@@ -220,6 +222,8 @@ class Users:
     async def lose(user: discord.Member, lobby: int) -> discord.Embed:
         # // Get the user data
         user_info = Users.info(user.guild.id, user.id)
+        user_losses: int = user_info.get("losses")
+        user_elo: int = user_info.get("elo")
 
         # // Get the lobby settings
         loss_elo: int = Lobby(user.guild.id, lobby).get("loss_elo")
@@ -234,15 +238,15 @@ class Users:
         # // Update the user
         await Users.update(
             user.guild.id, user.id,
-            elo = user_info["elo"] - loss_elo, 
-            loss = user_info["loss"] + 1
+            elo = user_elo - loss_elo, 
+            losses = user_losses + 1
         )
 
         # // Edit the users elo roles
-        await Users.remove_elo_role(user.guild, user, user_info["elo"])
+        await Users.remove_elo_role(user.guild, user, user_elo)
         
         # // Edit the users nickname
-        await Users.change_nickname(user, f"[{user_info['elo'] - loss_elo}] {user.name}")
+        await Users.change_nickname(user, f"[{user_elo - loss_elo}] {user.name}")
 
         # // Return the success embed
         return discord.Embed(
@@ -253,7 +257,7 @@ class Users:
 
     # // Update user data
     @staticmethod
-    async def update(guild_id: int, user_id: int, user_name = None, elo = None, wins = None, loss = None) -> None:
+    async def update(guild_id: int, user_id: int, user_name = None, elo = None, wins = None, losses = None) -> None:
         # // Update user name
         if user_name is not None:
             await Cache.update("users", guild_id=guild_id, data={"user_name": user_name}, sqlcmds=[
@@ -273,7 +277,7 @@ class Users:
             ])
 
         # // Update user losses
-        if loss is not None:
-            await Cache.update("users", guild_id=guild_id, data={"loss": loss}, sqlcmds=[
-                f"UPDATE users SET loss = {loss} WHERE guild_id = {guild_id} AND user_id = {user_id}"
+        if losses is not None:
+            await Cache.update("users", guild_id=guild_id, data={"losses": losses}, sqlcmds=[
+                f"UPDATE users SET losses = {losses} WHERE guild_id = {guild_id} AND user_id = {user_id}"
             ])

@@ -29,35 +29,28 @@ class Settings:
         # // Add the guild to the users cache
         await Cache.update("users", guild_id=guild_id, data={})
 
-
     # // Check if the settings exist
     @staticmethod
     def exists(guild_id: int) -> bool:
         return guild_id in Cache.fetch("settings")
     
-
     # // Get a specific setting
     @staticmethod
     def get(guild_id: int, key: str = None) -> dict:
         if key is not None:
             return Cache.fetch("settings", guild_id=guild_id)[key]
         return Cache.fetch("settings", guild_id=guild_id)
-    
 
     # // Add an elo role to the lobby
     @staticmethod
     async def add_elo_role(guild_id: int, role_id: int, elo_level: int, win_elo: int, lose_elo: int) -> None:
-        # // Fetch the elo roles
-        settings = Cache.fetch("settings", guild_id)
-        settings["elo_roles"][role_id] = {
-            "elo_level": elo_level, 
-            "win_elo": win_elo, 
-            "lose_elo": lose_elo
-        }
-
-        # // Update the cache and the database
-        await Cache.update("settings", guild_id=guild_id, data=settings, sqlcmds=[
-            # // role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT
+        await Cache.update("settings", guild_id=guild_id, key="elo_roles", data={
+            role_id: {
+                "elo_level": elo_level, 
+                "win_elo": win_elo, 
+                "lose_elo": lose_elo
+            }
+        }, sqlcmds=[
             f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({guild_id}, {role_id}, {elo_level}, {win_elo}, {lose_elo})"
         ])
 

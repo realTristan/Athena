@@ -38,7 +38,7 @@ class Cache:
                 "user_name": row[2], 
                 "elo": row[3], 
                 "wins": row[4], 
-                "loss": row[5]
+                "losses": row[5]
             }
 
     # // Load lobby settings into the sql cache
