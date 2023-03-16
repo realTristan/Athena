@@ -24,8 +24,8 @@ class Bans:
     @staticmethod
     def get(guild_id: int, user_id: int = None) -> any:
         if user_id is not None:
-            return Cache.fetch("bans", guild_id)[user_id]
-        return Cache.fetch("bans", guild_id)[user_id]
+            return Cache.fetch("bans", guild_id).get(user_id, None)
+        return Cache.fetch("bans", guild_id).get(user_id, None)
     
     # // Check if a user is banned
     @staticmethod
@@ -34,7 +34,6 @@ class Bans:
     
     # // Create a ban embed
     @staticmethod
-    @functools.lru_cache(maxsize=128)
     async def embed(guild_id: int, user: discord.Member) -> discord.Embed:
         if not Bans.is_banned(guild_id, user.id):
             return discord.Embed(

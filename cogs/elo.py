@@ -1,7 +1,6 @@
+from cache import Settings, Users, Lobby, Database, Matches
 from discord_components import *
 from discord.ext import commands
-from functools import *
-from cache import *
 import discord, re
 
 # // Elo cog
@@ -115,7 +114,7 @@ class EloCog(commands.Cog):
             description: str = ""
 
             # // Get all of the elo roles
-            elo_roles: list = await SqlData.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
+            elo_roles: list = await Database.select_all(f"SELECT * FROM elo_roles WHERE guild_id = {ctx.guild.id} ORDER BY elo_level ASC")
             
             # // For each elo role
             for i in range(len(elo_roles)):
@@ -309,7 +308,7 @@ class EloCog(commands.Cog):
             await Users.update(ctx.guild.id, user.id, elo=amount)
 
             # // Get the users nick_name from the cache
-            nick_name: str = Users.info(ctx.guild.id, user.id).get("nick_name")
+            nick_name: str = Users.get(ctx.guild.id, user.id).get("nick_name")
 
             # // Edit the users nickname
             await Users.change_nickname(user, f"{nick_name} [{amount}]")
@@ -444,7 +443,7 @@ class EloCog(commands.Cog):
                 ))
         
         # // Get the user from the database and make sure the result is valid
-        user_info: dict = await Users.info(ctx.guild.id, ctx.author.id)
+        user_info: dict = await Users.get(ctx.guild.id, ctx.author.id)
         if user_info is None:
             return await ctx.send(
                 embed = discord.Embed(
@@ -479,7 +478,7 @@ class EloCog(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         # // Get the user info
-        user_info: dict = await Users.info(ctx.guild.id, user.id)
+        user_info: dict = await Users.get(ctx.guild.id, user.id)
         if user_info is None:
             return await ctx.send(
                 embed = discord.Embed(
@@ -509,6 +508,9 @@ class EloCog(commands.Cog):
         if ctx.author.bot:
             return 
         
+        # // Get the user
+        user: discord.Member = ctx.author
+        
         # // Register the message author
         if len(args) == 0:
             # // Get the name
@@ -516,7 +518,7 @@ class EloCog(commands.Cog):
             if len(args) > 0: name = args[0]
                 
             # // If the user doesn't already exist
-            if await Users.exists(ctx.guild.id, ctx.author.id):
+            if Users.exists(ctx.guild.id, ctx.author.id):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} is already registered", 
@@ -540,8 +542,13 @@ class EloCog(commands.Cog):
         elif len(args) > 0 and "@" in args[0]:
             # // Check if the user has the mod role
             if not Users.is_mod(ctx.author):
-                return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} you do not have enough permissions", 
+                        color = 15158588
+                ))
             
+            # // Get the user
             user: discord.Member = ctx.guild.get_member(int(re.sub("\D","", args[0])))
             if user is None:
                 return await ctx.send(
@@ -559,7 +566,7 @@ class EloCog(commands.Cog):
                 ))
             
             # // Check whether the user already exists
-            if await Users.exists(ctx.guild.id, user.id):
+            if Users.exists(ctx.guild.id, user.id):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{user.mention} is already registered", 
@@ -601,7 +608,7 @@ class EloCog(commands.Cog):
             ))
         
         # // Make sure the provided user exists
-        if not await Users.exists(ctx.guild.id, user.id):
+        if not Users.exists(ctx.guild.id, user.id):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{user.mention} is not registered",
@@ -654,7 +661,7 @@ class EloCog(commands.Cog):
         
         # // Iterate over the users
         for user in users:
-            await Users.win(user, ctx.channel.id)
+            await ctx.send(embed = await Users.win(user, ctx.channel.id))
             await ctx.send(embed = Users.stats(user))
             
         # // Send the embeds
@@ -699,7 +706,7 @@ class EloCog(commands.Cog):
         
         # // Iterate over the users
         for user in users:
-            await Users.lose(user, ctx.channel.id)
+            await ctx.send(embed = await Users.lose(user, ctx.channel.id))
             await ctx.send(embed = Users.stats(user))
             
         # // Send the embeds
@@ -778,7 +785,7 @@ class EloCog(commands.Cog):
         elif "<@" in args:
             # // Get the user
             user: discord.Member= ctx.guild.get_member(int(re.sub("\D","", args)))
-            user_name: str = Users.info(ctx.guild.id, user.id).get("user_sname")
+            user_name: str = Users.get(ctx.guild.id, user.id).get("user_sname")
             
             # // Make sure user is not invalid
             if user_name is None:
@@ -808,7 +815,7 @@ class EloCog(commands.Cog):
             return
         
         # // Get the users from the database
-        users: list = await SqlData.select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
+        users: list = await Database.select_all(f"SELECT * FROM users WHERE guild_id = {ctx.guild.id} ORDER BY elo DESC")
         users_str: str = ""
         user_count: int = 0
         

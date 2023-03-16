@@ -76,31 +76,31 @@ class ErrorCog(commands.Cog):
 
     # ON COMMAND ERROR HANDLING
     # ///////////////////////////////
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx:commands.Context, error):
-        if isinstance(error, commands.CommandOnCooldown):
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Slow it down! Try again in **{error.retry_after:.2f}s**", color=15158588))
+    #@commands.Cog.listener()
+    #async def on_command_error(self, ctx:commands.Context, error):
+        #if isinstance(error, commands.CommandOnCooldown):
+            #return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} Slow it down! Try again in **{error.retry_after:.2f}s**", color=15158588))
             
-        elif isinstance(error, commands.CommandNotFound):
-            return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
+        #elif isinstance(error, commands.CommandNotFound):
+            #return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
             
-        elif isinstance(error, commands.MissingPermissions):
-            print(error)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions (or Athena)", color=15158588))
+        #elif isinstance(error, commands.MissingPermissions):
+            #print(error)
+            #return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions (or Athena)", color=15158588))
         
-        elif isinstance(error, commands.MemberNotFound):
-            print(error)
-            return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
+        #elif isinstance(error, commands.MemberNotFound):
+            #print(error)
+            #return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} player not found", color=15158588))
         
-        elif isinstance(error, commands.MissingRequiredArgument):
-            print(error)
-            return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
+        #elif isinstance(error, commands.MissingRequiredArgument):
+            #print(error)
+            #return await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
         
-        else:
-            error_channel = self.client.get_channel(938482543227994132)
-            await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
-            await error_channel.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
-            raise error
+        #else:
+            #error_channel = self.client.get_channel(938482543227994132)
+            #await self._run_sorter(ctx, str(ctx.message.content.split(" ")[0]).strip("="))
+            #await error_channel.send(f"**[{ctx.guild.name}]** `{datetime.datetime.utcnow()}`**:**  *{error}*")
+            #raise error
 
 def setup(client: commands.Bot):
     client.add_cog(ErrorCog(client))

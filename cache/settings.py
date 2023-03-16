@@ -1,4 +1,4 @@
-from cache.cache import Cache
+from .cache import Cache
 
 class Settings:
     # // Setup default settings and cache
@@ -38,7 +38,7 @@ class Settings:
     @staticmethod
     def get(guild_id: int, key: str = None) -> any:
         if key is not None:
-            return Cache.fetch("settings", guild_id=guild_id)[key]
+            return Cache.fetch("settings", guild_id=guild_id).get(key)
         return Cache.fetch("settings", guild_id=guild_id)
 
     # // Add an elo role to the lobby

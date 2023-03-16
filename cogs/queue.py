@@ -1,9 +1,8 @@
-import discord, random, asyncio, re
 from discord_components import Button, ButtonStyle
 from discord.ext import commands
-from functools import *
 from cached_queue import Queue
 from cache import Lobby, Users
+import discord, asyncio, re
 
 class QueueCog(commands.Cog):
     def __init__(self, client: commands.Bot):

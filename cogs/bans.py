@@ -1,7 +1,6 @@
+import discord, time, re, datetime
 from discord.ext import commands
 from cache import Users, Bans
-import datetime as datetime
-import discord, time, re
 
 # // Bans cog
 class BansCog(commands.Cog):

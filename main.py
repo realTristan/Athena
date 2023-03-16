@@ -1,6 +1,6 @@
+from cache import Cache, Settings, Users, Database
 from discord.ext import commands
 from discord_components import *
-from cache import *
 import discord, os
 
 # // CREATE THE CLIENT
@@ -42,6 +42,9 @@ async def on_guild_join(guild: discord.Guild):
 # ///////////////////
 @CLIENT.event
 async def on_ready():
+    # // Load the database
+    # await Database.reset()
+
     # // Load the cache
     await Cache.load_data()
 

@@ -1,8 +1,7 @@
+from cache import Cache, Settings, Users, Lobby
 from discord_components import *
 from discord.ext import commands
 import discord, asyncio, re
-from functools import *
-from cache import *
 
 # // Settings cog
 class SettingsCog(commands.Cog):
@@ -534,7 +533,7 @@ class SettingsCog(commands.Cog):
         # // Get the guild settings
         settings: dict = Settings.get(ctx.guild.id)
         match_categories: list = self.get_settings_option("match_categories", settings)
-        match_logs: list = self.get_settings_option("match_loggs", settings)
+        match_logs: list = self.get_settings_option("match_logs", settings)
         self_rename: list = self.get_settings_option("self_rename", settings)
 
         # // Send the settings menu
@@ -567,7 +566,7 @@ class SettingsCog(commands.Cog):
         try:
             # // SELF RENAME
             if res.values[0] == "self_rename":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -696,7 +695,7 @@ class SettingsCog(commands.Cog):
 
             # // CHANGE QUEUE SIZE
             if res.values[0] == "change_queue_size":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -738,7 +737,7 @@ class SettingsCog(commands.Cog):
 
             # // MAP PICKING PHASE
             if res.values[0] == 'map_pick_phase':
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -767,7 +766,7 @@ class SettingsCog(commands.Cog):
 
             # // MATCH LOGGING
             if res.values[0] == "match_logging":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -831,7 +830,7 @@ class SettingsCog(commands.Cog):
 
             # // MATCH CATEGORIES
             if res.values[0] == 'match_category':
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -860,7 +859,7 @@ class SettingsCog(commands.Cog):
 
             # // TEAM PICKING PHASE
             if res.values[0] == 'team_pick_phase':
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -938,7 +937,7 @@ class SettingsCog(commands.Cog):
 
             # // ADD MAP
             if res.values[0] == "add_map":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -964,7 +963,7 @@ class SettingsCog(commands.Cog):
             
             # // REMOVE MAP
             if res.values[0] == "remove_map":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -990,7 +989,7 @@ class SettingsCog(commands.Cog):
             
             # // NEGATIVE ELO
             if res.values[0] == "negative_elo":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -1019,7 +1018,7 @@ class SettingsCog(commands.Cog):
             
             # // CHANGE THE REGISTER CHANNEL
             if res.values[0] == "change_reg_channel":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -1068,7 +1067,7 @@ class SettingsCog(commands.Cog):
             
             # // CHANGE THE ELO PER WIN
             if res.values[0] == "change_win_elo":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -1111,7 +1110,7 @@ class SettingsCog(commands.Cog):
 
             # // CHANGE THE ELO PER LOSS
             if res.values[0] == "change_loss_elo":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -1155,7 +1154,7 @@ class SettingsCog(commands.Cog):
             
             # // CHANGE THE QUEUE PARTY SIZE
             if res.values[0] == "change_queue_party_size":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 
@@ -1197,7 +1196,7 @@ class SettingsCog(commands.Cog):
             
             # // QUEUE EMBED
             if res.values[0] == "queue_embed":
-                if not Users.is_admin(res):
+                if not Users.is_admin(res.author):
                     return await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you do not have enough permissions", 

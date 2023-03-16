@@ -62,14 +62,14 @@ class Lobby:
     # // Delete the lobby
     @staticmethod
     async def delete(guild_id: int, lobby_id: int) -> None:
-        Cache.delete_lobby(guild_id, lobby_id)
+        await Cache.delete_lobby(guild_id, lobby_id)
 
     # // Get the lobby or data from the lobby
     @staticmethod
     def get(guild_id: int, lobby_id: int, key: str = None) -> any:
         if key is not None:
-            return Cache.fetch("lobbies", guild_id)[lobby_id][key]
-        return Cache.fetch("lobbies", guild_id)[lobby_id]
+            return Cache.fetch("lobbies", guild_id)[lobby_id].get(key, None)
+        return Cache.fetch("lobbies", guild_id).get(lobby_id, None)
 
     # // Update lobby settings
     @staticmethod

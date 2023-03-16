@@ -5,17 +5,22 @@ db = mysql.connector.connect(
     host="localhost", port="3306", user="root", password="root", database="main"
 )
 
-class SqlData:
-    def __init__(self):
-        pass
+class Database:
+    # // Reset the database
+    @staticmethod
+    async def reset():
         with closing(db.cursor()) as cur:
-            cur.execute(f"DROP TABLE bans")
-            cur.execute(f"DROP TABLE maps")
-            cur.execute(f"DROP TABLE matches")
-            cur.execute(f"DROP TABLE settings")
-            cur.execute(f"DROP TABLE users")
-            cur.execute(f"DROP TABLE lobbies")
-            cur.execute(f"DROP TABLE lobby_settings")
+            # // Drop the previous tables
+            try:
+                cur.execute(f"DROP TABLE bans")
+                cur.execute(f"DROP TABLE maps")
+                cur.execute(f"DROP TABLE matches")
+                cur.execute(f"DROP TABLE settings")
+                cur.execute(f"DROP TABLE users")
+                cur.execute(f"DROP TABLE lobbies")
+                cur.execute(f"DROP TABLE elo_roles")
+            except Exception as e:
+                print(e)
 
             # // USERS TABLE
             cur.execute("CREATE TABLE users (guild_id BIGINT, user_id BIGINT, user_name VARCHAR(50), elo INT, wins INT, losses INT, id INT PRIMARY KEY AUTO_INCREMENT)")
@@ -38,14 +43,14 @@ class SqlData:
             # // ELO ROLE TABLE
             cur.execute("CREATE TABLE elo_roles (guild_id BIGINT, role_id BIGINT, elo_level INT, win_elo INT, lose_elo INT, id INT PRIMARY KEY AUTO_INCREMENT)")
     
-    # Connect to the database
+    # // Connect to the database
     @staticmethod
     async def db_connect():
         return mysql.connector.connect(
             host="localhost", port="3306", user="root", password="root", database="main"
         )
         
-    # Check if value exists
+    # // Check if value exists
     @staticmethod
     async def exists(command: str):
         global db
@@ -56,26 +61,26 @@ class SqlData:
                     return False  # // Doesn't exist
                 return True  # // Does exist
         except mysql.connector.Error as e:
-            print(f"SqlData (exists): {e}")
+            print(f"Database (exists): {e}")
             db.close()
-            db = await SqlData.db_connect()
+            db = await Database.db_connect()
 
-    # Returns a single list of results
+    # // Returns a single list of results
     @staticmethod
     async def select(command: str):
         global db
         try:
             with closing(db.cursor()) as cur:
-                if await SqlData.exists(command):
+                if await Database.exists(command):
                     cur.execute(command)
                     return list(cur.fetchone())
                 return None
         except mysql.connector.Error as e:
-            print(f"SqlData (select): {e}")
+            print(f"Database (select): {e}")
             db.close()
-            db = await SqlData.db_connect()
+            db = await Database.db_connect()
 
-    # Returns multiple lists of results
+    # // Returns multiple lists of results
     @staticmethod
     async def select_all(command: str):
         global db
@@ -84,11 +89,11 @@ class SqlData:
                 cur.execute(command)
                 return [list(i) for i in cur.fetchall()]
         except mysql.connector.Error as e:
-            print(f"SqlData (select_all): {e}")
+            print(f"Database (select_all): {e}")
             db.close()
-            db = await SqlData.db_connect()
+            db = await Database.db_connect()
 
-    # Execute a command
+    # // Execute a command
     @staticmethod
     async def execute(command: str):
         global db
@@ -97,6 +102,6 @@ class SqlData:
                 cur.execute(command)
                 db.commit()
         except mysql.connector.Error as e:
-            print(f"SqlData (execute): {e}")
+            print(f"Database (execute): {e}")
             db.close()
-            db = await SqlData.db_connect()
+            db = await Database.db_connect()

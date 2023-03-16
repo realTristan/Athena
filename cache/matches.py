@@ -1,4 +1,6 @@
-from cache import Cache, Lobby, Users
+from .cache import Cache
+from .users import Users
+from .lobby import Lobby
 import discord, functools
 
 class Matches:
@@ -11,7 +13,7 @@ class Matches:
     @staticmethod
     def get(guild_id: int, match_id: int = None) -> any:
         if match_id is not None:
-            return Cache.fetch("matches", guild_id)[match_id]
+            return Cache.fetch("matches", guild_id).get(match_id, None)
         return Cache.fetch("matches", guild_id)
 
     # // Delete a match category
@@ -32,7 +34,6 @@ class Matches:
 
     # // Produce a match embed
     @staticmethod
-    @functools.lru_cache(maxsize=128)
     def embed(guild_id: int, match_id: int) -> discord.Embed:
         # // Fetch the match data
         match_data: dict = Matches.get(guild_id, match_id)
@@ -140,7 +141,7 @@ class Matches:
                 continue
             
             # // Get the user info
-            user_info: dict = Users.info(guild.id, user)
+            user_info: dict = Users.get(guild.id, user)
             user_elo: int = user_info.get("elo")
             user_losses: int = user_info.get("losses")
             new_elo: int = user_elo + loss_elo
@@ -160,7 +161,7 @@ class Matches:
                 continue
                 
             # // Get the user info
-            user_info: dict = Users.info(guild.id, user)
+            user_info: dict = Users.get(guild.id, user)
             user_elo: int = user_info.get("elo")
             user_wins: int = user_info.get("wins")
             new_elo: int = user_elo - win_elo
