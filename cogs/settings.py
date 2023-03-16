@@ -22,29 +22,6 @@ class SettingsCog(commands.Cog):
             return 'ENABLED'
         return 'DISABLED'
     
-    # // ADD MAP TO THE DATABASE
-    # /////////////////////////////////////////
-    async def _add_map(self, ctx: commands.Context, map:str, lobby:int):
-        maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=ctx.channel.id)
-        if not map in maps:
-            maps.append(map)
-            await Cache.update(table="maps", guild=ctx.guild.id, key=ctx.channel.id, data=maps, sqlcmds=[
-                f"INSERT INTO maps (guild_id, lobby_id, map) VALUES ({ctx.guild.id}, {lobby}, '{map}')"
-            ])
-            return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)+1}/20]** {ctx.author.mention} added **{map}** to the map pool", color=3066992))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** already exists", color=15158588))
-
-    # // REMOVE MAP FROM THE DATABASE
-    # /////////////////////////////////////////
-    async def _del_map(self, ctx: commands.Context, map:str, lobby:int):
-        maps = Cache.fetch(table="maps", guild=ctx.guild.id, key=ctx.channel.id)
-        if map in maps:
-            await Cache.delete(table="maps", guild=ctx.guild.id, key=ctx.channel.id, sub_key=map, sqlcmds=[
-                f"DELETE FROM maps WHERE map = '{map}' AND guild_id = {ctx.guild.id} AND lobby_id = {lobby}"
-            ])
-            return await ctx.channel.send(embed=discord.Embed(description=f"**[{len(maps)-1}/20]** {ctx.author.mention} removed **{map}** from the map pool", color=3066992))
-        return await ctx.channel.send(embed=discord.Embed(description=f"{ctx.author.mention} **{map}** is not in the map pool", color=15158588))
-    
     # // SET THE MOD ROLE
     # ////////////////////////
     @commands.command(name="modrole", description="`=modrole set @role, =modrole show, =modrole delete`")
@@ -63,7 +40,7 @@ class SettingsCog(commands.Cog):
                 ))
             
             # // Update the settings
-            await Settings.update(ctx.guild.id, modrole=role.id)
+            await Settings.update(ctx.guild.id, mod_role=role.id)
 
             # // Send the success embed
             return await ctx.send(
@@ -76,7 +53,7 @@ class SettingsCog(commands.Cog):
         # // SHOW THE MOD ROLE
         elif args[0] in ["info", "show"]:
             # // Get the role
-            role_id: int = Settings.get(ctx.guild.id, "modrole")
+            role_id: int = Settings.get(ctx.guild.id, "mod_role")
 
             # // Check if the role exists
             if role_id == 0:
@@ -98,7 +75,7 @@ class SettingsCog(commands.Cog):
         # // REMOVE THE MOD ROLE
         elif args[0] in ["delete", "del", "reset", "remove"]:
             # // Update the settings
-            await Settings.update(ctx.guild.id, modrole=0)
+            await Settings.update(ctx.guild.id, mod_role=0)
 
             # // Send the success embed
             return await ctx.send(
@@ -132,7 +109,7 @@ class SettingsCog(commands.Cog):
                 ))
             
             # // Update the settings
-            await Settings.update(ctx.guild.id, adminrole=role.id)
+            await Settings.update(ctx.guild.id, admin_role=role.id)
 
             # // Send the success embed
             return await ctx.send(
@@ -144,7 +121,7 @@ class SettingsCog(commands.Cog):
         # // SHOW THE ADMIN ROLE
         elif args[0] in ["info", "show"]:
             # // Get the role
-            role_id: int = Settings.get(ctx.guild.id, "adminrole")
+            role_id: int = Settings.get(ctx.guild.id, "admin_role")
             if role_id == 0:
                 return await ctx.send(
                     embed = discord.Embed(
@@ -163,7 +140,7 @@ class SettingsCog(commands.Cog):
         # // DELETE THE ADMIN ROLE
         elif args[0] in ["delete", "del", "reset", "remove"]:
             # // Update the settings
-            await Settings.update(ctx.guild.id, adminrole=0)
+            await Settings.update(ctx.guild.id, admin_role=0)
 
             # // Send the success embed
             return await ctx.send(
@@ -406,7 +383,14 @@ class SettingsCog(commands.Cog):
             ))
 
         # // Add the map
-        Lobby.add_map(ctx.guild.id, ctx.channel.id, map)
+        await Lobby.add_map(ctx.guild.id, ctx.channel.id, map)
+
+        # // Send the embed
+        return await ctx.send(
+            embed = discord.Embed(
+                description = f"{ctx.author.mention} has added **{map}** to the map pool", 
+                color = 33023
+        ))
 
     # // DELETE MAP COMMAND
     # /////////////////////////////////////////
@@ -444,7 +428,14 @@ class SettingsCog(commands.Cog):
             ))
 
         # // Delete the map
-        Lobby.delete_map(ctx.guild.id, ctx.channel.id, map)
+        await Lobby.delete_map(ctx.guild.id, ctx.channel.id, map)
+
+        # // Send the embed
+        return await ctx.send(
+            embed = discord.Embed(
+                description = f"{ctx.author.mention} has removed **{map}** from the map pool", 
+                color = 33023
+        ))
         
 
     # // SHOW LIST OF MAPS COMMAND
@@ -466,11 +457,16 @@ class SettingsCog(commands.Cog):
         # // Fetch the maps
         maps: list = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
 
+        # // If there are no maps
+        description: str = "None"
+        if len(maps) > 0:
+            description = "\n".join(m[0].upper() + m[1:].lower() for m in maps)
+
         # // Return the maps embed
         return await ctx.send(
             embed = discord.Embed(
-                title = f"Maps ┃ {ctx.guild.name}", 
-                description = "\n".join(m for m in maps), 
+                title = f"Maps ┃ {ctx.channel.name}", 
+                description = description, 
                 color = 33023
             )
         )

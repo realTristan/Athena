@@ -71,8 +71,7 @@ class Users:
             return Settings.update(user.guild.id, reg_role=0)
         
         # // Add the role to the user
-        try: await user.add_roles(user.guild.get_role(reg_role))
-        except Exception: return
+        await Users.add_role(user, role)
 
     # // Add a role to the user
     @staticmethod

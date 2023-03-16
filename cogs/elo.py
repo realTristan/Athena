@@ -14,7 +14,9 @@ class EloCog(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def elorole(self, ctx: commands.Context, option: str, *args):
         # // Get the current elo roles and check to make sure the server has under 20
-        elo_roles: dict = await Settings.get(ctx.guild.id, "elo_roles")
+        elo_roles: dict = Settings.get(ctx.guild.id, "elo_roles")
+        if elo_roles is None:
+            elo_roles = {}
 
         # // Add a new elo role
         if option in ["add", "create", "new"]:
@@ -61,12 +63,12 @@ class EloCog(commands.Cog):
             
             # // Add the new elo role into the database
             elo_level: int = int(args[1])
-            Settings.add_elo_role(ctx.guild.id, role.id, elo_level, 5, 2)
+            await Settings.create_elo_role(ctx.guild.id, role.id, elo_level, 5, 2)
             
             # // Send the success embed
             return await ctx.send(
                 embed = discord.Embed(
-                    description = f"**[{len(elo_roles) + 1}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_level} elo**", 
+                    description = f"**[{len(elo_roles)}/20]** {ctx.author.mention} {role.mention} will now be given at **{elo_level} elo**", 
                     color = 3066992
             ))
 
@@ -104,7 +106,7 @@ class EloCog(commands.Cog):
             # // Return the success embed
             return await ctx.send(
                 embed = discord.Embed(
-                    description = f"**[{len(elo_roles) - 1}/20]** {ctx.author.mention} {role.mention} has been removed", 
+                    description = f"**[{len(elo_roles)}/20]** {ctx.author.mention} {role.mention} has been removed", 
                     color = 3066992
             ))
 
@@ -443,7 +445,7 @@ class EloCog(commands.Cog):
                 ))
         
         # // Get the user from the database and make sure the result is valid
-        user_info: dict = await Users.get(ctx.guild.id, ctx.author.id)
+        user_info: dict = Users.get(ctx.guild.id, ctx.author.id)
         if user_info is None:
             return await ctx.send(
                 embed = discord.Embed(
@@ -478,7 +480,7 @@ class EloCog(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         # // Get the user info
-        user_info: dict = await Users.get(ctx.guild.id, user.id)
+        user_info: dict = Users.get(ctx.guild.id, user.id)
         if user_info is None:
             return await ctx.send(
                 embed = discord.Embed(
@@ -785,7 +787,7 @@ class EloCog(commands.Cog):
         elif "<@" in args:
             # // Get the user
             user: discord.Member= ctx.guild.get_member(int(re.sub("\D","", args)))
-            user_name: str = Users.get(ctx.guild.id, user.id).get("user_sname")
+            user_name: str = Users.get(ctx.guild.id, user.id).get("user_name")
             
             # // Make sure user is not invalid
             if user_name is None:
@@ -821,7 +823,7 @@ class EloCog(commands.Cog):
         
         # // For each user in rows
         for i in range(len(users)):
-            user: discord.Member = await self._check_member(ctx, users[i][1])
+            user: discord.Member = await Users.verify(ctx.guild, users[i][1])
             
             # // If the member exists
             if user is None:

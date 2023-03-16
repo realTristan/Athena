@@ -47,7 +47,7 @@ class Lobby:
             return
         
         # // Delete the map
-        Cache.delete_map(guild_id, lobby_id, map)
+        await Cache.delete_map(guild_id, lobby_id, map)
 
     # // Add a map to the lobby
     @staticmethod
@@ -57,7 +57,7 @@ class Lobby:
             return
         
         # // Add the map
-        Cache.add_map(guild_id, lobby_id, map)
+        await Cache.add_map(guild_id, lobby_id, map)
     
     # // Delete the lobby
     @staticmethod

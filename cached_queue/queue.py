@@ -256,7 +256,7 @@ class Queue:
 
         # // Check if the user is banned
         if Bans.is_banned(guild.id, user.id):
-            await Bans.embed(guild.id, user)
+            return await Bans.embed(guild.id, user)
 
         # // Get the queue sizes
         queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")

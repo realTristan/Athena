@@ -120,7 +120,7 @@ class QueueCog(commands.Cog):
             return
         
         # // Check if the user has the mod role
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -149,7 +149,7 @@ class QueueCog(commands.Cog):
             return
         
         # // Check if the author has the mod role
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -187,7 +187,7 @@ class QueueCog(commands.Cog):
             return
         
         # // Check if the user is a mod
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 

@@ -14,7 +14,7 @@ class Settings:
             "self_rename": 1,
             "elo_roles": {}
         }, sqlcmds=[
-            f"INSERT INTO settings (guild_id, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({guild_id}, 0, 0, 0, 0, 0, 0, 1)"
+            f"INSERT INTO settings (guild_id, is_premium, reg_role, match_categories, reg_channel, match_logs, mod_role, admin_role, self_rename) VALUES ({guild_id}, 0, 0, 0, 0, 0, 0, 0, 1)"
         ])
 
         # // Add guild to the lobby settings cache
@@ -41,9 +41,9 @@ class Settings:
             return Cache.fetch("settings", guild_id=guild_id).get(key)
         return Cache.fetch("settings", guild_id=guild_id)
 
-    # // Add an elo role to the lobby
+    # // Create a new elo role
     @staticmethod
-    async def add_elo_role(guild_id: int, role_id: int, elo_level: int, win_elo: int, lose_elo: int) -> None:
+    async def create_elo_role(guild_id: int, role_id: int, elo_level: int, win_elo: int, lose_elo: int) -> None:
         await Cache.update("settings", guild_id=guild_id, key="elo_roles", data={
             role_id: {
                 "elo_level": elo_level, 
@@ -62,7 +62,7 @@ class Settings:
     # // Delete an elo role from the lobby
     @staticmethod
     async def delete_elo_role(guild_id: int, role_id: int) -> None:
-        Cache.delete_elo_role(guild_id, role_id)
+        await Cache.delete_elo_role(guild_id, role_id)
 
     # // Add a setting to the lobby
     @staticmethod

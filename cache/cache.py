@@ -4,7 +4,7 @@ import functools
 # // The Global Cache Variable
 cache: dict[str, dict] = {
     "settings": {}, "users": {}, "lobbies": {},
-    "bans": {}, "elo_roles": {}, "matches": {}
+    "bans": {}, "matches": {}
 }
 
 # // The Cache Class that contains all the cache functions
@@ -12,13 +12,14 @@ class Cache:
     # // Add all MySQL Data into a cached map
     @staticmethod
     async def load_data() -> None:
+        await Cache.load_settings()
+        await Cache.load_elo_roles()
         await Cache.load_users()
         await Cache.load_lobbies()
-        await Cache.load_elo_roles()
+        await Cache.load_maps()
         await Cache.load_bans()
         await Cache.load_matches()
-        await Cache.load_settings()
-        await Cache.load_maps()
+        print(cache)
 
     # // Load users into the sql cache
     @staticmethod
@@ -32,12 +33,14 @@ class Cache:
 
             # // Add the user to the cache
             user_id: int = row[1]
-            cache["users"][guild][user_id] = {
-                "user_name": row[2], 
-                "elo": row[3], 
-                "wins": row[4], 
-                "losses": row[5]
-            }
+            cache["users"][guild].update({
+                user_id: {
+                    "user_name": row[2], 
+                    "elo": row[3], 
+                    "wins": row[4], 
+                    "losses": row[5]
+                }
+            })
 
     # // Load lobby settings into the sql cache
     @staticmethod
@@ -51,17 +54,19 @@ class Cache:
 
             # // Add the lobby settings to the cache
             lobby_id: int = row[1]
-            cache["lobbies"][guild][lobby_id] = {
-                "lobby_id": lobby_id, 
-                "maps": [], 
-                "map_pick_phase": row[2], 
-                "team_pick_phase": row[3], 
-                "win_elo": row[4], 
-                "loss_elo": row[5], 
-                "party_size": row[6], 
-                "negative_elo": row[7], 
-                "queue_size": row[8]
-            }
+            cache["lobbies"][guild].update({
+                lobby_id: {
+                    "lobby_id": lobby_id, 
+                    "maps": [], 
+                    "map_pick_phase": row[2], 
+                    "team_pick_phase": row[3], 
+                    "win_elo": row[4], 
+                    "loss_elo": row[5], 
+                    "party_size": row[6], 
+                    "negative_elo": row[7], 
+                    "queue_size": row[8]
+                }
+            })
 
     # // Load elo roles into the sql cache
     @staticmethod
@@ -79,12 +84,14 @@ class Cache:
 
             # // Add the elo roles to the cache
             role_id: int = row[1]
-            cache["settings"][guild]["elo_roles"][role_id] = {
-                "role_id": role_id, 
-                "elo_level": row[2], 
-                "win_elo": row[3], 
-                "lose_elo": row[4]
-            }
+            cache["settings"][guild]["elo_roles"].update({
+                role_id: {
+                    "role_id": role_id, 
+                    "elo_level": row[2], 
+                    "win_elo": row[3], 
+                    "lose_elo": row[4]
+                }
+            })
     
     # // Load matches into the sql cache
     @staticmethod
@@ -98,17 +105,19 @@ class Cache:
 
             # // Add the match to the cache
             match_id: int = row[1]
-            cache["matches"][guild][match_id] = {
-                "match_id": match_id, 
-                "lobby_id": row[2], 
-                "map": row[3], 
-                "orange_cap": row[4], 
-                "orange_team": row[5].split(",", maxsplit=4), 
-                "blue_cap": row[6], 
-                "blue_team": row[7].split(",", maxsplit=4), 
-                "status": row[8],
-                "winner": row[9]
-            }
+            cache["matches"][guild].update({
+                match_id: {
+                    "match_id": match_id, 
+                    "lobby_id": row[2], 
+                    "map": row[3], 
+                    "orange_cap": row[4], 
+                    "orange_team": row[5].split(",", maxsplit=4), 
+                    "blue_cap": row[6], 
+                    "blue_team": row[7].split(",", maxsplit=4), 
+                    "status": row[8],
+                    "winner": row[9]
+                }
+            })
 
     # // Load bans into the sql cache
     @staticmethod
@@ -122,12 +131,14 @@ class Cache:
 
             # // Add the ban to the cache
             user_id: int = row[1]
-            cache["bans"][guild][user_id] = {
-                "user_id": user_id, 
-                "length": row[2], 
-                "reason": row[3], 
-                "banned_by": row[4]
-            }
+            cache["bans"][guild].update({
+                user_id: {
+                    "user_id": user_id, 
+                    "length": row[2], 
+                    "reason": row[3], 
+                    "banned_by": row[4]
+                }
+            })
     
     # // Load settings into the sql cache
     @staticmethod
@@ -135,16 +146,19 @@ class Cache:
         rows: list = await Database.select_all(f"SELECT * FROM settings")
         for row in rows:
             # // Add the setting to the cache
-            guild: int = row[0]
-            cache["settings"][guild] = {
-                "reg_role": row[1], 
-                "match_categories": row[2], 
-                "reg_channel": row[3], 
-                "match_logs": row[4], 
-                "mod_role": row[5], 
-                "admin_role": row[6], 
-                "self_rename": row[7]
-            }
+            guild_id: int = row[0]
+            cache["settings"].update({
+                guild_id: {
+                    "is_premium": row[1],
+                    "reg_role": row[2], 
+                    "match_categories": row[3], 
+                    "reg_channel": row[4], 
+                    "match_logs": row[5], 
+                    "mod_role": row[6], 
+                    "admin_role": row[7], 
+                    "self_rename": row[8]
+                }
+            })
     
     # // Load maps into the sql cache
     @staticmethod
@@ -159,10 +173,12 @@ class Cache:
             # // If the lobby does not exist in the cache
             lobby_id: int = row[1]
             if lobby_id not in cache["lobbies"][guild]:
-                cache["lobbies"][guild][lobby_id] = {
-                    "lobby_id": lobby_id,
-                    "maps": []
-                }
+                cache["lobbies"][guild].update({
+                    lobby_id: {
+                        "lobby_id": lobby_id,
+                        "maps": []
+                    }
+                })
             
             # // If the maps do not exist in the cache
             if "maps" not in cache["lobbies"][guild][lobby_id]:
@@ -253,7 +269,7 @@ class Cache:
         del cache["users"][guild_id][user_id]
 
         # // Delete the player from the database
-        await Database.execute(f"DELETE FROM players WHERE guild_id = {guild_id} AND user_id = {user_id}")
+        await Database.execute(f"DELETE FROM users WHERE guild_id = {guild_id} AND user_id = {user_id}")
 
     # // Delete an elo role from the cache
     @staticmethod

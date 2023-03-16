@@ -15,7 +15,7 @@ class BansCog(commands.Cog):
             return
         
         # // Check if the user has enough permissions
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
@@ -40,12 +40,12 @@ class BansCog(commands.Cog):
             # // If the users ban time hasn't expired yet
             if ban_data["length"] - time.time() > 0:
                 # // Get the ban length
-                length: datetime.timedelta = datetime.timedelta(seconds = ban_data["length"])
+                length: datetime.timedelta = datetime.timedelta(seconds = int(ban_data["length"] - time.time()))
 
                 # // Send the embed
                 return await ctx.send(
                     embed = discord.Embed(
-                        title = f"{user.name} already banned", 
+                        title = f"{user.name} is already banned", 
                         description = f"**Length:** {length}\n**Reason:** {ban_data['reason']}\n**Banned by:** {ban_data['banned_by']}", 
                         color = 15158588
                 ))
@@ -79,7 +79,7 @@ class BansCog(commands.Cog):
             return
         
         # // Check if the user has mod role
-        if not Users.is_mod(ctx.guild, ctx.author):
+        if not Users.is_mod(ctx.author):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} you do not have enough permissions", 
