@@ -102,8 +102,8 @@ class Queue:
     # // Remove a user from a party
     @staticmethod
     def remove_from_party(guild_id: int, user_id: int) -> bool:
-        for party in queue[guild_id]["parties"]:
-            if user_id in queue[guild_id]["parties"][party]:
+        for party, members in queue[guild_id]["parties"]:
+            if user_id in members:
                 queue[guild_id]["parties"][party].remove(user_id)
                 return True
         return False

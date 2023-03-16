@@ -471,12 +471,12 @@ class QueueCog(commands.Cog):
                 ))
             
             # // Kick the user from the party
-            Queue.remove_from_party(ctx.guild.id, user.id)
-            return await ctx.send(
-                embed = discord.Embed(
-                    description = f"{ctx.author.mention} has kicked {user.mention} from the party", 
-                    color = 3066992
-            ))
+            if Queue.remove_from_party(ctx.guild.id, user.id):
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"{ctx.author.mention} has kicked {user.mention} from the party", 
+                        color = 3066992
+                ))
 
     # // Listen to the queue embed buttons
     @commands.Cog.listener()
