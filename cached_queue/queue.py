@@ -1,6 +1,6 @@
 from cache import Lobby, Users, Matches, Settings, Users, Bans
-import threading, discord, functools, random
 from discord_components import *
+import discord, random
 
 # // Store the queue data in a cache map
 queue: dict = {}
@@ -9,7 +9,7 @@ queue: dict = {}
 class Queue:
     # // Reset the queue
     @staticmethod
-    def reset(guild_id: int, lobby_id: int):
+    def clear(guild_id: int, lobby_id: int):
         # // Add the guild if it doesn't exist
         if guild_id not in queue:
             queue[guild_id] = {}
@@ -22,10 +22,19 @@ class Queue:
             "orange_cap": None, 
             "orange_team": [], 
             "pick_logic": [], 
-            "map": "None", 
-            "parties": {}, 
+            "map": "None",
             "state": "queue"
         }
+
+    # // Reset the parties
+    @staticmethod
+    def reset_parties(guild_id: int):
+        # // Add the guild if it doesn't exist
+        if guild_id not in queue:
+            queue[guild_id] = {}
+
+        # // Reset the parties
+        queue[guild_id]["parties"] = {}
 
     # // Get a value from the queue cache
     @staticmethod
@@ -36,6 +45,18 @@ class Queue:
     @staticmethod
     def get_lobby(guild_id: int, lobby_id: int) -> any:
         return queue[guild_id][lobby_id]
+    
+    # // Delete the lobby
+    @staticmethod
+    def delete_lobby(guild_id: int, lobby_id: int) -> None:
+        del queue[guild_id][lobby_id]
+
+    # // Get a party from the cache
+    @staticmethod
+    def get_parties(guild_id: int, party: int = None) -> any:
+        if party is None:
+            return queue[guild_id]["parties"]
+        return queue[guild_id]["parties"][party]
     
     # // Check if channel is a valid queue lobby
     @staticmethod
@@ -49,7 +70,8 @@ class Queue:
         
         # // Check if the lobby is in the cache
         if lobby_id not in queue[guild_id]:
-            Queue.reset(guild_id, lobby_id)
+            Queue.clear(guild_id, lobby_id)
+            Queue.reset_parties(guild_id)
         return True
     
     # // Update the map
@@ -64,25 +86,25 @@ class Queue:
 
     # // Add an user to a party
     @staticmethod
-    def add_to_party(guild_id: int, lobby_id: int, party_leader: int, user_id: int) -> None:
-        queue[guild_id][lobby_id]["parties"][party_leader] = user_id
+    def add_to_party(guild_id: int, party_leader: int, user_id: int) -> None:
+        queue[guild_id]["parties"][party_leader].append(user_id)
 
     # // Create a party
     @staticmethod
-    def create_party(guild_id: int, lobby_id: int, party_leader: int) -> None:
-        queue[guild_id][lobby_id]["parties"][party_leader] = []
+    def create_party(guild_id: int, party_leader: int) -> None:
+        queue[guild_id]["parties"][party_leader] = []
 
     # // Disband a party
     @staticmethod
-    def disband_party(guild_id: int, lobby_id: int, party_leader: int) -> None:
-        del queue[guild_id][lobby_id]["parties"][party_leader]
+    def disband_party(guild_id: int, party_leader: int) -> None:
+        del queue[guild_id]["parties"][party_leader]
     
     # // Remove a user from a party
     @staticmethod
-    def remove_from_party(guild_id: int, lobby_id: int, user_id: int) -> bool:
-        for party in queue[guild_id][lobby_id]["parties"]:
-            if user_id in queue[guild_id][lobby_id]["parties"][party]:
-                queue[guild_id][lobby_id]["parties"][party].remove(user_id)
+    def remove_from_party(guild_id: int, user_id: int) -> bool:
+        for party in queue[guild_id]["parties"]:
+            if user_id in queue[guild_id]["parties"][party]:
+                queue[guild_id]["parties"][party].remove(user_id)
                 return True
         return False
 
@@ -204,7 +226,7 @@ class Queue:
         await Queue.new_match(guild.id, lobby_id)
         await Queue.log_match(guild, embed)
         await Queue.create_match_category(guild, amount_of_matches, lobby_id)
-        Queue.reset(guild.id, lobby_id)
+        Queue.clear(guild.id, lobby_id)
 
         # // Send the embed
         return embed
@@ -245,14 +267,16 @@ class Queue:
             if user in queue[guild.id][lobby]["queue"]:
                 # // Get the channel
                 channel: discord.Channel = guild.get_channel(lobby)
-                if channel is not None:
-                    return discord.Embed(
-                        description = f"{user.mention} is already queued in {channel.mention}", 
-                        color = 15158588
-                    )
-                
+
                 # // If the channel is not found, then remove the lobby
-                del queue[guild.id][lobby]
+                if channel is None:
+                    del queue[guild.id][lobby]
+
+                # // Return the embed
+                return discord.Embed(
+                    description = f"{user.mention} is already queued in {channel.mention}", 
+                    color = 15158588
+                )
 
         # // Check if the user is banned
         if Bans.is_banned(guild.id, user.id):
@@ -279,25 +303,25 @@ class Queue:
     @staticmethod
     async def check_party(guild: discord.Guild, user: discord.Member, lobby_id: int) -> bool:
         # // If the user isn't a party leader
-        if user.id not in queue[guild.id][lobby_id]["parties"]:
+        if user.id not in queue[guild.id]["parties"]:
             return True
         
         # // Check if the user is in a party
-        for party in queue[guild.id][lobby_id]["parties"]:
-            if user.id in queue[guild.id][lobby_id]["parties"][party] and party != user.id:
+        for party in queue[guild.id]["parties"]:
+            if user.id in queue[guild.id]["parties"][party] and party != user.id:
                 return False
         
         # // Get the queue size
         max_queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
         lobby_queue_size: int = len(queue[guild.id][lobby_id]["queue"])
-        party_size: int = len(queue[guild.id][lobby_id]["parties"][user.id])
+        party_size: int = len(queue[guild.id]["parties"][user.id])
 
         # // Check if the party can join the queue
         if party_size + lobby_queue_size > max_queue_size:
             return False
             
         # // Add the party to the queue
-        for party_member in queue[guild.id][lobby_id]["parties"][user.id][1:]:
+        for party_member in queue[guild.id]["parties"][user.id][1:]:
             party_member: discord.Member = await Users.verify(guild, party_member.id)
 
             # // If the party member is in the guild and registered

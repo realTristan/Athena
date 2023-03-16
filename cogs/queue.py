@@ -48,7 +48,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Pick the user
-        await ctx.send(embed = Queue.pick(ctx.guild.id, ctx.channel.id, ctx.author, user))
+        await ctx.send(embed = Queue.pick(ctx.guild, ctx.channel.id, ctx.author, user))
         
         # // Send the embed
         await ctx.send(embed = Queue.embed(ctx.guild, ctx.channel.id))
@@ -203,7 +203,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Clear the queue
-        Queue.reset(ctx.guild.id, ctx.channel.id)
+        Queue.clear(ctx.guild.id, ctx.channel.id)
         return await ctx.send(
             embed = discord.Embed(
                 description = f"{ctx.author.mention} has cleared the queue", 
@@ -225,8 +225,8 @@ class QueueCog(commands.Cog):
                     color = 15158588
             ))
         
-        # // Get the parties and max party size for the current lobby
-        parties: list = Queue.get(ctx.guild.id, ctx.channel.id, "parties")
+        # // Get the parties and max party size
+        parties: list = Queue.get_parties(ctx.guild.id)
         max_party_size: int = Lobby.get(ctx.guild.id, ctx.channel.id, "max_party_size")
 
         # // Invite a player to your party
@@ -295,7 +295,7 @@ class QueueCog(commands.Cog):
 
                 # // If the user accepted the party invite
                 if res.component.id == "accept_party":
-                    Queue.add_to_party(ctx.guild.id, ctx.channel.id, ctx.author.id, user.id)
+                    Queue.add_to_party(ctx.guild.id, ctx.author.id, user.id)
                     await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} you have accepted {ctx.author.mention}'s party invite", 
@@ -331,7 +331,7 @@ class QueueCog(commands.Cog):
         if action in ["leave"]:
             # // Disband party
             if ctx.author.id in parties:
-                Queue.disband_party(ctx.guild.id, ctx.channel.id, ctx.author.id)
+                Queue.disband_party(ctx.guild.id, ctx.author.id)
 
                 # // Send the embed
                 return await ctx.send(
@@ -342,7 +342,7 @@ class QueueCog(commands.Cog):
                 )
 
             # // Remove the user from the party
-            if Queue.remove_from_party(ctx.guild.id, ctx.channel.id, ctx.author.id):
+            if Queue.remove_from_party(ctx.guild.id, ctx.author.id):
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"{ctx.author.mention} has left the party", 
@@ -405,7 +405,7 @@ class QueueCog(commands.Cog):
                     return await ctx.send(
                         embed = discord.Embed(
                             title = f"[{len(parties[party])}/{max_party_size}] {member.name}'s party", 
-                            description = "\n".join("<@" + str(e) + ">" for e in parties[user.id]), 
+                            description = "\n".join("<@" + str(user) + ">" for user in parties[user.id]), 
                             color = 33023
                     ))
                 
@@ -436,7 +436,7 @@ class QueueCog(commands.Cog):
                     ))
             
             # // Add the user to the parties list
-            Queue.create_party(ctx.guild.id, ctx.channel.id, ctx.author.id)
+            Queue.create_party(ctx.guild.id, ctx.author.id)
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} has created a party", 
@@ -472,7 +472,7 @@ class QueueCog(commands.Cog):
                 ))
             
             # // Kick the user from the party
-            Queue.remove_from_party(ctx.guild.id, ctx.channel.id, user.id)
+            Queue.remove_from_party(ctx.guild.id, user.id)
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} has kicked {user.mention} from the party", 
@@ -501,11 +501,11 @@ class QueueCog(commands.Cog):
             if Queue.is_valid_lobby(res.guild.id, lobby.id):
                 # // If the user is trying to join the queue
                 if res.component.id == "join_queue":
-                    await Queue.join(res, lobby.id, res.author)
+                    await Queue.join(res.guild, lobby.id, res.author)
 
                 # // If the user is trying to leave the queue
                 elif res.component.id == "leave_queue":
-                    await Queue.leave(res, lobby.id, res.author)
+                    await Queue.leave(res.guild, lobby.id, res.author)
                 
                 # // Get the players and store them in a string
                 queue_players: list = Queue.get(res.guild.id, lobby.id, "queue")

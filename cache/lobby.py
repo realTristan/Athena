@@ -1,4 +1,5 @@
 from .cache import Cache
+from cached_queue import Queue
 
 class Lobby:
     # // Check if a lobby exists for the guild
@@ -62,6 +63,10 @@ class Lobby:
     # // Delete the lobby
     @staticmethod
     async def delete(guild_id: int, lobby_id: int) -> None:
+        # // Delete the lobby from the queue cache
+        Queue.delete_lobby(guild_id, lobby_id)
+
+        # // Delete the lobby from the cache
         await Cache.delete_lobby(guild_id, lobby_id)
 
     # // Get the lobby or data from the lobby
