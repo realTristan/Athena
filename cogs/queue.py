@@ -1,7 +1,6 @@
 from discord_components import Button, ButtonStyle
+from cache import Lobby, Users, Queue
 from discord.ext import commands
-from cached_queue import Queue
-from cache import Lobby, Users
 import discord, asyncio, re
 
 class QueueCog(commands.Cog):

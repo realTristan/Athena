@@ -1,5 +1,5 @@
 from .cache import Cache
-from cached_queue import Queue
+from .queue import Queue
 
 class Lobby:
     # // Check if a lobby exists for the guild

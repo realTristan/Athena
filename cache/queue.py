@@ -588,9 +588,9 @@ class Queue:
         embed.add_field(name = "Blue Captain", value = queue_data["blue_cap"].mention)
 
         # // Teams
-        embed.add_field(name = "Orange Team", value = '\n'.join(str(e.mention) for e in queue_data["orange_team"]))
+        embed.add_field(name = "Orange Team", value = '\n'.join(str(user.mention) for user in queue_data["orange_team"]))
         embed.add_field(name = "\u200b", value = "\u200b")
-        embed.add_field(name = "Blue Team", value = '\n'.join(str(e.mention) for e in queue_data["blue_team"]))
+        embed.add_field(name = "Blue Team", value = '\n'.join(str(user.mention) for user in queue_data["blue_team"]))
 
         # // Available maps
         embed.add_field(name = "Available Maps", value = '\n'.join(str(m) for m in maps))
@@ -621,9 +621,9 @@ class Queue:
         embed.add_field(name = "Blue Captain", value = queue_data["blue_cap"].mention)
 
         # // Teams
-        embed.add_field(name = "Orange Team", value = '\n'.join(str(e.mention) for e in queue_data["orange_team"]))
+        embed.add_field(name = "Orange Team", value = '\n'.join(str(user.mention) for user in queue_data["orange_team"]))
         embed.add_field(name = "\u200b", value = "\u200b")
-        embed.add_field(name = "Blue Team", value = '\n'.join(str(e.mention) for e in queue_data["blue_team"]))
+        embed.add_field(name = "Blue Team", value = '\n'.join(str(user.mention) for user in queue_data["blue_team"]))
 
         # // Set the footer to the lobby id
         embed.set_footer(text = str(lobby_id))

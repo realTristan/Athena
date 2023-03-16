@@ -1,7 +1,7 @@
 from .cache import Cache
 from .users import Users
 from .lobby import Lobby
-import discord, functools
+import discord
 
 class Matches:
     # // Get the number of matches in the lobby
