@@ -56,7 +56,7 @@ class BansCog(commands.Cog):
             
         # // Ban the user (time, reason)
         ban_time: int = int(length + time.time())
-        ban_reason: str = ' '.join(str(e) for e in args)
+        ban_reason: str = ' '.join(word for word in args)
         
         # // Ban the user
         await Bans.ban(ctx.guild.id, user.id, ban_time, ban_reason, ctx.author.id)

@@ -71,9 +71,9 @@ class Matches:
         embed.add_field(name = "Blue Captain", value = f"<@{blue_captain}>")
 
         # // Teams
-        embed.add_field(name = "Orange Team", value = '\n'.join(f"<@{e}>" for e in orange_team))
+        embed.add_field(name = "Orange Team", value = '\n'.join(f"<@{user}>" for user in orange_team))
         embed.add_field(name = "\u200b", value = "\u200b")
-        embed.add_field(name = "Blue Team", value = '\n'.join(f"<@{e}>" for e in blue_team))
+        embed.add_field(name = "Blue Team", value = '\n'.join(f"<@{user}>" for user in blue_team))
         
         # // Return the embed
         return embed
@@ -135,33 +135,33 @@ class Matches:
         loss_elo: int = lobby_settings.get("loss_elo")
 
         # // Remove the loss from the losers
-        for user in losers:
+        for user_id in losers:
             # // Verify the user
-            if Users.verify(guild.id, user) is None:
+            if Users.verify(guild.id, user_id) is None:
                 continue
             
             # // Get the user info
-            user_info: dict = Users.get(guild.id, user)
+            user_info: dict = Users.get(guild.id, user_id)
             user_elo: int = user_info.get("elo")
             user_losses: int = user_info.get("losses")
             new_elo: int = user_elo + loss_elo
 
             # // Update the users elo and losses
-            Users.update(guild.id, user, elo = new_elo, loss = user_losses - 1)
+            Users.update(guild.id, user_id, elo = new_elo, loss = user_losses - 1)
 
             # // Add any elo roles that were lost
-            user: discord.Member = await guild.get_member(user)
+            user: discord.Member = await guild.get_member(user_id)
             await Users.add_elo_role(user, new_elo)
 
     
         # // Remove the win from the winners
-        for user in winners:
+        for user_id in winners:
             # // Verify the user
-            if Users.verify(guild.id, user) is None:
+            if Users.verify(guild.id, user_id) is None:
                 continue
                 
             # // Get the user info
-            user_info: dict = Users.get(guild.id, user)
+            user_info: dict = Users.get(guild.id, user_id)
             user_elo: int = user_info.get("elo")
             user_wins: int = user_info.get("wins")
             new_elo: int = user_elo - win_elo
@@ -171,10 +171,10 @@ class Matches:
                 new_elo = 0
             
             # // Update the users elo and wins
-            Users.update(guild.id, user, elo = new_elo, win = user_wins - 1)
+            Users.update(guild.id, user_id, elo = new_elo, win = user_wins - 1)
 
             # // Remove any elo roles that were added
-            user: discord.Member = await guild.get_member(user)
+            user: discord.Member = await guild.get_member(user_id)
             await Users.remove_elo_role(user, new_elo)
             
     # // Update a match
@@ -188,25 +188,25 @@ class Matches:
         # // Update the match status
         if status is not None:
             await Cache.update("matches", guild_id=guild_id, key=match_id, data={"status": status}, sqlcmds=[
-                f"UPDATE matches SET status = '{status}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+                f"UPDATE matches SET status = '{status}' WHERE guild_id = {guild_id} AND match_id = {match_id} AND lobby_id = {lobby_id}"
             ])
 
         # // Update the match winners
         if winners is not None:
             await Cache.update("matches", guild_id=guild_id, key=match_id, data={"winners": winners}, sqlcmds=[
-                f"UPDATE matches SET winners = '{winners}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+                f"UPDATE matches SET winners = '{winners}' WHERE guild_id = {guild_id} AND match_id = {match_id} AND lobby_id = {lobby_id}"
             ])
 
         # // Update the orange team captain
         if orange_cap is not None:
             await Cache.update("matches", guild_id=guild_id, key=match_id, data={"orange_cap": orange_cap}, sqlcmds=[
-                f"UPDATE matches SET orange_cap = '{orange_cap}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+                f"UPDATE matches SET orange_cap = '{orange_cap}' WHERE guild_id = {guild_id} AND match_id = {match_id} AND lobby_id = {lobby_id}"
             ])
         
         # // Update the blue team captain
         if blue_cap is not None:
             await Cache.update("matches", guild_id=guild_id, key=match_id, data={"blue_cap": blue_cap}, sqlcmds=[
-                f"UPDATE matches SET blue_cap = '{blue_cap}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+                f"UPDATE matches SET blue_cap = '{blue_cap}' WHERE guild_id = {guild_id} AND match_id = {match_id} AND lobby_id = {lobby_id}"
             ])
 
         # // Update the orange team
@@ -214,7 +214,7 @@ class Matches:
             await Cache.update("matches", guild_id=guild_id, key=match_id, data={
                 "orange_team": orange_team.split(",", maxsplit=4)
             }, sqlcmds=[
-                f"UPDATE matches SET orange_team = '{orange_team}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+                f"UPDATE matches SET orange_team = '{orange_team}' WHERE guild_id = {guild_id} AND match_id = {match_id} AND lobby_id = {lobby_id}"
             ])
 
         # // Update the blue team
@@ -222,6 +222,6 @@ class Matches:
             await Cache.update("matches", guild_id=guild_id, key=match_id, data={
                 "blue_team": blue_team.split(",", maxsplit=4)
             }, sqlcmds=[
-                f"UPDATE matches SET blue_team = '{blue_team}' WHERE guild_id = {guild_id} AND lobby_id = {lobby_id} AND match_id = {match_id}"
+                f"UPDATE matches SET blue_team = '{blue_team}' WHERE guild_id = {guild_id} AND match_id = {match_id} AND lobby_id = {lobby_id}"
             ])
        

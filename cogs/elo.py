@@ -183,7 +183,7 @@ class EloCog(commands.Cog):
                 ))
 
             # // Update the match
-            await Matches.update(ctx.guild.id, match_id, status="reported", winner=args[0])
+            await Matches.update(ctx.guild.id, lobby_id, match_id, status="reported", winners=args[0])
             
             # // Get the orange team
             orange_team: list = match_data.get("orange_team")
@@ -193,8 +193,8 @@ class EloCog(commands.Cog):
             blue_team: list = match_data.get("blue_team")
             blue_team.append(match_data["blue_cap"])
 
-            # // If team is the winner
-            if "blue" in args[0]:
+            # // If blue team is the winner
+            if args[0] == "blue":
                 # // Add a loss for each orange team member
                 for user in orange_team:
                     user: discord.Member = Users.verify(ctx.guild, user)
@@ -208,7 +208,7 @@ class EloCog(commands.Cog):
                         await Users.win(user, lobby_id)
 
             # // If orange team is the winner
-            if "orange" in args[0]:
+            if args[0] == "orange":
                 # // Add a win for each orange team member
                 for user in orange_team:
                     user: discord.Member = Users.verify(ctx.guild, user)
@@ -239,7 +239,7 @@ class EloCog(commands.Cog):
                 ))
             
             # // Update the match data
-            await Matches.update(ctx.guild.id, match_id, status="cancelled", winner="none")
+            await Matches.update(ctx.guild.id, lobby_id, match_id, status="cancelled", winners="none")
             
             # // Send the match info embed
             await ctx.send(Matches.embed(ctx.guild.id, match_id))
@@ -258,7 +258,7 @@ class EloCog(commands.Cog):
                 ))
             
             # // Update the match status and winners
-            await Matches.update(ctx.guild.id, match_id, status="ongoing", winner="none")
+            await Matches.update(ctx.guild.id, lobby_id, match_id, status="ongoing", winners="none")
 
             # // Add the orange team and it's captains
             orange_team: list = match_data.get("orange_team")
@@ -871,38 +871,38 @@ class EloCog(commands.Cog):
         matches: dict = Matches.get(ctx.guild.id)
 
         # // For each match
-        for match in matches:
-            if match["status"] in ["ongoing", "cancelled", "rollbacked"]:
+        for match_id, match_data in matches:
+            if match_data["status"] in ["ongoing", "cancelled", "rollbacked"]:
                 continue
 
             # // Blue team
-            blue_team: list = match.get("blue_team")
-            blue_team.append(match["blue_cap"])
+            blue_team: list = match_data.get("blue_team")
+            blue_team.append(match_data["blue_cap"])
 
             # // Orange team
-            orange_team: list = match.get("orange_team")
-            orange_team.append(match["orange_cap"])
+            orange_team: list = match_data.get("orange_team")
+            orange_team.append(match_data["orange_cap"])
 
             # // Get the lobby id
-            lobby_id: int = match.get("lobby_id")
+            lobby_id: int = match_data.get("lobby_id")
 
             # // Check if the user is in either of the teams
             if user in blue_team or user in orange_team:
                 # // Check the match winners (in this case it's orange)
-                if match["winners"] == "orange" and user in orange_team:
+                if match_data["winners"] == "orange" and user in orange_team:
                     await Matches.undo(ctx.guild.id, lobby_id, orange_team, blue_team)
                 
                 # // Check the match winners (in this case it's blue)
-                if match["winners"] == "blue" and user in blue_team:
+                if match_data["winners"] == "blue" and user in blue_team:
                     await Matches.undo(ctx.guild.id, lobby_id, blue_team, orange_team)
                 
                 # // Update the match status
-                await Matches.update(ctx.guild.id, lobby_id, match["match_id"], status="rollbacked")
+                await Matches.update(ctx.guild.id, lobby_id, match_id, status="rollbacked")
                 
                 # // Send match rollback embed
                 await ctx.send(
                     embed = discord.Embed(
-                        description = f"{ctx.author.mention} Match **#{match[1]}** has been rollbacked", 
+                        description = f"{ctx.author.mention} Match **#{match_id}** has been rollbacked", 
                         color = 3066992
                 ))
 

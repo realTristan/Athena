@@ -1,8 +1,12 @@
 from contextlib import closing
 import mysql.connector
 
-db = mysql.connector.connect(
-    host="localhost", port="3306", user="root", password="root", database="main"
+db: any = mysql.connector.connect(
+    host = "localhost", 
+    port = "3306", 
+    user = "root", 
+    password = "root", 
+    database = "main"
 )
 
 class Database:
@@ -47,19 +51,23 @@ class Database:
     @staticmethod
     async def db_connect():
         return mysql.connector.connect(
-            host="localhost", port="3306", user="root", password="root", database="main"
+            host = "localhost", 
+            port = "3306", 
+            user = "root", 
+            password = "root", 
+            database = "main"
         )
         
     # // Check if value exists
     @staticmethod
     async def exists(command: str):
-        global db
+        # // Try to execute the command
         try:
             with closing(db.cursor(buffered=True)) as cur:
                 cur.execute(command)
-                if cur.fetchone() is None:
-                    return False  # // Doesn't exist
-                return True  # // Does exist
+                return cur.fetchone() is not None
+        
+        # // If an error occurs, reconnect to the database
         except mysql.connector.Error as e:
             print(f"Database (exists): {e}")
             db.close()
@@ -68,13 +76,15 @@ class Database:
     # // Returns a single list of results
     @staticmethod
     async def select(command: str):
-        global db
+        # // Try to execute the command
         try:
             with closing(db.cursor()) as cur:
                 if await Database.exists(command):
                     cur.execute(command)
                     return list(cur.fetchone())
                 return None
+        
+        # // If an error occurs, reconnect to the database
         except mysql.connector.Error as e:
             print(f"Database (select): {e}")
             db.close()
@@ -83,11 +93,13 @@ class Database:
     # // Returns multiple lists of results
     @staticmethod
     async def select_all(command: str):
-        global db
+        # // Try to execute the command
         try:
             with closing(db.cursor(buffered=True)) as cur:
                 cur.execute(command)
                 return [list(i) for i in cur.fetchall()]
+        
+        # // If an error occurs, reconnect to the database
         except mysql.connector.Error as e:
             print(f"Database (select_all): {e}")
             db.close()
@@ -96,11 +108,13 @@ class Database:
     # // Execute a command
     @staticmethod
     async def execute(command: str):
-        global db
+        # // Try to execute the command
         try:
             with closing(db.cursor()) as cur:
                 cur.execute(command)
                 db.commit()
+
+        # // If an error occurs, reconnect to the database
         except mysql.connector.Error as e:
             print(f"Database (execute): {e}")
             db.close()
