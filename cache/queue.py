@@ -39,12 +39,12 @@ class Queue:
     # // Get a value from the queue cache
     @staticmethod
     def get(guild_id: int, lobby_id: int, key: str) -> any:
-        return queue[guild_id][lobby_id][key]
+        return queue[guild_id][lobby_id].get(key, None)
     
     # // Get the lobby data
     @staticmethod
     def get_lobby(guild_id: int, lobby_id: int) -> any:
-        return queue[guild_id][lobby_id]
+        return queue[guild_id].get(lobby_id, None)
     
     # // Delete the lobby
     @staticmethod
@@ -55,8 +55,8 @@ class Queue:
     @staticmethod
     def get_parties(guild_id: int, party: int = None) -> any:
         if party is None:
-            return queue[guild_id]["parties"]
-        return queue[guild_id]["parties"][party]
+            return queue[guild_id].get("parties", None)
+        return queue[guild_id]["parties"].get(party, None)
     
     # // Check if channel is a valid queue lobby
     @staticmethod
