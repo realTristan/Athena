@@ -25,9 +25,9 @@ class Users:
         
         # // Get the user info
         user_name: str = user_info.get("user_name")
-        user_elo: int = user_info.get("elo")
-        user_wins: int = user_info.get("wins")
-        user_losses: int = user_info.get("losses")
+        user_elo: int = user_info.get("elo", 0)
+        user_wins: int = user_info.get("wins", 0)
+        user_losses: int = user_info.get("losses", 0)
         user_matches: int = user_wins + user_losses
         
         # // Create an embed
@@ -99,7 +99,7 @@ class Users:
     async def add_elo_role(user: discord.Member, elo: int) -> None:
         roles: list = await Database.select_all(f"SELECT role_id FROM elo_roles WHERE elo_level <= {elo} AND guild_id = {user.guild.id}")
         
-        # // Check roles and add them
+        # // Check if the roles list is empty
         if len(roles) <= 0:
             return
         
@@ -110,13 +110,13 @@ class Users:
             # // Add the role to the user
             if role not in user.roles:
                 await Users.add_role(user, role)
-    
+     
     # // Remove an elo role from the user
     @staticmethod
     async def remove_elo_role(user: discord.Member, elo: int) -> None:
         roles: list = await Database.select_all(f"SELECT role_id FROM elo_roles WHERE elo_level > {elo} AND guild_id = {user.guild.id}")
         
-        # // Check roles and add them
+        # // Check if the roles list is empty
         if len(roles) <= 0:
             return
         
@@ -185,8 +185,8 @@ class Users:
     async def win(user: discord.Member, lobby: int) -> discord.Embed:
         # // Get the user data
         user_info: dict = Users.get(user.guild.id, user.id)
-        user_wins: int = user_info.get("wins")
-        user_elo: int = user_info.get("elo")
+        user_wins: int = user_info.get("wins", 0)
+        user_elo: int = user_info.get("elo", 0)
 
         # // Get the lobby settings
         win_elo: int = Lobby.get(user.guild.id, lobby, "win_elo")
@@ -223,8 +223,8 @@ class Users:
     async def lose(user: discord.Member, lobby: int) -> discord.Embed:
         # // Get the user data
         user_info: dict = Users.get(user.guild.id, user.id)
-        user_losses: int = user_info.get("losses")
-        user_elo: int = user_info.get("elo")
+        user_losses: int = user_info.get("losses", 0)
+        user_elo: int = user_info.get("elo", 0)
 
         # // Get the lobby settings
         loss_elo: int = Lobby.get(user.guild.id, lobby, "loss_elo")
