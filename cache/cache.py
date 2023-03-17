@@ -1,5 +1,4 @@
 from .database import Database
-import functools
 
 # // The Global Cache Variable
 cache: dict[str, dict] = {

@@ -38,7 +38,7 @@ class Lobby:
     # // Check if a map exists
     @staticmethod
     def map_exists(guild_id: int, lobby_id: int, map: str) -> bool:
-        return map in Cache.fetch("lobbies", guild_id)[lobby_id]["maps"]
+        return map in Cache.fetch("lobbies", guild_id)[lobby_id].get("maps", [])
 
     # // Delete a map from the lobby
     @staticmethod

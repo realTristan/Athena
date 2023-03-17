@@ -1,5 +1,5 @@
 from .cache import Cache
-import time, datetime, discord, functools
+import time, datetime, discord
 
 class Bans:
     # // Add a ban to the lobby
