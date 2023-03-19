@@ -6,7 +6,7 @@ import discord, asyncio, re
 # // Settings cog
 class SettingsCog(commands.Cog):
     def __init__(self, client: commands.Bot):
-        self.client = client
+        self.client: commands.Bot = client
     
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
@@ -1257,6 +1257,6 @@ class SettingsCog(commands.Cog):
             ))
                 
 
-
-def setup(client: commands.Bot):
-    client.add_cog(SettingsCog(client))
+# // Setup the cog
+async def setup(client: commands.Bot):
+    await client.add_cog(SettingsCog(client))

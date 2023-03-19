@@ -1,5 +1,4 @@
 from cache import Settings, Users, Lobby, Database, Matches
-from discord import app_commands
 from discord_components import *
 from discord.ext import commands
 import discord, re
@@ -7,11 +6,10 @@ import discord, re
 # // Elo cog
 class EloCog(commands.Cog):
     def __init__(self, client: commands.Bot):
-        self.client = client
+        self.client: commands.Bot = client
     
     # // ADD / REMOVE A NEW ELO ROLE
     # /////////////////////////////////
-    @app_commands.command(name="elorole", description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`')
     @commands.command(name="elorole", description='`=elorole add (@role) [elo]`**,** `=elorole del (@role)`**,** `=elorole list`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def elorole(self, ctx: commands.Context, option: str, *args):
@@ -143,7 +141,6 @@ class EloCog(commands.Cog):
         
     # // MATCH REPORT / CANCEL / UNDO / SHOW COMMAND
     # ////////////////////////////////////////////////
-    @app_commands.command(name="match", description='`=match report (match id) [blue/orange]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
     @commands.command(name="match", description='`=match report (match id) [blue/orange]`**,** `=match cancel (match id)`**,** `=match undo (match id)`**,** `=match show (match id)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def match(self, ctx: commands.Context, action: str, match_id: int, *args):
@@ -285,7 +282,6 @@ class EloCog(commands.Cog):
 
     # // SET PLAYERS STATS COMMAND
     # /////////////////////////////////
-    @app_commands.command(name="set", description='`=set elo (@user) (amount)`**,** `=set wins (@user) (amount)`**,** `=set losses (@user) (amount)`')
     @commands.command(name="set", description='`=set elo (@user) (amount)`**,** `=set wins (@user) (amount)`**,** `=set losses (@user) (amount)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def set(self, ctx: commands.Context, action: str, user: discord.Member, amount: int):
@@ -336,7 +332,6 @@ class EloCog(commands.Cog):
 
     # // SHOW THE LAST MATCH PLAYED COMMAND
     # /////////////////////////////////////////
-    @app_commands.command(name="lastmatch", description='`=lastmatch`')
     @commands.command(name="lastmatch", aliases=["lm"], description='`=lastmatch`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def lastmatch(self, ctx: commands.Context):
@@ -350,7 +345,6 @@ class EloCog(commands.Cog):
 
     # // REPLACE / SUB TWO PLAYERS COMMAND
     # /////////////////////////////////////////
-    @app_commands.command(name="replace", description='`=replace (@user to be replaced) (@user replacing) (match id)`')
     @commands.command(name="replace", aliases=["sub", "swap"], description='`=replace (@user to be replaced) (@user replacing) (match id)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def replace(self, ctx: commands.Context, user1: discord.Member, user2: discord.Member, match_id: int):
@@ -435,7 +429,6 @@ class EloCog(commands.Cog):
     
     
     # // Modify your own nickname
-    @app_commands.command(name="rename", description='`=rename (name)`')
     @commands.command(name="rename", description='`=rename (name)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def rename(self, ctx: commands.Context, name: str):
@@ -476,7 +469,6 @@ class EloCog(commands.Cog):
 
     # // FORCE CHANGE A PLAYER'S USERNAME COMMAND
     # ////////////////////////////////////////////
-    @app_commands.command(name="forcerename", description='`=forcerename (@user) (name)`')
     @commands.command(name="forcerename", aliases=["fr"], description='`=forcerename (@user) (name)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def forcerename(self, ctx: commands.Context, user:discord.Member, name:str):
@@ -512,7 +504,6 @@ class EloCog(commands.Cog):
 
     # // REGISTER USER INTO THE DATABASE COMMAND
     # ///////////////////////////////////////////
-    @app_commands.command(name="register", description='`=register (name)`')
     @commands.command(name="register", aliases=["reg"], description='`=register (name)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def register(self, ctx: commands.Context, *args):
@@ -604,7 +595,6 @@ class EloCog(commands.Cog):
     
     # // UNREGISTER AN USER
     # ////////////////////////
-    @app_commands.command(name="unregister", description='`=unreg (@user)`')
     @commands.command(name="unregister", aliases=["unreg"], description='`=unreg (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def unregister(self, ctx: commands.Context, user:discord.Member):
@@ -640,7 +630,6 @@ class EloCog(commands.Cog):
 
     # // GIVES AN USER A WIN COMMAND
     # /////////////////////////////////
-    @app_commands.command(name="win", description='`=win (@users)`')
     @commands.command(name="win", description='`=win (@users)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def win(self, ctx: commands.Context, users: commands.Greedy[discord.Member]):
@@ -687,7 +676,6 @@ class EloCog(commands.Cog):
 
     # // GIVES AN USER A LOSS COMMAND
     # //////////////////////////////////////
-    @app_commands.command(name="lose", description='`=lose (@users)`')
     @commands.command(name="lose", description='`=lose (@users)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def lose(self, ctx: commands.Context, users: commands.Greedy[discord.Member]):
@@ -733,7 +721,6 @@ class EloCog(commands.Cog):
 
     # // SHOW YOUR OR ANOTHER PLAYER'S STATS COMMAND
     # ////////////////////////////////////////////////
-    @app_commands.command(name="stats", description='`=stats`**,** `=stats (@user)`')
     @commands.command(name="stats", description='`=stats`**,** `=stats (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def stats(self, ctx: commands.Context, *args):
@@ -759,7 +746,6 @@ class EloCog(commands.Cog):
 
     # // RESET AN USERS STATS COMMAND
     # /////////////////////////////////////////
-    @app_commands.command(name="reset", description='`=reset all`**,** `=reset (@user)`')
     @commands.command(name="reset", description='`=reset all`**,** `=reset (@user)`')
     @commands.cooldown(1, 300, commands.BucketType.guild)
     async def reset(self, ctx: commands.Context, args: str):
@@ -824,7 +810,6 @@ class EloCog(commands.Cog):
     
     # // SHOW GUILD'S LEADERBOARD COMMAND
     # /////////////////////////////////////////
-    @app_commands.command(name="leaderboard", description='`=leaderboard`')
     @commands.command(name="leaderboard", aliases=["lb"], description='`=leaderboard`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def leaderboard(self, ctx: commands.Context):
@@ -863,7 +848,6 @@ class EloCog(commands.Cog):
         
     # // ROLLBACK EVERY MATCH AN USER WAS IN
     # //////////////////////////////////////////
-    @app_commands.command(name="rollback", description='`=rollback (user id)`')
     @commands.command(name="rollback", aliases=["rb"], description='`=rollback (user id)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def rollback(self, ctx: commands.Context, user: int):
@@ -1040,5 +1024,5 @@ class EloCog(commands.Cog):
 
 
 # // Setup the cog
-def setup(client: commands.Bot):
-    client.add_cog(EloCog(client))
+async def setup(client: commands.Bot):
+    await client.add_cog(EloCog(client))

@@ -1,15 +1,13 @@
 import discord, time, re, datetime
 from discord.ext import commands
-from discord import app_commands
 from cache import Users, Bans
 
 # // Bans cog
 class BansCog(commands.Cog):
     def __init__(self, client: commands.Bot):
-        self.client = client
+        self.client: commands.Bot = client
     
     # // Ban an user command
-    @app_commands.command(name="ban", description='`=ban (@user) (length) (reason)  |  Lengths: [s (seconds), m (minutes), h (hours), d (days)]`')
     @commands.command(name="ban", description='`=ban (@user) (length) (reason)  |  Lengths: [s (seconds), m (minutes), h (hours), d (days)]`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def ban(self, ctx: commands.Context, user: discord.Member, length: str, *args):
@@ -76,7 +74,6 @@ class BansCog(commands.Cog):
 
 
     # // Unban an user command
-    @app_commands.command(name="unban", description='`=unban (@user)`')
     @commands.command(name="unban", description='`=unban (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def unban(self, ctx:commands.Context, user:discord.Member):
@@ -109,6 +106,6 @@ class BansCog(commands.Cog):
                 color = 3066992
         ))
 
-
-def setup(client: commands.Bot):
-    client.add_cog(BansCog(client))
+# // Setup the cog
+async def setup(client: commands.Bot):
+    await client.add_cog(BansCog(client))

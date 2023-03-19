@@ -5,7 +5,7 @@ import discord
 
 class HelpCog(commands.Cog):
     def __init__(self, client: commands.Bot):
-        self.client = client
+        self.client: commands.Bot = client
 
     # // CREATING EMBED OBJECTS
     player_embed=discord.Embed(title='Player Commands', color=33023, timestamp=datetime.utcnow())
@@ -108,5 +108,6 @@ class HelpCog(commands.Cog):
                 await res.send(embed=discord.Embed(description=f"{res.author.mention} the commands have been sent to your dm's", color=3066992))
                 return await res.author.send(embed=self.administrator_embed)
 
-def setup(client: commands.Bot):
-    client.add_cog(HelpCog(client))
+# // Setup the cog
+async def setup(client: commands.Bot):
+    await client.add_cog(HelpCog(client))

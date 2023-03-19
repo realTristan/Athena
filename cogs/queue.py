@@ -5,7 +5,7 @@ import discord, asyncio, re
 
 class QueueCog(commands.Cog):
     def __init__(self, client: commands.Bot):
-        self.client = client
+        self.client: commands.Bot = client
 
     # // The command for team captains to pick a teammate
     @commands.command(name="pick", aliases=["p"], description='`=pick (@user)`')
@@ -526,5 +526,6 @@ class QueueCog(commands.Cog):
                 return await res.message.edit(embed=embed)
                 
 
-def setup(client: commands.Bot):
-    client.add_cog(QueueCog(client))
+# // Setup the cog
+async def setup(client: commands.Bot):
+    await client.add_cog(QueueCog(client))
