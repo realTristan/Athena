@@ -1,5 +1,6 @@
 import discord, time, re, datetime
 from discord.ext import commands
+from discord import app_commands
 from cache import Users, Bans
 
 # // Bans cog
@@ -8,9 +9,10 @@ class BansCog(commands.Cog):
         self.client = client
     
     # // Ban an user command
+    @app_commands.command(name="ban", description='`=ban (@user) (length) (reason)  |  Lengths: [s (seconds), m (minutes), h (hours), d (days)]`')
     @commands.command(name="ban", description='`=ban (@user) (length) (reason)  |  Lengths: [s (seconds), m (minutes), h (hours), d (days)]`')
     @commands.cooldown(1, 1, commands.BucketType.user)
-    async def ban(self, ctx: commands.Context, user: discord.Member, length_str: str, *args):
+    async def ban(self, ctx: commands.Context, user: discord.Member, length: str, *args):
         if ctx.author.bot:
             return
         
@@ -22,15 +24,17 @@ class BansCog(commands.Cog):
                     color = 15158588
             ))
         
-        # // Get the ban length
-        if "s" in length_str:
-            length = int(re.sub("\D","", length_str))
-        if "m" in length_str:
-            length = int(re.sub("\D","", length_str)) * 60
-        if "h" in length_str:
-            length = int(re.sub("\D","", length_str)) * 3600
-        if "d" in length_str:
-            length = int(re.sub("\D","", length_str)) * 86400
+        # // Get the ban length as an integer
+        if "s" in length:
+            length = int(re.sub("\D", "", length))
+        elif "m" in length:
+            length = int(re.sub("\D", "", length)) * 60
+        elif "h" in length:
+            length = int(re.sub("\D", "", length)) * 3600
+        elif "d" in length:
+            length = int(re.sub("\D", "", length)) * 86400
+        else:
+            length = 0
         
         # // Chekc if the user already exists in the bans table
         if Bans.is_banned(ctx.guild.id, user.id):
@@ -72,6 +76,7 @@ class BansCog(commands.Cog):
 
 
     # // Unban an user command
+    @app_commands.command(name="unban", description='`=unban (@user)`')
     @commands.command(name="unban", description='`=unban (@user)`')
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def unban(self, ctx:commands.Context, user:discord.Member):
