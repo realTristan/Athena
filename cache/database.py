@@ -61,6 +61,7 @@ class Database:
     # // Check if value exists
     @staticmethod
     async def exists(command: str):
+        global db
         # // Try to execute the command
         try:
             with closing(db.cursor(buffered=True)) as cur:
@@ -76,6 +77,7 @@ class Database:
     # // Returns a single list of results
     @staticmethod
     async def select(command: str):
+        global db
         # // Try to execute the command
         try:
             with closing(db.cursor()) as cur:
@@ -93,6 +95,7 @@ class Database:
     # // Returns multiple lists of results
     @staticmethod
     async def select_all(command: str):
+        global db
         # // Try to execute the command
         try:
             with closing(db.cursor(buffered=True)) as cur:
@@ -108,6 +111,7 @@ class Database:
     # // Execute a command
     @staticmethod
     async def execute(command: str):
+        global db
         # // Try to execute the command
         try:
             with closing(db.cursor()) as cur:

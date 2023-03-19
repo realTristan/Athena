@@ -1,6 +1,6 @@
-from cache import Lobby, Users, Matches, Settings, Users, Bans
-from discord_components import *
+from cache import *
 import discord, random
+from discord_components import *
 
 # // Store the queue data in a cache map
 queue: dict = {}

@@ -16,7 +16,7 @@ class Users:
         # // Get the user info
         user_info: dict = Users.get(user.guild.id, user.id)
         
-        # // Make sure the match exists
+        # // Make sure the user exists
         if user_info is None:
             return discord.Embed(
                 description = f"{user.mention} is not registered", 

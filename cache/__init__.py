@@ -5,4 +5,3 @@ from .lobby import *
 from .bans import *
 from .settings import *
 from .matches import *
-from .queue import *
