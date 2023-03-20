@@ -9,25 +9,47 @@ class Users:
     @staticmethod
     def get(guild_id: int, user_id: int) -> any:
         return Cache.fetch("users", guild_id).get(user_id, None)
+    
+    # // Get the user elo
+    @staticmethod
+    def get_elo(guild_id: int, user_id: int) -> int:
+        return Cache.fetch("users", guild_id, user_id).get("elo", 0)
+    
+    # // Get the user wins
+    @staticmethod
+    def get_wins(guild_id: int, user_id: int) -> int:
+        return Cache.fetch("users", guild_id, user_id).get("wins", 0)
+    
+    # // Get the user losses
+    @staticmethod
+    def get_losses(guild_id: int, user_id: int) -> int:
+        return Cache.fetch("users", guild_id, user_id).get("losses", 0)
+    
+    # // Get the user name
+    @staticmethod
+    def get_name(guild_id: int, user_id: int) -> str:
+        return Cache.fetch("users", guild_id, user_id).get("user_name", "Unknown User")
+    
+    # // Check if user exists
+    @staticmethod
+    def exists(guild_id: int, user_id: int) -> bool:
+        return user_id in Cache.fetch("users", guild_id)
 
     # // Show the users stats in an embed
     @staticmethod
-    def stats(user: discord.Member) -> discord.Embed:
-        # // Get the user info
-        user_info: dict = Users.get(user.guild.id, user.id)
-        
+    def get_stats(user: discord.Member) -> discord.Embed:
         # // Make sure the user exists
-        if user_info is None:
+        if not Users.exists(user.guild.id, user.id):
             return discord.Embed(
                 description = f"{user.mention} is not registered", 
                 color = 15158588
             )
         
         # // Get the user info
-        user_name: str = user_info.get("user_name")
-        user_elo: int = user_info.get("elo", 0)
-        user_wins: int = user_info.get("wins", 0)
-        user_losses: int = user_info.get("losses", 0)
+        user_name: str = Users.get_name(user.guild.id, user.id)
+        user_elo: int = Users.get_elo(user.guild.id, user.id)
+        user_wins: int = Users.get_wins(user.guild.id, user.id)
+        user_losses: int = Users.get_losses(user.guild.id, user.id)
         user_matches: int = user_wins + user_losses
         
         # // Create an embed
@@ -39,11 +61,6 @@ class Users:
     
         # // Return the embed
         return embed
-
-    # // Check if user exists
-    @staticmethod
-    def exists(guild_id: int, user_id: int) -> bool:
-        return user_id in Cache.fetch("users", guild_id)
     
     # // Register a new user
     @staticmethod
@@ -61,8 +78,8 @@ class Users:
         ])
 
         # // Add the register role to the user
-        reg_role: int = Settings.get(user.guild.id, "reg_role")
-        if reg_role == 0:
+        reg_role: int = Settings.get_reg_role(user.guild.id)
+        if reg_role is None:
             return
         
         # // Get the role
@@ -146,20 +163,40 @@ class Users:
             return True
         
         # // Else, check for whether the user has mod role
-        mod_role: int = Settings.get(user.guild.id, "mod_role")
-        return user.guild.get_role(mod_role) in user.roles
+        mod_role: int = Settings.get_mod_role(user.guild.id)
+        if mod_role is None:
+            return
+        
+        # // Get the role
+        role: discord.Role = user.guild.get_role(mod_role)
+        if role is None:
+            Settings.update(user.guild.id, mod_role=0)
+            return False
+        
+        # // Return whether the user has the role
+        return role in user.roles
     
     
     # // Check admin role or admin permissions
     @staticmethod
     def is_admin(user: discord.Member) -> bool:
         # // Get the admin role from settings
-        admin_role: int = Settings.get(user.guild.id, "admin_role")
+        admin_role: int = Settings.get_admin_role(user.guild.id)
+        if admin_role is None:
+            return False
         
         # // Check admin permissions
         if admin_role == 0 or user.guild_permissions.administrator:
             return user.guild_permissions.administrator
-        return user.guild.get_role(admin_role) in user.roles
+        
+        # // Get the role
+        role: discord.Role = user.guild.get_role(admin_role)
+        if role is None:
+            Settings.update(user.guild.id, admin_role=0)
+            return False
+        
+        # // Return whether the user has the role
+        return role in user.roles
     
     # // Check if member is still in the server
     @staticmethod
@@ -182,22 +219,21 @@ class Users:
     
     # // Give an user a win
     @staticmethod
-    async def win(user: discord.Member, lobby: int) -> discord.Embed:
-        # // Get the user data
-        user_info: dict = Users.get(user.guild.id, user.id)
-        user_wins: int = user_info.get("wins", 0)
-        user_elo: int = user_info.get("elo", 0)
-
-        # // Get the lobby settings
-        win_elo: int = Lobby.get(user.guild.id, lobby, "win_elo")
-        new_user_elo: int = user_elo + win_elo
-        
+    async def win(user: discord.Member, lobby_id: int) -> discord.Embed:
         # // Make sure the user is in the cache, if they aren't it will return None
-        if user_info is None:
+        if not Users.exists(user.guild.id, user.id):
             return discord.Embed(
                 description = f"{user.mention} is not registered", 
                 color = 15158588
             )
+        
+        # // Get the user data
+        user_wins: int = Users.get_wins(user.guild.id, user.id)
+        user_elo: int = Users.get_elo(user.guild.id, user.id)
+
+        # // Get the lobby settings
+        win_elo: int = Lobby.get_win_elo(lobby_id)
+        new_user_elo: int = user_elo + win_elo
         
         # // Update the user
         await Users.update(
@@ -220,27 +256,26 @@ class Users:
     
     # // Give an user a loss
     @staticmethod
-    async def lose(user: discord.Member, lobby: int) -> discord.Embed:
-        # // Get the user data
-        user_info: dict = Users.get(user.guild.id, user.id)
-        user_losses: int = user_info.get("losses", 0)
-        user_elo: int = user_info.get("elo", 0)
-
-        # // Get the lobby settings
-        loss_elo: int = Lobby.get(user.guild.id, lobby, "loss_elo")
-        new_user_elo: int = user_elo - loss_elo
-
-        # // Get the lobby settings and check if negative elo is allowed
-        negative_elo: int = Lobby.get(user.guild.id, lobby, "negative_elo")
-        if negative_elo == 1 and new_user_elo < 0:
-            new_user_elo: int = 0
-        
-        # // Make sure the user is in the cache, if they aren't it will return None
-        if user_info is None:
+    async def lose(user: discord.Member, lobby_id: int) -> discord.Embed:
+        # // Make sure the user exists
+        if not Users.exists(user.guild.id, user.id):
             return discord.Embed(
                 description = f"{user.mention} is not registered", 
                 color = 15158588
             )
+        
+        # // Get the user data
+        user_losses: int = Users.get_losses(user.guild.id, user.id)
+        user_elo: int = Users.get_elo(user.guild.id, user.id)
+
+        # // Get the lobby settings
+        loss_elo: int = Lobby.get_loss_elo(lobby_id)
+        new_user_elo: int = user_elo - loss_elo
+
+        # // Get the lobby settings and check if negative elo is allowed
+        negative_elo: int = Lobby.get_negative_elo(lobby_id)
+        if not negative_elo and new_user_elo < 0:
+            new_user_elo: int = 0
         
         # // Update the user
         await Users.update(

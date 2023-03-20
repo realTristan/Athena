@@ -16,6 +16,41 @@ class Lobby:
     @staticmethod
     def get_all(guild_id: int) -> dict:
         return Cache.fetch("lobbies", guild_id)
+    
+    # // Get the lobby win elo
+    @staticmethod
+    def get_win_elo(guild_id: int, lobby_id: int) -> int:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("win_elo", 5)
+    
+    # // Get the lobby loss elo
+    @staticmethod
+    def get_loss_elo(guild_id: int, lobby_id: int) -> int:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("loss_elo", 2)
+    
+    # // Get the lobby party size
+    @staticmethod
+    def get_party_size(guild_id: int, lobby_id: int) -> int:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("party_size", 1)
+    
+    # // Get the lobby queue size
+    @staticmethod
+    def get_queue_size(guild_id: int, lobby_id: int) -> int:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("queue_size", 10)
+    
+    # // Get the lobby negative elo
+    @staticmethod
+    def get_negative_elo(guild_id: int, lobby_id: int) -> bool:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("negative_elo") == 1
+    
+    # // Get whether map pick phase is enabled
+    @staticmethod
+    def get_map_pick_phase(guild_id: int, lobby_id: int) -> bool:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("map_pick_phase") == 1
+    
+    # // Get whether team pick phase is enabled
+    @staticmethod
+    def get_team_pick_phase(guild_id: int, lobby_id: int) -> bool:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("team_pick_phase") == 1
 
     # // Create a new lobby
     @staticmethod
@@ -39,6 +74,11 @@ class Lobby:
     @staticmethod
     def map_exists(guild_id: int, lobby_id: int, map: str) -> bool:
         return map in Cache.fetch("lobbies", guild_id)[lobby_id].get("maps", [])
+    
+    # // Get the maps
+    @staticmethod
+    def get_maps(guild_id: int, lobby_id: int) -> list:
+        return Cache.fetch("lobbies", guild_id)[lobby_id].get("maps", [])
 
     # // Delete a map from the lobby
     @staticmethod

@@ -37,18 +37,18 @@ class BansCog(commands.Cog):
         # // Chekc if the user already exists in the bans table
         if Bans.is_banned(ctx.guild.id, user.id):
             # // Get the ban data
-            ban_data = Bans.get(ctx.guild.id, user.id)
+            ban_data: dict = Bans.get(ctx.guild.id, user.id)
 
             # // If the users ban time hasn't expired yet
-            if ban_data["length"] - time.time() > 0:
+            if ban_data.get("length", 0) - time.time() > 0:
                 # // Get the ban length
-                length: datetime.timedelta = datetime.timedelta(seconds = int(ban_data["length"] - time.time()))
+                length: datetime.timedelta = datetime.timedelta(seconds = int(ban_data.get("length", 0) - time.time()))
 
                 # // Send the embed
                 return await ctx.send(
                     embed = discord.Embed(
                         title = f"{user.name} is already banned", 
-                        description = f"**Length:** {length}\n**Reason:** {ban_data['reason']}\n**Banned by:** {ban_data['banned_by']}", 
+                        description = f"**Length:** {length}\n**Reason:** {ban_data.get('reason', 'None')}\n**Banned by:** {ban_data.get('banned_by', 'Unknown')}", 
                         color = 15158588
                 ))
             

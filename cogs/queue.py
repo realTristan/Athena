@@ -23,7 +23,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Check if the lobby state is not pick
-        if Queue.get(ctx.guild.id, ctx.channel.id, "state") != "pick":
+        if Queue.get_state(ctx.guild.id, ctx.channel.id) != "pick":
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} it is not the picking phase", 
@@ -31,7 +31,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Check if the user is not the captain
-        if ctx.author != Queue.get(ctx.guild.id, ctx.channel.id, "pick_logic")[0]:
+        if ctx.author != Queue.get_current_picker(ctx.guild.id, ctx.channel.id):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} it is not your turn to pick", 
@@ -39,7 +39,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Check if the user is not in the queue
-        if user not in Queue.get(ctx.guild.id, ctx.channel.id, "queue"):
+        if not Queue.is_queued(ctx.guild.id, ctx.channel.id, user):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} that player is not in this queue", 
@@ -69,7 +69,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Check if the lobby state is not maps
-        if Queue.get(ctx.guild.id, ctx.channel.id, "state") != "maps":
+        if Queue.get_state(ctx.guild.id, ctx.channel.id) != "maps":
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} it is not the map picking phase", 
@@ -77,7 +77,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Check if the user is the blue team captain
-        if ctx.author != Queue.get(ctx.guild.id, ctx.channel.id, "blue_cap"):
+        if ctx.author != Queue.get_blue_cap(ctx.guild.id, ctx.channel.id):
             return await ctx.send(
                 embed = discord.Embed(
                     description=f"{ctx.author.mention} you are not the blue team captain", 
@@ -85,7 +85,7 @@ class QueueCog(commands.Cog):
             ))
         
         # // Get the maps
-        maps: list = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
+        maps: list = Lobby.get_maps(ctx.guild.id, ctx.channel.id)
 
         # // Check if the map is in the map pool
         for m in maps:
@@ -226,7 +226,7 @@ class QueueCog(commands.Cog):
         
         # // Get the parties and max party size
         parties: list = Queue.get_parties(ctx.guild.id)
-        max_party_size: int = Lobby.get(ctx.guild.id, ctx.channel.id, "max_party_size")
+        max_party_size: int = Lobby.get_party_size(ctx.guild.id, ctx.channel.id)
 
         # // Invite a player to your party
         if action in ["invite", "inv"]:
@@ -507,11 +507,11 @@ class QueueCog(commands.Cog):
                     await Queue.leave(res.guild, lobby.id, res.author)
                 
                 # // Get the players and store them in a string
-                queue_players: list = Queue.get(res.guild.id, lobby.id, "queue")
+                queue_players: list = Queue.get_queue(res.guild.id, lobby.id)
                 players: str = "\n".join(str(p.mention) for p in queue_players)
 
                 # // Get the queue size
-                queue_size: int = Lobby.get(res.guild.id, lobby.id, "queue_size")
+                queue_size: int = Lobby.get_queue_size(res.guild.id, lobby.id)
 
                 # // Create the new embed
                 current_queue_size: int = len(queue_players)

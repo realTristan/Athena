@@ -129,10 +129,9 @@ class Matches:
     @staticmethod
     async def undo(guild: discord.Guild, lobby_id: int, winners: list, losers: list) -> None:
         # // Fetch the lobby settings
-        lobby_settings: dict = Lobby.get(guild.id, lobby_id)
-        negative_elo: int = lobby_settings.get("negative_elo")
-        win_elo: int = lobby_settings.get("win_elo")
-        loss_elo: int = lobby_settings.get("loss_elo")
+        negative_elo: bool = Lobby.get_negative_elo(guild.id, lobby_id)
+        win_elo: int = Lobby.get_win_elo(guild.id, lobby_id)
+        loss_elo: int = Lobby.get_loss_elo(guild.id, lobby_id)
 
         # // Remove the loss from the losers
         for user_id in losers:
@@ -141,9 +140,8 @@ class Matches:
                 continue
             
             # // Get the user info
-            user_info: dict = Users.get(guild.id, user_id)
-            user_elo: int = user_info.get("elo")
-            user_losses: int = user_info.get("losses")
+            user_elo: int = Users.get_elo(guild.id, user_id)
+            user_losses: int = Users.get_losses(guild.id, user_id)
             new_elo: int = user_elo + loss_elo
 
             # // Update the users elo and losses
@@ -161,13 +159,12 @@ class Matches:
                 continue
                 
             # // Get the user info
-            user_info: dict = Users.get(guild.id, user_id)
-            user_elo: int = user_info.get("elo")
-            user_wins: int = user_info.get("wins")
+            user_elo: int = Users.get_elo(guild.id, user_id)
+            user_wins: int = Users.get_wins(guild.id, user_id)
             new_elo: int = user_elo - win_elo
 
             # // If negative elo is enabled, set the users new elo to 0
-            if negative_elo != 1 and (user_elo - win_elo) < 0:
+            if not negative_elo and (user_elo - win_elo) < 0:
                 new_elo = 0
             
             # // Update the users elo and wins

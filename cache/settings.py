@@ -40,6 +40,56 @@ class Settings:
         if key is not None:
             return Cache.fetch("settings", guild_id=guild_id).get(key)
         return Cache.fetch("settings", guild_id=guild_id)
+    
+    # // Get whether self rename is enabled
+    @staticmethod
+    def get_self_rename(guild_id: int) -> bool:
+        return Cache.fetch("settings", guild_id=guild_id).get("self_rename") == 1
+    
+    # // Get the register role
+    @staticmethod
+    def get_reg_role(guild_id: int) -> int:
+        reg_role: int = Cache.fetch("settings", guild_id=guild_id).get("reg_role")
+        return reg_role if reg_role != 0 else None
+    
+    # // Get the match categories
+    @staticmethod
+    def get_match_categories(guild_id: int) -> bool:
+        return Cache.fetch("settings", guild_id=guild_id).get("match_categories") == 1
+    
+    # // Get the register channel
+    @staticmethod
+    def get_reg_channel(guild_id: int) -> int:
+        reg_channel: int = Cache.fetch("settings", guild_id=guild_id).get("reg_channel")
+        return reg_channel if reg_channel != 0 else None
+    
+    # // Get the match logs channel
+    @staticmethod
+    def get_match_logs(guild_id: int) -> int:
+        match_logs: int = Cache.fetch("settings", guild_id=guild_id).get("match_logs")
+        return match_logs if match_logs != 0 else None
+    
+    # // Get the mod role
+    @staticmethod
+    def get_mod_role(guild_id: int) -> int:
+        mod_role: int = Cache.fetch("settings", guild_id=guild_id).get("mod_role")
+        return mod_role if mod_role != 0 else None
+    
+    # // Get the admin role
+    @staticmethod
+    def get_admin_role(guild_id: int) -> int:
+        admin_role: int = Cache.fetch("settings", guild_id=guild_id).get("admin_role")
+        return admin_role if admin_role != 0 else None
+    
+    # // Get the elo roles
+    @staticmethod
+    def get_elo_roles(guild_id: int) -> dict:
+        return Cache.fetch("settings", guild_id=guild_id).get("elo_roles", {})
+    
+    # // Get the elo role
+    @staticmethod
+    def get_elo_role(guild_id: int, role_id: int) -> dict:
+        return Cache.fetch("settings", guild_id=guild_id).get("elo_roles").get(role_id)
 
     # // Create a new elo role
     @staticmethod

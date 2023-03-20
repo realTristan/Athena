@@ -14,9 +14,7 @@ class EloCog(commands.Cog):
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def elorole(self, ctx: commands.Context, option: str, *args):
         # // Get the current elo roles and check to make sure the server has under 20
-        elo_roles: dict = Settings.get(ctx.guild.id, "elo_roles")
-        if elo_roles is None:
-            elo_roles = {}
+        elo_roles: dict = Settings.get_elo_roles(ctx.guild.id)
 
         # // Add a new elo role
         if option in ["add", "create", "new"]:
@@ -310,7 +308,7 @@ class EloCog(commands.Cog):
             await Users.update(ctx.guild.id, user.id, elo=amount)
 
             # // Get the users nick_name from the cache
-            nick_name: str = Users.get(ctx.guild.id, user.id).get("nick_name")
+            nick_name: str = Users.get_name(ctx.guild.id, user.id)
 
             # // Edit the users nickname
             await Users.change_nickname(user, f"{nick_name} [{amount}]")
@@ -364,7 +362,7 @@ class EloCog(commands.Cog):
         lobby_id: int = match_data.get("lobby_id")
         
         # // Check match status
-        if match_data["status"] in ["reported", "cancelled", "rollbacked"]:
+        if match_data.get("status") in ["reported", "cancelled", "rollbacked"]:
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} this match has already been reported",
@@ -437,16 +435,16 @@ class EloCog(commands.Cog):
         
         # // Check if the user is not a mod nor admin
         if not Users.is_mod(ctx.author):
-            if Settings.get(ctx.guild.id, "self_rename") == 0:
+            # // Check if self renaming is enabled
+            if not Settings.get_self_rename(ctx.guild.id):
                 return await ctx.send(
                     embed = discord.Embed(
                     description = f"{ctx.author.mention} self renaming is not enabled", 
                     color = 15158588
                 ))
         
-        # // Get the user from the database and make sure the result is valid
-        user_info: dict = Users.get(ctx.guild.id, ctx.author.id)
-        if user_info is None:
+        # // Verify that user is registered
+        if not Users.exists(ctx.guild.id, ctx.author.id):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} is not registered", 
@@ -455,9 +453,12 @@ class EloCog(commands.Cog):
         
         # // Update the users nickname
         await Users.update(ctx.guild.id, ctx.author.id, user_name=name)
+
+        # // Get the users elo
+        user_elo: int = Users.get_elo(ctx.guild.id, ctx.author.id)
         
         # // Update the users nickname
-        await Users.change_nickname(ctx.author, f"{name} [{user_info['elo']}]")
+        await Users.change_nickname(ctx.author, f"{name} [{user_elo}]")
 
         # // Send the embeds
         return await ctx.send(
@@ -480,8 +481,7 @@ class EloCog(commands.Cog):
             return await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} you do not have enough permissions", color=15158588))
         
         # // Get the user info
-        user_info: dict = Users.get(ctx.guild.id, user.id)
-        if user_info is None:
+        if not Users.exists(ctx.guild.id, user.id):
             return await ctx.send(
                 embed = discord.Embed(
                     description = f"{ctx.author.mention} is not registered", 
@@ -491,8 +491,11 @@ class EloCog(commands.Cog):
         # // Update the users nickname
         await Users.update(ctx.guild.id, user.id, user_name=name)
 
+        # // Get the users elo
+        user_elo: int = Users.get_elo(ctx.guild.id, user.id)
+
         # // Update the users nickname
-        await Users.change_nickname(user, f"{name} [{user_info['elo']}]")
+        await Users.change_nickname(user, f"{name} [{user_elo}]")
 
         # // Send the embeds
         return await ctx.send(
@@ -786,15 +789,29 @@ class EloCog(commands.Cog):
         # // RESET THE MENTIONED USERS STATS
         elif "<@" in args:
             # // Get the user
-            user: discord.Member= ctx.guild.get_member(int(re.sub("\D","", args)))
-            user_name: str = Users.get(ctx.guild.id, user.id).get("user_name")
+            user: discord.Member = ctx.guild.get_member(int(re.sub("\D","", args)))
+            if user is None:
+                return await ctx.send(
+                    embed = discord.Embed(
+                        title = "Reset Stats", 
+                        description = f"{ctx.author.mention} unknown user", 
+                        color = 15158588
+                ))
             
             # // Make sure user is not invalid
-            if user_name is None:
-                return await ctx.send(embed=discord.Embed(title="Reset Stats", description=f"{user.mention} is not registered", color=15158588))
+            if not Users.exists(ctx.guild.id, user.id):
+                return await ctx.send(
+                    embed = discord.Embed(
+                        title = "Reset Stats", 
+                        description=f"{user.mention} is not registered", 
+                        color=15158588
+                ))
             
             # // Reset the users stats
             await Users.reset(ctx.guild.id, user.id)
+
+            # // Get the users name
+            user_name: str = Users.get_name(ctx.guild.id, user.id)
 
             # // Update the users name
             await Users.change_nickname(user, f"{user_name} [0]")

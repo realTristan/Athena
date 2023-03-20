@@ -10,17 +10,13 @@ class SettingsCog(commands.Cog):
     
     # // RETURN CORRESPONDING EMOJI TO SETTING
     # /////////////////////////////////////////
-    def get_settings_option(self, option: str, settings: dict):
-        if settings[option] == 1:
-            return ["🟢", "Disable"]
-        return ["🔴", "Enable"]
+    def get_settings_option(self, value: bool):
+        ["🟢", "Disable"] if value else ["🔴", "Enable"]
         
     # // CONVERT 0-1 TO ENABLED/DISABLED
     # /////////////////////////////////////
-    def num_to_words(self, value:int):
-        if value == 1:
-            return 'ENABLED'
-        return 'DISABLED'
+    def bool_to_words(self, value: bool):
+        "ENABLED" if value else "DISABLED"
     
     # // SET THE MOD ROLE
     # ////////////////////////
@@ -53,10 +49,10 @@ class SettingsCog(commands.Cog):
         # // SHOW THE MOD ROLE
         elif args[0] in ["info", "show"]:
             # // Get the role
-            role_id: int = Settings.get(ctx.guild.id, "mod_role")
+            mod_role_id: int = Settings.get_mod_role(ctx.guild.id)
 
             # // Check if the role exists
-            if role_id == 0:
+            if mod_role_id is None:
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"**Mod Role:** None", 
@@ -64,10 +60,22 @@ class SettingsCog(commands.Cog):
                 ))
             
             # // Get the role and send it to the channel
-            role: discord.Role = ctx.guild.get_role(role_id)
+            mod_role: discord.Role = ctx.guild.get_role(mod_role_id)
+            if mod_role is None:
+                # // Update the settings
+                await Settings.update(ctx.guild.id, mod_role=0)
+
+                # // Send the success embed
+                return await ctx.send(
+                    embed = discord.Embed(
+                        description = f"**Mod Role:** None", 
+                        color = 33023
+                ))
+            
+            # // Send the mod role
             return await ctx.send(
                 embed = discord.Embed(
-                    description = f"**Mod Role:** {role.mention}", 
+                    description = f"**Mod Role:** {mod_role.mention}", 
                     color = 33023
             ))
 
@@ -121,8 +129,8 @@ class SettingsCog(commands.Cog):
         # // SHOW THE ADMIN ROLE
         elif args[0] in ["info", "show"]:
             # // Get the role
-            role_id: int = Settings.get(ctx.guild.id, "admin_role")
-            if role_id == 0:
+            admin_role_id: int = Settings.get_admin_role(ctx.guild.id)
+            if admin_role_id is None:
                 return await ctx.send(
                     embed = discord.Embed(
                         description = f"**Admin Role:** None", 
@@ -130,10 +138,22 @@ class SettingsCog(commands.Cog):
                 ))
             
             # // Send the admin role
-            role: discord.Role = ctx.guild.get_role(role_id)
+            admin_role: discord.Role = ctx.guild.get_role(admin_role_id)
+            if admin_role is None:
+                # // Update the settings
+                await Settings.update(ctx.guild.id, admin_role=0)
+
+                # // Send the success embed
+                await ctx.send(
+                    embed = discord.Embed(
+                        description=f"**Admin Role:** None",
+                        color=33023
+                ))
+
+            # // Send the admin role
             return await ctx.send(
                 embed = discord.Embed(
-                    description = f"**Admin Role:** {role.mention}", 
+                    description = f"**Admin Role:** {admin_role.mention}", 
                     color = 33023
             ))
         
@@ -249,13 +269,22 @@ class SettingsCog(commands.Cog):
                         description = f"{ctx.author.mention} this channel is not a lobby", 
                         color = 15158588
                 ))
-
-            lobby_settings: dict = Lobby.get(ctx.guild.id, ctx.channel.id)
-            team_pick_phase = self.get_settings_option("team_pick_phase", lobby_settings)
-            map_pick_phase = self.get_settings_option("map_pick_phase", lobby_settings)
-            negative_elo = self.get_settings_option("negative_elo", lobby_settings)
-
             
+            # // Get whether the team pick phase is enabled
+            team_pick_phase: list = self.get_settings_option(
+                Lobby.get_team_pick_phase(ctx.guild.id, ctx.channel.id)
+            )
+
+            # // Get whether the map pick phase is enabled
+            map_pick_phase: list = self.get_settings_option(
+                Lobby.get_map_pick_phase(ctx.guild.id, ctx.channel.id)
+            )
+
+            # // Get whether the map veto phase is enabled
+            negative_elo: list = self.get_settings_option(
+                Lobby.get_negative_elo(ctx.guild.id, ctx.channel.id)
+            )
+
             # // Send the lobby settings menu
             await ctx.send(
                 embed = discord.Embed(
@@ -321,16 +350,27 @@ class SettingsCog(commands.Cog):
                         color = 15158588
                 ))
             
-            # // Fetch the lobby settings and maps
-            lobby_settings: dict = Lobby.get(ctx.guild.id, ctx.channel.id)
-            team_pick_phase: str = self.num_to_words(lobby_settings['team_pick_phase'])
-            map_pick_phase: str = self.num_to_words(lobby_settings['map_pick_phase'])
-            negative_elo: str = self.num_to_words(lobby_settings['negative_elo'])
-            win_elo: int = lobby_settings.get("win_elo")
-            loss_elo: int = lobby_settings.get("loss_elo")
-            party_size: int = lobby_settings.get("party_size")
-            queue_size: int = lobby_settings.get("queue_size")
-            maps: list = lobby_settings.get("maps")
+            # // Get whether the team pick phase is enabled
+            team_pick_phase: str = self.bool_to_words(
+                Lobby.get_team_pick_phase(ctx.guild.id, ctx.channel.id)
+            )
+
+            # // Get whether the map pick phase is enabled
+            map_pick_phase: str = self.bool_to_words(
+                Lobby.get_map_pick_phase(ctx.guild.id, ctx.channel.id)
+            )
+
+            # // Get whether negative elo phase is enabled
+            negative_elo: str = self.bool_to_words(
+                Lobby.get_negative_elo(ctx.guild.id, ctx.channel.id)
+            )
+
+            # // Get the lobby settings
+            win_elo: int = Lobby.get_win_elo(ctx.guild.id, ctx.channel.id)
+            loss_elo: int = Lobby.get_loss_elo(ctx.guild.id, ctx.channel.id)
+            party_size: int = Lobby.get_party_size(ctx.guild.id, ctx.channel.id)
+            queue_size: int = Lobby.get_queue_size(ctx.guild.id, ctx.channel.id)
+            maps: list = Lobby.get_maps(ctx.guild.id, ctx.channel.id)
 
             # // Send the embed
             return await ctx.send(
@@ -366,7 +406,7 @@ class SettingsCog(commands.Cog):
             ))
         
         # // Fetch the maps
-        maps: list = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
+        maps: list = Lobby.get_maps(ctx.guild.id, ctx.channel.id)
         if len(maps) >= 20:
             return await ctx.send(
                 embed = discord.Embed(
@@ -417,7 +457,7 @@ class SettingsCog(commands.Cog):
             ))
         
         # // Fetch the maps
-        maps: list = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
+        maps: list = Lobby.get_maps(ctx.guild.id, ctx.channel.id)
 
         # // If the map already exists
         if map not in maps:
@@ -455,7 +495,7 @@ class SettingsCog(commands.Cog):
             ))
         
         # // Fetch the maps
-        maps: list = Lobby.get(ctx.guild.id, ctx.channel.id, "maps")
+        maps: list = Lobby.get_maps(ctx.guild.id, ctx.channel.id)
 
         # // If there are no maps
         description: str = "None"
@@ -526,11 +566,20 @@ class SettingsCog(commands.Cog):
                     color = 15158588
             ))
         
-        # // Get the guild settings
-        settings: dict = Settings.get(ctx.guild.id)
-        match_categories: list = self.get_settings_option("match_categories", settings)
-        match_logs: list = self.get_settings_option("match_logs", settings)
-        self_rename: list = self.get_settings_option("self_rename", settings)
+        # // Get whether match categories are enabled
+        match_categories: list = self.get_settings_option(
+            Settings.get_match_categories(ctx.guild.id)
+        )
+
+        # // Get whether match logs are enabled
+        match_logs: list = self.get_settings_option(
+            Settings.get_match_logs(ctx.guild.id) is not None
+        )
+
+        # // Get whether self rename is enabled
+        self_rename: list = self.get_settings_option(
+            Settings.get_self_rename(ctx.guild.id)
+        )
 
         # // Send the settings menu
         await ctx.send(
@@ -570,10 +619,10 @@ class SettingsCog(commands.Cog):
                     ))
                 
                 # // Get the self rename status
-                self_rename: int = Settings.get(res.guild.id, "self_rename")
+                self_rename: bool = Settings.get_self_rename(res.guild.id)
 
                 # // If the self rename is disabled, enable it
-                if self_rename == 0:
+                if self_rename:
                     # // Update the settings
                     await Settings.update(res.guild.id, self_rename=1)
 
@@ -741,10 +790,10 @@ class SettingsCog(commands.Cog):
                     ))
                 
                 # // Get whether the map picking phase is enabled or disabled
-                map_pick_phase: int = Settings.get(res.guild.id, "map_pick_phase")
+                map_pick_phase: bool = Lobby.get_map_pick_phase(res.guild.id, res.channel.id)
                 
                 # // If map picking phase is disabled, enable it
-                if map_pick_phase == 0:
+                if not map_pick_phase:
                     await Settings.update(res.guild.id, map_pick_phase=1)
                     return await res.send(
                         embed = discord.Embed(
@@ -770,10 +819,10 @@ class SettingsCog(commands.Cog):
                     ))
                 
                 # // Get whether the match logging is enabled or disabled
-                match_logs: int = Settings.get(res.guild.id, "match_logs")
+                match_logs: int = Settings.get_match_logs(res.guild.id)
 
                 # // If match logging is disabled
-                if match_logs == 0:
+                if match_logs is None:
                     await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} mention the channel you want to use", 
@@ -834,10 +883,10 @@ class SettingsCog(commands.Cog):
                     ))
                 
                 # // Get whether the match categories is enabled or disabled
-                match_categories: int = Settings.get(res.guild.id, "match_categories")
+                match_categories: bool = Settings.get_match_categories(res.guild.id)
 
                 # // If match categories is disabled
-                if match_categories == 0:
+                if not match_categories:
                     await Settings.update(res.guild.id, match_categories=1)
                     return await res.send(
                         embed = discord.Embed(
@@ -863,10 +912,10 @@ class SettingsCog(commands.Cog):
                     ))
                 
                 # // Get whether the team picking phase is enabled or disabled
-                team_pick_phase: int = Settings.get(res.guild.id, "team_pick_phase")
+                team_pick_phase: bool = Lobby.get_team_pick_phase(res.guild.id, res.channel.id)
                 
                 # // If team picking phase is disabled
-                if team_pick_phase == 0:
+                if not team_pick_phase:
                     await Settings.update(res.guild.id, team_pick_phase=1)
                     return await res.send(
                         embed = discord.Embed(
@@ -993,10 +1042,10 @@ class SettingsCog(commands.Cog):
                     ))
                 
                 # // Get whether the negative elo is enabled or disabled
-                negative_elo: int = Settings.get(res.guild.id, "negative_elo")
+                negative_elo: bool = Lobby.get_negative_elo(res.guild.id, res.channel.id)
 
                 # // If negative elo is disabled
-                if negative_elo == 0:
+                if not negative_elo:
                     await Settings.update(res.guild.id, negative_elo=1)
                     return await res.send(
                         embed = discord.Embed(

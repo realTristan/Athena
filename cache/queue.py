@@ -84,6 +84,36 @@ class Queue:
     def update_state(guild_id: int, lobby_id: int, state: str) -> None:
         queue[guild_id][lobby_id]["state"] = state
 
+    # // Get the queue state
+    @staticmethod
+    def get_state(guild_id: int, lobby_id: int) -> str:
+        return queue[guild_id][lobby_id]["state"]
+    
+    # // Get the pick logic
+    @staticmethod
+    def get_pick_logic(guild_id: int, lobby_id: int) -> list:
+        return queue[guild_id][lobby_id]["pick_logic"]
+    
+    # // Get the current picker
+    @staticmethod
+    def get_current_picker(guild_id: int, lobby_id: int) -> discord.Member:
+        return queue[guild_id][lobby_id]["pick_logic"][0]
+    
+    # // Get the queue
+    @staticmethod
+    def get_queue(guild_id: int, lobby_id: int) -> list:
+        return queue[guild_id][lobby_id]["queue"]
+
+    # // Check if the user is queued
+    @staticmethod
+    def is_queued(guild_id: int, lobby_id: int, user: discord.Member) -> bool:
+        return user in queue[guild_id][lobby_id]["queue"]
+    
+    # // Get the blue team captain
+    @staticmethod
+    def get_blue_cap(guild_id: int, lobby_id: int) -> discord.Member:
+        return queue[guild_id][lobby_id]["blue_cap"]
+
     # // Add an user to a party
     @staticmethod
     def add_to_party(guild_id: int, party_leader: int, user_id: int) -> None:
@@ -107,7 +137,6 @@ class Queue:
                 queue[guild_id]["parties"][party].remove(user_id)
                 return True
         return False
-
     
     # // Pick and user function
     @staticmethod
@@ -132,16 +161,16 @@ class Queue:
             queue[guild.id][lobby_id]["queue"].remove(queue[guild.id][lobby_id]["queue"][0])
 
             # // Get whether the map pick phase is enabled
-            map_pick_phase: int = Lobby.get(guild.id, lobby_id, "map_pick_phase")
+            map_pick_phase: bool = Lobby.get_map_pick_phase(guild.id, lobby_id)
 
             # // If the map pick phase is enabled
-            if map_pick_phase == 1:
+            if map_pick_phase:
                 queue[guild.id][lobby_id]["state"] = "maps"
 
             # // If the map pick phase is disabled
             else:
                 # // Get the maps
-                maps: list = Lobby.get(guild.id, lobby_id, "maps")
+                maps: list = Lobby.get_maps(guild.id, lobby_id)
 
                 # // If there are maps
                 if len(maps) > 0:
@@ -161,7 +190,8 @@ class Queue:
     @staticmethod
     async def start(guild: discord.Guild, lobby_id: int) -> discord.Embed:
         # // Get the lobby settings
-        lobby: dict = Lobby.get(guild.id, lobby_id)
+        team_pick_phase: bool = Lobby.get_team_pick_phase(guild.id, lobby_id)
+        map_pick_phase: bool = Lobby.get_map_pick_phase(guild.id, lobby_id)
 
         # // Set the blue team captain
         blue_cap: discord.Member = random.choice(queue[guild.id][lobby_id]["queue"])
@@ -174,7 +204,7 @@ class Queue:
         queue[guild.id][lobby_id]["queue"].remove(orange_cap)
 
         # // If the pick phase is enabled
-        if lobby["team_pick_phase"] == 1:
+        if team_pick_phase:
             queue[guild.id][lobby_id]["state"] = "pick"
 
             # // Get the pick logic
@@ -198,7 +228,7 @@ class Queue:
             queue[guild.id][lobby_id]["queue"].remove(user)
         
         # // If the map pick phase is enabled
-        if lobby["map_pick_phase"] == 1:
+        if map_pick_phase:
             # // Set the state to map picking phase
             queue[guild.id][lobby_id]["state"] = "maps"
 
@@ -206,7 +236,7 @@ class Queue:
             return Queue.embed(guild, lobby_id)
 
         # // Get the maps
-        maps: list = lobby.get("maps")
+        maps: list = Lobby.get_maps(guild.id, lobby_id)
         queue[guild.id][lobby_id]["map"] = "None"
         
         # // If there are maps
@@ -283,7 +313,7 @@ class Queue:
             return await Bans.embed(guild.id, user)
 
         # // Get the queue sizes
-        queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
+        queue_size: int = Lobby.get_queue_size(guild.id, lobby_id)
         current_queue_size: int = len(queue[guild.id][lobby_id]["queue"])
 
         # // Add the user to the queue
@@ -312,7 +342,7 @@ class Queue:
                 return False
         
         # // Get the queue size
-        max_queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
+        max_queue_size: int = Lobby.get_queue_size(guild.id, lobby_id)
         lobby_queue_size: int = len(queue[guild.id][lobby_id]["queue"])
         party_size: int = len(queue[guild.id]["parties"][user.id])
 
@@ -356,7 +386,7 @@ class Queue:
             )
         
         # // Get the queue sizes
-        queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
+        queue_size: int = Lobby.get_queue_size(guild.id, lobby_id)
         current_queue_size: int = len(queue[guild.id][lobby_id]['queue'])
 
         # // Remove the user from the queue
@@ -397,10 +427,8 @@ class Queue:
     # // Create the match category function
     @staticmethod
     async def create_match_category(guild: discord.Guild, match_id: int, lobby_id: int) -> None:
-        match_categories: int = Settings.get(guild.id, "match_categories")
-
         # // If the match categories are disabled
-        if match_categories == 0:
+        if not Settings.get_match_categories(guild.id):
             return
         
         # // If the match category already exists
@@ -452,14 +480,13 @@ class Queue:
             # // Add the blue captain to the pick logic
             queue[guild_id][lobby_id]["pick_logic"].append(blue_captain)
 
-
     # // Send match logs to the given match logs channel
     @staticmethod
     async def log_match(guild: discord.Guild, embed: discord.Embed) -> None:
-        match_logs: int = Settings.get(guild.id, "match_logs")
+        match_logs: int = Settings.get_match_logs(guild.id)
 
         # // If the match logs are disabled
-        if match_logs == 0:
+        if match_logs is None:
             return
         
         # // If the match logs are enabled
@@ -478,7 +505,6 @@ class Queue:
                 Button(style=ButtonStyle.red, label="Cancel", custom_id='match_cancel')
             ]])
     
-
     # // Embed generator function (for queue)
     @staticmethod
     def embed(guild: discord.Guild, lobby_id: int) -> discord.Embed:
@@ -512,7 +538,7 @@ class Queue:
 
         # // Get the queue sizes
         current_queue_size: int = len(queue_data["queue"])
-        max_queue_size: int = Lobby.get(guild.id, lobby_id, "queue_size")
+        max_queue_size: int = Lobby.get_queue_size(guild.id, lobby_id)
 
         # // Get the queue
         description: str = "None"
@@ -570,7 +596,7 @@ class Queue:
         amount_of_matches: int = Matches.count(guild.id) + 1
 
         # // Get the maps
-        maps: list = Lobby.get(guild.id, lobby_id, "maps")
+        maps: list = Lobby.get_maps(guild.id, lobby_id)
 
         # // Get the blue team captain
         blue_cap: discord.Member = queue_data["blue_cap"]
@@ -598,7 +624,6 @@ class Queue:
         # // Send the embed
         return embed
         
-
     # // Embed generator function (for final match up)
     @staticmethod
     def state_final_embed(guild: discord.Guild, lobby_id: int) -> None:
@@ -630,3 +655,4 @@ class Queue:
 
         # // Send the embed
         return embed
+    
