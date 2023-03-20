@@ -76,7 +76,7 @@ class Queue:
     
     # // Update the map
     @staticmethod
-    def update_map(guild_id: int, lobby_id: int, map: str) -> None:
+    def set_map(guild_id: int, lobby_id: int, map: str) -> None:
         queue[guild_id][lobby_id]["map"] = str(map[0]).upper() + str(map[1:]).lower()
 
     # // Get the map
@@ -86,7 +86,7 @@ class Queue:
 
     # // Update the state
     @staticmethod
-    def update_state(guild_id: int, lobby_id: int, state: str) -> None:
+    def set_state(guild_id: int, lobby_id: int, state: str) -> None:
         queue[guild_id][lobby_id]["state"] = state
 
     # // Get the queue state
@@ -179,19 +179,14 @@ class Queue:
     def remove_from_queue(guild_id: int, lobby_id: int, user: discord.Member) -> None:
         queue[guild_id][lobby_id]["queue"].remove(user)
 
-    # // Update the current map
-    @staticmethod
-    def update_map(guild_id: int, lobby_id: int, map: str) -> None:
-        queue[guild_id][lobby_id]["current_map"] = map
-
     # // Update the blue team captain
     @staticmethod
-    def update_blue_cap(guild_id: int, lobby_id: int, user: discord.Member) -> None:
+    def set_blue_cap(guild_id: int, lobby_id: int, user: discord.Member) -> None:
         queue[guild_id][lobby_id]["blue_cap"] = user
 
     # // Update the orange team captain
     @staticmethod
-    def update_orange_cap(guild_id: int, lobby_id: int, user: discord.Member) -> None:
+    def set_orange_cap(guild_id: int, lobby_id: int, user: discord.Member) -> None:
         queue[guild_id][lobby_id]["orange_cap"] = user
 
     # // Add a captain to the pick logic
@@ -259,7 +254,7 @@ class Queue:
 
             # // If the map pick phase is enabled
             if map_pick_phase:
-                Queue.update_state(guild.id, lobby_id, "maps")
+                Queue.set_state(guild.id, lobby_id, "maps")
 
             # // If the map pick phase is disabled
             else:
@@ -272,10 +267,10 @@ class Queue:
                     random_map: str = random.choice(maps)
 
                     # // Update the current map
-                    Queue.update_map(guild.id, lobby_id, random_map)
+                    Queue.set_map(guild.id, lobby_id, random_map)
 
                 # // Set the state to final
-                Queue.update_state(guild.id, lobby_id, "final")
+                Queue.set_state(guild.id, lobby_id, "final")
 
         # // Send who the captain picked
         return discord.Embed(
@@ -292,18 +287,18 @@ class Queue:
 
         # // Set the blue team captain
         blue_cap: discord.Member = random.choice(Queue.get_queue(guild.id, lobby_id))
-        Queue.update_blue_cap(guild.id, lobby_id, blue_cap)
+        Queue.set_blue_cap(guild.id, lobby_id, blue_cap)
         Queue.remove_from_queue(guild.id, lobby_id, blue_cap)
         
         # // Set the orange team captain
         orange_cap: discord.Member = random.choice(Queue.get_queue(guild.id, lobby_id))
-        Queue.update_orange_cap(guild.id, lobby_id, orange_cap)
+        Queue.set_orange_cap(guild.id, lobby_id, orange_cap)
         Queue.remove_from_queue(guild.id, lobby_id, orange_cap)
 
         # // If the pick phase is enabled
         if team_pick_phase:
             # // Set the state to pick
-            Queue.update_state(guild.id, lobby_id, "pick")
+            Queue.set_state(guild.id, lobby_id, "pick")
 
             # // Get the pick logic
             await Queue.generate_pick_logic(guild.id, lobby_id)
@@ -328,14 +323,14 @@ class Queue:
         # // If the map pick phase is enabled
         if map_pick_phase:
             # // Set the state to map picking phase
-            Queue.update_state(guild.id, lobby_id, "maps")
+            Queue.set_state(guild.id, lobby_id, "maps")
 
             # // Send the embed
             return Queue.embed(guild, lobby_id)
 
         # // Get the maps
         maps: list = Lobby.get_maps(guild.id, lobby_id)
-        Queue.update_map(guild.id, lobby_id, "None")
+        Queue.set_map(guild.id, lobby_id, "None")
         
         # // If there are maps
         if len(maps) > 0:
@@ -343,10 +338,10 @@ class Queue:
             random_map: str = random.choice(maps)
 
             # // Update the current map
-            Queue.update_map(guild.id, lobby_id, random_map)
+            Queue.set_map(guild.id, lobby_id, random_map)
 
         # // Set the state to final
-        Queue.update_state(guild.id, lobby_id, "final")
+        Queue.set_state(guild.id, lobby_id, "final")
 
         # // Store the embed
         embed: discord.Embed = Queue.embed(guild, lobby_id)
