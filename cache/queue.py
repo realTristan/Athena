@@ -36,43 +36,46 @@ class Queue:
         # // Reset the parties
         queue[guild_id]["parties"] = {}
 
-    # // Get the lobby data
-    @staticmethod
-    def get_lobby(guild_id: int, lobby_id: int) -> any:
-        return queue[guild_id].get(lobby_id, {})
-
-    # // Get a value from the queue cache
-    @staticmethod
-    def get(guild_id: int, lobby_id: int, key: str) -> any:
-        return Queue.get_lobby(guild_id, lobby_id).get(key, None)
-    
-    # // Delete the lobby
-    @staticmethod
-    def delete_lobby(guild_id: int, lobby_id: int) -> None:
-        del queue[guild_id][lobby_id]
-
     # // Get a party from the cache
     @staticmethod
-    def get_parties(guild_id: int, party: int = None) -> any:
-        if party is None:
-            return queue[guild_id].get("parties", None)
-        return queue[guild_id]["parties"].get(party, None)
+    def get_parties(guild_id: int, party_leader: int = None) -> any:
+        if party_leader is None:
+            return queue[guild_id].get("parties", {})
+        return queue[guild_id]["parties"].get(party_leader, [])
     
-    # // Check if channel is a valid queue lobby
+    # // Add an user to a party
     @staticmethod
-    def is_valid_lobby(guild_id: int, lobby_id: int) -> bool:
-        if guild_id not in queue:
-            queue[guild_id] = {}
-        
-        # // Check if the lobby exists
-        if not Lobby.exists(guild_id, lobby_id):
-            return False
-        
-        # // Check if the lobby is in the cache
-        if lobby_id not in queue[guild_id]:
-            Queue.clear(guild_id, lobby_id)
-            Queue.reset_parties(guild_id)
-        return True
+    def add_to_party(guild_id: int, party_leader: int, user_id: int) -> None:
+        queue[guild_id]["parties"][party_leader].append(user_id)
+
+    # // Create a party
+    @staticmethod
+    def create_party(guild_id: int, party_leader: int) -> None:
+        queue[guild_id]["parties"][party_leader] = []
+
+    # // Disband a party
+    @staticmethod
+    def disband_party(guild_id: int, party_leader: int) -> None:
+        del queue[guild_id]["parties"][party_leader]
+
+    # // Check whether a user exists in the party
+    @staticmethod
+    def is_in_party(guild_id: int, party_leader: int, user_id: int) -> bool:
+        return user_id in queue[guild_id]["parties"][party_leader] and party_leader != user_id
+
+    # // Get the party size
+    @staticmethod
+    def get_party_size(guild_id: int, party_leader: int) -> int:
+        return len(queue[guild_id]["parties"][party_leader])
+    
+    # // Remove a user from a party
+    @staticmethod
+    def remove_from_party(guild_id: int, user_id: int) -> bool:
+        for party, members in queue[guild_id]["parties"]:
+            if user_id in members:
+                queue[guild_id]["parties"][party].remove(user_id)
+                return True
+        return False
     
     # // Update the map
     @staticmethod
@@ -104,6 +107,11 @@ class Queue:
     def get_current_picker(guild_id: int, lobby_id: int) -> discord.Member:
         return Queue.get_pick_logic(guild_id, lobby_id)[0]
     
+    # // Add a captain to the pick logic
+    @staticmethod
+    def add_to_pick_logic(guild_id: int, lobby_id: int, captain: discord.Member) -> None:
+        queue[guild_id][lobby_id]["pick_logic"].append(captain)
+    
     # // Get the queue
     @staticmethod
     def get_queue(guild_id: int, lobby_id: int) -> list:
@@ -118,6 +126,16 @@ class Queue:
     @staticmethod
     def is_queued(guild_id: int, lobby_id: int, user: discord.Member) -> bool:
         return user in Queue.get_queue(guild_id, lobby_id)
+
+    # // Add a user to the queue
+    @staticmethod
+    def add_to_queue(guild_id: int, lobby_id: int, user: discord.Member) -> None:
+        queue[guild_id][lobby_id]["queue"].append(user)
+
+    # // Remove a user from the queue
+    @staticmethod
+    def remove_from_queue(guild_id: int, lobby_id: int, user: discord.Member) -> None:
+        queue[guild_id][lobby_id]["queue"].remove(user)
     
     # // Get the blue team captain
     @staticmethod
@@ -159,26 +177,6 @@ class Queue:
     def get_orange_size(guild_id: int, lobby_id: int) -> int:
         return len(queue[guild_id][lobby_id]["orange_team"])
 
-    # // Check whether a user exists in the party
-    @staticmethod
-    def is_in_party(guild_id: int, party_leader: int, user_id: int) -> bool:
-        return user_id in queue[guild_id]["parties"][party_leader] and party_leader != user_id
-
-    # // Get the party size
-    @staticmethod
-    def get_party_size(guild_id: int, party_leader: int) -> int:
-        return len(queue[guild_id]["parties"][party_leader])
-
-    # // Add a user to the queue
-    @staticmethod
-    def add_to_queue(guild_id: int, lobby_id: int, user: discord.Member) -> None:
-        queue[guild_id][lobby_id]["queue"].append(user)
-
-    # // Remove a user from the queue
-    @staticmethod
-    def remove_from_queue(guild_id: int, lobby_id: int, user: discord.Member) -> None:
-        queue[guild_id][lobby_id]["queue"].remove(user)
-
     # // Update the blue team captain
     @staticmethod
     def set_blue_cap(guild_id: int, lobby_id: int, user: discord.Member) -> None:
@@ -189,40 +187,32 @@ class Queue:
     def set_orange_cap(guild_id: int, lobby_id: int, user: discord.Member) -> None:
         queue[guild_id][lobby_id]["orange_cap"] = user
 
-    # // Add a captain to the pick logic
+    # // Delete a lobby
     @staticmethod
-    def add_to_pick_logic(guild_id: int, lobby_id: int, captain: discord.Member) -> None:
-        queue[guild_id][lobby_id]["pick_logic"].append(captain)
-
-    # // Add an user to a party
-    @staticmethod
-    def add_to_party(guild_id: int, party_leader: int, user_id: int) -> None:
-        queue[guild_id]["parties"][party_leader].append(user_id)
-
-    # // Create a party
-    @staticmethod
-    def create_party(guild_id: int, party_leader: int) -> None:
-        queue[guild_id]["parties"][party_leader] = []
-
-    # // Disband a party
-    @staticmethod
-    def disband_party(guild_id: int, party_leader: int) -> None:
-        del queue[guild_id]["parties"][party_leader]
+    def delete_lobby(guild_id: int, lobby_id: int) -> None:
+        del queue[guild_id][lobby_id]
     
-    # // Remove a user from a party
+    # // Check if channel is a valid queue lobby
     @staticmethod
-    def remove_from_party(guild_id: int, user_id: int) -> bool:
-        for party, members in queue[guild_id]["parties"]:
-            if user_id in members:
-                queue[guild_id]["parties"][party].remove(user_id)
-                return True
-        return False
+    def is_valid_lobby(guild_id: int, lobby_id: int) -> bool:
+        if guild_id not in queue:
+            queue[guild_id] = {}
+        
+        # // Check if the lobby exists
+        if not Lobby.exists(guild_id, lobby_id):
+            return False
+        
+        # // Check if the lobby is in the cache
+        if lobby_id not in queue[guild_id]:
+            Queue.clear(guild_id, lobby_id)
+            Queue.reset_parties(guild_id)
+        return True
     
     # // Pick and user function
     @staticmethod
     def pick(guild: discord.Guild, lobby_id: int, captain: discord.Member, user: discord.Member) -> discord.Embed:
-        # // Pop the first item from the pick logic
-        queue[guild.id][lobby_id]["pick_logic"].pop(0)
+        # // Remove the first captain in the pick logic
+        queue[guild.id][lobby_id]["pick_logic"] = queue[guild.id][lobby_id]["pick_logic"][1:]
 
         # // If the user is the blue team captain
         if Queue.get_blue_cap(guild.id, lobby_id) == captain:
