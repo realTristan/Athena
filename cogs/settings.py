@@ -323,20 +323,20 @@ class SettingsCog(commands.Cog):
             )
 
             # // Get all the lobbies for the guild
-            lobbies: list = Lobby.get_all(ctx.guild.id)
+            lobbies: dict = Lobby.get_all(ctx.guild.id)
 
             # // Iterate over the lobbies
-            for i, lobby in enumerate(lobbies):
-                channel: discord.Channel = ctx.guild.get_channel(lobby)
+            for i, lobby_id in enumerate(lobbies):
+                channel: discord.Channel = ctx.guild.get_channel(lobby_id)
 
-                # // If the channel exists
-                if channel is not None:
-                    embed.add_field(name= f"{i + 1}. " + channel.name, value=channel.mention)
+                # // If the channel does not exist
+                if channel is None:
+                    await Lobby.delete(ctx.guild.id, lobby_id)
                     continue
+
+                # // Add the channel to the embed
+                embed.add_field(name = f"{i + 1}. " + channel.name, value = channel.mention)
                 
-                # // If the channel is None
-                await Lobby.delete(ctx.guild.id, lobby)
-                    
             # // Send the embed
             return await ctx.send(embed = embed)
         

@@ -48,7 +48,7 @@ class Matches:
         # // Get the match winners and clean up the team name
         match_winners: str = match_data["winners"][0].upper() + match_data["winners"][1:].lower()
         match_status: str = match_data.get("status")
-        match_map: str = match_data.get("map")
+        match_map: str = match_data.get("map", "None")
 
         # // Get the orange team
         orange_captain: int = match_data.get("orange_cap")
@@ -89,14 +89,14 @@ class Matches:
         orange_team_str: str = ','.join(str(user.id) for user in orange_team)
         blue_team_str: str = ','.join(str(user.id) for user in blue_team)
 
+        # // Team Captains
+        orange_cap: int = match_data.get("orange_cap")
+        blue_cap: int = match_data.get("blue_cap")
+
         # // Define variables for the match data
         match_map: str = match_data.get("map", "none")
         match_status: str = match_data.get("status", "ongoing")
         match_winners: str = match_data.get("winners", "none")
-
-        # // Team Captains
-        orange_cap: int = match_data.get("orange_cap")
-        blue_cap: int = match_data.get("blue_cap")
 
         # // Add the match to the cache
         await Cache.update("matches", guild_id=guild_id, data={
