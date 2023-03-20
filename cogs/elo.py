@@ -436,7 +436,7 @@ class EloCog(commands.Cog):
         # // Check if the user is not a mod nor admin
         if not Users.is_mod(ctx.author):
             # // Check if self renaming is enabled
-            if not Settings.get_self_rename(ctx.guild.id):
+            if not Settings.self_rename_enabled(ctx.guild.id):
                 return await ctx.send(
                     embed = discord.Embed(
                     description = f"{ctx.author.mention} self renaming is not enabled", 

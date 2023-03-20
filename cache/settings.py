@@ -34,50 +34,43 @@ class Settings:
     def exists(guild_id: int) -> bool:
         return guild_id in Cache.fetch("settings")
     
-    # // Get a specific setting
-    @staticmethod
-    def get(guild_id: int, key: str = None) -> any:
-        if key is not None:
-            return Cache.fetch("settings", guild_id=guild_id).get(key)
-        return Cache.fetch("settings", guild_id=guild_id)
-    
     # // Get whether self rename is enabled
     @staticmethod
-    def get_self_rename(guild_id: int) -> bool:
+    def self_rename_enabled(guild_id: int) -> bool:
         return Cache.fetch("settings", guild_id=guild_id).get("self_rename") == 1
-    
-    # // Get the register role
-    @staticmethod
-    def get_reg_role(guild_id: int) -> int:
-        reg_role: int = Cache.fetch("settings", guild_id=guild_id).get("reg_role")
-        return reg_role if reg_role != 0 else None
     
     # // Get the match categories
     @staticmethod
-    def get_match_categories(guild_id: int) -> bool:
+    def match_categories_enabled(guild_id: int) -> bool:
         return Cache.fetch("settings", guild_id=guild_id).get("match_categories") == 1
+    
+    # // Get the register role
+    @staticmethod
+    def get_reg_role(guild_id: int) -> int or None:
+        reg_role: int = Cache.fetch("settings", guild_id=guild_id).get("reg_role")
+        return reg_role if reg_role != 0 else None
     
     # // Get the register channel
     @staticmethod
-    def get_reg_channel(guild_id: int) -> int:
+    def get_reg_channel(guild_id: int) -> int or None:
         reg_channel: int = Cache.fetch("settings", guild_id=guild_id).get("reg_channel")
         return reg_channel if reg_channel != 0 else None
     
     # // Get the match logs channel
     @staticmethod
-    def get_match_logs(guild_id: int) -> int:
+    def get_match_logs_channel(guild_id: int) -> int or None:
         match_logs: int = Cache.fetch("settings", guild_id=guild_id).get("match_logs")
         return match_logs if match_logs != 0 else None
     
     # // Get the mod role
     @staticmethod
-    def get_mod_role(guild_id: int) -> int:
+    def get_mod_role(guild_id: int) -> int or None:
         mod_role: int = Cache.fetch("settings", guild_id=guild_id).get("mod_role")
         return mod_role if mod_role != 0 else None
     
     # // Get the admin role
     @staticmethod
-    def get_admin_role(guild_id: int) -> int:
+    def get_admin_role(guild_id: int) -> int or None:
         admin_role: int = Cache.fetch("settings", guild_id=guild_id).get("admin_role")
         return admin_role if admin_role != 0 else None
     
@@ -86,11 +79,6 @@ class Settings:
     def get_elo_roles(guild_id: int) -> dict:
         return Cache.fetch("settings", guild_id=guild_id).get("elo_roles", {})
     
-    # // Get the elo role
-    @staticmethod
-    def get_elo_role(guild_id: int, role_id: int) -> dict:
-        return Cache.fetch("settings", guild_id=guild_id).get("elo_roles").get(role_id)
-
     # // Create a new elo role
     @staticmethod
     async def create_elo_role(guild_id: int, role_id: int, elo_level: int, win_elo: int, lose_elo: int) -> None:
@@ -104,11 +92,6 @@ class Settings:
             f"INSERT INTO elo_roles (guild_id, role_id, elo_level, win_elo, lose_elo) VALUES ({guild_id}, {role_id}, {elo_level}, {win_elo}, {lose_elo})"
         ])
 
-    # // Check if the elo role exists
-    @staticmethod
-    def elo_role_exists(guild_id: int, role_id: int) -> bool:
-        return role_id in Cache.fetch("settings", guild_id=guild_id).get("elo_roles", {})
-    
     # // Delete an elo role from the lobby
     @staticmethod
     async def delete_elo_role(guild_id: int, role_id: int) -> None:

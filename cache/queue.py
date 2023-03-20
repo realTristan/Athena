@@ -28,7 +28,7 @@ class Queue:
 
     # // Reset the parties
     @staticmethod
-    def reset_parties(guild_id: int):
+    def reset_parties(guild_id: int) -> None:
         # // Add the guild if it doesn't exist
         if guild_id not in queue:
             queue[guild_id] = {}
@@ -38,7 +38,7 @@ class Queue:
 
     # // Get a party from the cache
     @staticmethod
-    def get_parties(guild_id: int, party_leader: int = None) -> any:
+    def get_parties(guild_id: int, party_leader: int = None) -> list or dict:
         if party_leader is None:
             return queue[guild_id].get("parties", {})
         return queue[guild_id]["parties"].get(party_leader, [])
@@ -516,7 +516,7 @@ class Queue:
     @staticmethod
     async def create_match_category(guild: discord.Guild, match_id: int, lobby_id: int) -> None:
         # // If the match categories are disabled
-        if not Settings.get_match_categories(guild.id):
+        if not Settings.match_categories_enabled(guild.id):
             return
         
         # // If the match category already exists
@@ -575,14 +575,14 @@ class Queue:
     # // Send match logs to the given match logs channel
     @staticmethod
     async def log_match(guild: discord.Guild, embed: discord.Embed) -> None:
-        match_logs: int = Settings.get_match_logs(guild.id)
+        channel_id: int = Settings.get_match_logs_channel(guild.id)
 
         # // If the match logs are disabled
-        if match_logs is None:
+        if channel_id is None:
             return
         
         # // If the match logs are enabled
-        channel: discord.Channel = guild.get_channel(match_logs)
+        channel: discord.Channel = guild.get_channel(channel_id)
 
         # // If the channel is not found, set the match logs to 0
         if channel is None:

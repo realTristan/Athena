@@ -568,17 +568,17 @@ class SettingsCog(commands.Cog):
         
         # // Get whether match categories are enabled
         match_categories: list = self.get_settings_option(
-            Settings.get_match_categories(ctx.guild.id)
+            Settings.match_categories_enabled(ctx.guild.id)
         )
 
         # // Get whether match logs are enabled
         match_logs: list = self.get_settings_option(
-            Settings.get_match_logs(ctx.guild.id) is not None
+            Settings.get_match_logs_channel(ctx.guild.id) is not None
         )
 
         # // Get whether self rename is enabled
         self_rename: list = self.get_settings_option(
-            Settings.get_self_rename(ctx.guild.id)
+            Settings.self_rename_enabled(ctx.guild.id)
         )
 
         # // Send the settings menu
@@ -619,7 +619,7 @@ class SettingsCog(commands.Cog):
                     ))
                 
                 # // Get the self rename status
-                self_rename: bool = Settings.get_self_rename(res.guild.id)
+                self_rename: bool = Settings.self_rename_enabled(res.guild.id)
 
                 # // If the self rename is disabled, enable it
                 if self_rename:
@@ -818,11 +818,8 @@ class SettingsCog(commands.Cog):
                             color = 15158588
                     ))
                 
-                # // Get whether the match logging is enabled or disabled
-                match_logs: int = Settings.get_match_logs(res.guild.id)
-
                 # // If match logging is disabled
-                if match_logs is None:
+                if Settings.get_match_logs_channel(res.guild.id) is None:
                     await res.send(
                         embed = discord.Embed(
                             description = f"{res.author.mention} mention the channel you want to use", 
@@ -882,11 +879,8 @@ class SettingsCog(commands.Cog):
                             color = 15158588
                     ))
                 
-                # // Get whether the match categories is enabled or disabled
-                match_categories: bool = Settings.get_match_categories(res.guild.id)
-
                 # // If match categories is disabled
-                if not match_categories:
+                if not Settings.match_categories_enabled(res.guild.id):
                     await Settings.update(res.guild.id, match_categories=1)
                     return await res.send(
                         embed = discord.Embed(
