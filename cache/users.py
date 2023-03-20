@@ -122,7 +122,7 @@ class Users:
         
         # // Iterate over the roles
         for role_id in roles:
-            role = user.guild.get_role(role_id[0])
+            role: discord.Role = user.guild.get_role(role_id[0])
 
             # // Add the role to the user
             if role not in user.roles:

@@ -107,7 +107,7 @@ class Settings:
     # // Check if the elo role exists
     @staticmethod
     def elo_role_exists(guild_id: int, role_id: int) -> bool:
-        return role_id in Cache.fetch("settings", guild_id=guild_id)["elo_roles"]
+        return role_id in Cache.fetch("settings", guild_id=guild_id).get("elo_roles", {})
     
     # // Delete an elo role from the lobby
     @staticmethod

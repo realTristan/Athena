@@ -36,15 +36,15 @@ class Queue:
         # // Reset the parties
         queue[guild_id]["parties"] = {}
 
-    # // Get a value from the queue cache
-    @staticmethod
-    def get(guild_id: int, lobby_id: int, key: str) -> any:
-        return queue[guild_id][lobby_id].get(key, None)
-    
     # // Get the lobby data
     @staticmethod
     def get_lobby(guild_id: int, lobby_id: int) -> any:
-        return queue[guild_id].get(lobby_id, None)
+        return queue[guild_id].get(lobby_id, {})
+
+    # // Get a value from the queue cache
+    @staticmethod
+    def get(guild_id: int, lobby_id: int, key: str) -> any:
+        return Queue.get_lobby(guild_id, lobby_id).get(key, None)
     
     # // Delete the lobby
     @staticmethod
@@ -493,7 +493,7 @@ class Queue:
         queue_size: int = Queue.get_queue_size(guild.id, lobby_id)
 
         # // Remove the user from the queue
-        queue[guild.id][lobby_id]["queue"].remove(user)
+        Queue.remove_from_queue(guild.id, lobby_id, user)
 
         # // Send the queue embed
         return discord.Embed(
@@ -542,18 +542,22 @@ class Queue:
         category: discord.Category = await guild.create_category(f'Match #{match_id}')
         await category.set_permissions(guild.default_role, connect = False, send_messages = False)
 
+        # // Get the team captains
+        orange_cap: discord.Member = Queue.get_orange_cap(guild.id, lobby_id)
+        blue_cap: discord.Member = Queue.get_blue_cap(guild.id, lobby_id)
+
         # // Creating channels inside category
         await guild.create_text_channel(f"match-{match_id}", category = category)
-        await guild.create_voice_channel(f'🔹 Team ' + queue[guild.id][lobby_id]["blue_cap"].name, category = category)
-        await guild.create_voice_channel(f"🔸 Team " + queue[guild.id][lobby_id]['orange_cap'].name, category = category)
+        await guild.create_voice_channel(f"🔹 Team {blue_cap.name}", category = category)
+        await guild.create_voice_channel(f"🔸 Team {orange_cap.name}", category = category)
 
         # // Blue team
         blue_team: list[discord.Member] = Queue.get_blue_team(guild.id, lobby_id)
-        blue_team.append(queue[guild.id][lobby_id]["blue_cap"])
+        blue_team.append(blue_cap)
 
         # // Orange team
         orange_team: list[discord.Member] = Queue.get_orange_team(guild.id, lobby_id)
-        orange_team.append(queue[guild.id][lobby_id]["orange_cap"])
+        orange_team.append(orange_cap)
 
         # // Edit the permissions for each player in the teams
         for user in orange_team:
