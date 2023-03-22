@@ -61,17 +61,17 @@ class Queue:
     # // Check whether a user exists in the party
     @staticmethod
     def is_in_party(guild_id: int, party_leader: int, user_id: int) -> bool:
-        return user_id in queue[guild_id]["parties"][party_leader] and party_leader != user_id
+        return user_id in queue[guild_id]["parties"].get(party_leader, []) and party_leader != user_id
 
     # // Get the party size
     @staticmethod
     def get_party_size(guild_id: int, party_leader: int) -> int:
-        return len(queue[guild_id]["parties"][party_leader])
+        return len(queue[guild_id]["parties"].get(party_leader, []))
     
     # // Remove a user from a party
     @staticmethod
     def remove_from_party(guild_id: int, user_id: int) -> bool:
-        for party, members in queue[guild_id]["parties"]:
+        for party, members in queue[guild_id].get("parties", {}):
             if user_id in members:
                 queue[guild_id]["parties"][party].remove(user_id)
                 return True
@@ -170,12 +170,12 @@ class Queue:
     # // Get the blue team size
     @staticmethod
     def get_blue_size(guild_id: int, lobby_id: int) -> int:
-        return len(queue[guild_id][lobby_id]["blue_team"])
+        return len(queue[guild_id][lobby_id].get("blue_team", []))
     
     # // Get the orange team size
     @staticmethod
     def get_orange_size(guild_id: int, lobby_id: int) -> int:
-        return len(queue[guild_id][lobby_id]["orange_team"])
+        return len(queue[guild_id][lobby_id].get("orange_team", []))
 
     # // Update the blue team captain
     @staticmethod
@@ -225,9 +225,9 @@ class Queue:
             Queue.remove_from_queue(guild.id, lobby_id, user)
 
         # // Check if the queue has one player left
-        if len(queue[guild.id][lobby_id]["queue"]) == 1:
+        if Queue.get_queue_size(guild.id, lobby_id) == 1:
             # // Add the last player to the team
-            last_in_queue: discord.Member = queue[guild.id][lobby_id]["queue"][0]
+            last_in_queue: discord.Member = Queue.get_queue(guild.id, lobby_id)[0]
 
             # // Add the user to the orange team
             if Queue.get_blue_size(guild.id, lobby_id) > Queue.get_orange_size(guild.id, lobby_id):
